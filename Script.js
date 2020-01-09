@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://www.hldww.com/
-// @version      1.5
+// @version      1.6
 // @require https://cdn.staticfile.org/jquery/3.4.0/jquery.min.js
 // @description  NGA论坛显示优化，功能增强，防止突然蹦出一对??而导致的突然性的社会死亡
 // @author       HLD
@@ -18,6 +18,7 @@
         hideSmile: true,
         hideImage: false,
         hideSign: true,
+        hideHeader: false,
         linkTargetBlank: true,
         imgResize: true,
         authorMark: true,
@@ -27,6 +28,7 @@
     let post_author = []
     let ban_list = []
     let mark_list = []
+
     //同步配置
     if(window.localStorage.getItem('hld__NGA_setting')){
         let local_setting = JSON.parse(window.localStorage.getItem('hld__NGA_setting'))
@@ -102,8 +104,10 @@
             const type = $(this).data('type')
             const user = $(this).data('user')
             if(type == 'ban') {
-                if(window.confirm(`确定要拉黑 "${user}"?\n拉黑后将屏蔽所有发言(抽楼)`)) {
-                    ban_list.push(user)
+                let ban_name = window.prompt(' 是否拉黑此用户？\n请检查用户名称，可能会出现解析异常', user)
+                ban_name = $.trim(ban_name)
+                if(ban_name) {
+                    ban_list.push(ban_name)
                     window.localStorage.setItem('hld__NGA_ban_list', ban_list.join(','))
                     alert('已加进黑名单，重载以屏蔽此用户')
                 }
@@ -119,6 +123,8 @@
                 }
             }
         })
+        //隐藏版头
+        setting.hideHeader && $('#toppedtopic').hide()
         //名单管理
         $('body').on('click', '#hld__list_manage', function(){
             $('body').append(`<div id="hld__banlist_panel">
@@ -161,56 +167,110 @@
         el.parent().find('[hld__imglist=ready]').each(function(){
             url_list.push($(this).data('srcorg') || $(this).data('srclazy') || $(this).attr('src'))
         })
-        let $imgBox = $('<div id="hld__img_full" title="点击背景关闭"></div>')
-        $imgBox.click(function(){
-            $(this).remove()
+        let $imgBox = $('<div id="hld__img_full" title="点击背景关闭"><div id="loader"></div></div>')
+        let $img = $('<img title="鼠标滚轮放大/缩小\n左键拖动移动">')
+
+        const renderImg = (index) => {
+            let timer = null
+            $('#loader').show()
+            $img.attr('src', url_list[index]).height($(window).height() * 0.85).hide()
+            timer = setInterval(()=>{
+                const w = $img.width()
+                if(w > 0) {
+                    const t = ($(window).height() -$img.height()) / 2 - $(window).height() * 0.05
+                    const l = ($(window).width() - w) / 2
+                    $img.css({
+                        'top':  t + 'px',
+                        'left': l + 'px'
+                    }).show()
+                    $('#loader').hide()
+                    clearInterval(timer)
+                }
+            }, 1)
+        }
+        //当前图片
+        renderImg(current_index)
+        $img.mousedown(function (e) {
+            var endx = 0;
+            var endy = 0;
+
+            var left = parseInt($img.css("left"))
+            var top = parseInt($img.css("top"))
+
+            var downx = e.pageX
+            var downy = e.pageY
+
+            e.preventDefault()
+            $(document).on("mousemove", function (es) {
+                var endx = es.pageX - downx + left
+                var endy = es.pageY - downy + top
+                $img.css("left", endx + "px").css("top", endy + "px")
+                return false
+            });
+        })
+
+        $img.mouseup(function () {
+            //鼠标弹起时给div取消事件
+            $(document).unbind("mousemove")
+        })
+
+        $imgBox.append($img)
+        $imgBox.click(function(e){
+            $(e.target).attr('id') == 'hld__img_full' && $(this).remove()
         })
         $imgBox.append(`<div class="hld__if_control">
-<div class="change prev-img" title="本楼内上一张（滚轮上）"><div></div></div>
+<div class="change prev-img" title="本楼内上一张"><div></div></div>
 <div class="change rotate-right" title="逆时针旋转90°"><div></div></div>
 <div class="change rotate-left" title="顺时针旋转90°"><div></div></div>
-<div class="change next-img" title="本楼内下一张（滚轮下）"><div></div></div>
+<div class="change next-img" title="本楼内下一张"><div></div></div>
 </div>`)
         $imgBox.on('click', '.change', function(){
             if($(this).hasClass('prev-img') && current_index - 1 >= 0)
-                $img.attr('src', url_list[--current_index])
+                renderImg(--current_index)
+
             if($(this).hasClass('next-img') && current_index + 1 < url_list.length)
-                $img.attr('src', url_list[++current_index])
+                renderImg(++current_index)
+
             if($(this).hasClass('rotate-right') || $(this).hasClass('rotate-left')) {
                 let deg = ($img.data('rotate-deg') || 0) - ($(this).hasClass('rotate-right') ? 90 : -90)
                 if(deg >= 360 || deg <= -360) deg = 0
                 $img.css('transform', `rotate(${deg}deg)`)
                 $img.data('rotate-deg', deg)
-                if((Math.abs(deg) == 90 || Math.abs(deg) == 270) && $img.width() > $(window).height()) {
-                    $img.css('max-height', ($img.css('max-height').replace('px', '')) * ($img.height() / $img.width()) + 'px')
-                }else {
-                    $img.css('max-height', $(window).height() * 0.85 + 'px')
-                }
             }else {
                 $img.css('transform', '')
                 $img.data('rotate-deg', 0)
-                $img.css('max-height', $(window).height() * 0.85 + 'px')
             }
             window.getSelection ? window.getSelection().removeAllRanges() : document.selection.empty()
             return false;
         })
+
         $imgBox.on("mousewheel DOMMouseScroll", function (e) {
             const delta = (e.originalEvent.wheelDelta && (e.originalEvent.wheelDelta > 0 ? 1 : -1))||
                   (e.originalEvent.detail && (e.originalEvent.detail > 0 ? -1 : 1));
-            if(delta > 0 && current_index - 1 >= 0) {
-                $img.attr('src', url_list[--current_index])
+
+            const offset_y = $img.height() * 0.2
+            const offset_x = $img.width() * 0.2
+            if(delta > 0) {
+                $img.css({
+                    'height': ($img.height() + offset_y) + 'px',
+                    'top': ($img.position().top - offset_y / 2) + 'px',
+                    'left': ($img.position().left - offset_x / 2) + 'px'
+                })
             }
-            if(delta < 0 && current_index + 1 < url_list.length) {
-                $img.attr('src', url_list[++current_index])
+            if(delta < 0) {
+                $img.css({
+                    'height': ($img.height() - offset_y) + 'px',
+                    'top': ($img.position().top + offset_y / 2) + 'px',
+                    'left': ($img.position().left + offset_x / 2) + 'px'
+                })
             }
+
             e.stopPropagation()
             return false
         })
-        let $img = $('<img>')
-        $img.css({'max-height': $(window).height() * 0.85 + 'px', 'margin-top': `-${$(window).height() * 0.1}px`, 'transition': 'all .2s ease'})
-        $img.attr('src', url_list[current_index])
-        $imgBox.append($img)
+
         $('body').append($imgBox)
+
     }
     //新页面打开连接
     setting.linkTargetBlank && $('.topic').attr('target', '_blank')
@@ -319,6 +379,7 @@
 <p><label><input type="checkbox" id="hld__cb_hideSmile"> 隐藏表情（快捷键切换显示[<b>W</b>]）</label></p>
 <p><label><input type="checkbox" id="hld__cb_hideImage"> 隐藏贴内图片（快捷键切换显示[<b>E</b>]）</label></p>
 <p><label><input type="checkbox" id="hld__cb_hideSign"> 隐藏签名</label></p>
+<p><label><input type="checkbox" id="hld__cb_hideHeader"> 隐藏版头/版规</label></p>
 <p class="hld__sp-section">功能强化</p>
 <p><label><input type="checkbox" id="hld__cb_linkTargetBlank"> 论坛列表新窗口打开</label></p>
 <p><label><input type="checkbox" id="hld__cb_imgResize"> 贴内图片功能增强</label></p>
@@ -463,15 +524,22 @@ right: 0;
 bottom: 0;
 background: rgba(0, 0, 0, 0.6);
 z-index: 99999;
-display: flex;
-align-items: center;
-justify-content: center;
+/*display: flex;*/
+/*align-items: center;*/
+/*justify-content: center;*/
 }
 #hld__img_full img{
+position: absolute;
 display:block;
 width:auto;
 max-width:auto;
-cursor: pointer;
+cursor: move;
+transition: transform .2s ease;
+}
+#hld__img_full .hld__imgcenter{
+top: 50%;
+left: 50%;
+transform: translate(-50%, -50%);
 }
 .hld__if_control {
 position: absolute;
@@ -481,11 +549,12 @@ bottom: 15px;
 width: 160px;
 margin-left:-80px;
 height: 40px;
+background: rgba(0, 0, 0, 0.6);
+z-index:9999999;
 }
 #hld__img_full .change {
 width: 40px;
 height: 40px;
-transition: all .2s ease;
 cursor:pointer;
 }
 #hld__img_full .rotate-right,
@@ -649,6 +718,30 @@ font-weight:bold;
 .hld__buttons {
 display:flex;
 justify-content: space-between;
+}
+#loader{
+display:none;
+position: absolute;
+top: 50%;
+left: 50%;
+margin-top:-10px;
+margin-left:-10px;
+width: 20px;
+height: 20px;
+border: 6px dotted #FFF;
+border-radius: 50%;
+-webkit-animation: 1s loader linear infinite;
+animation: 1s loader linear infinite;
+}
+@keyframes loader {
+0% {
+-webkit-transform: rotate(0deg);
+transform: rotate(0deg);
+}
+100% {
+-webkit-transform: rotate(360deg);
+transform: rotate(360deg);
+}
 }
 
 `))
