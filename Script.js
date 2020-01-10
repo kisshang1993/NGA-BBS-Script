@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://www.hldww.com/
-// @version      1.6
+// @version      1.7
 // @require https://cdn.staticfile.org/jquery/3.4.0/jquery.min.js
 // @description  NGA论坛显示优化，功能增强，防止突然蹦出一对??而导致的突然性的社会死亡
 // @author       HLD
@@ -54,7 +54,7 @@
         if(event.keyCode == 87){
             $('img').each(function(){
                 const classs = $(this).attr('class');
-                if(classs && classs.indexOf('smile') > -1) $(this).toggle()
+                if(classs && classs.includes('smile')) $(this).toggle()
             })
             $('.smile_alt_text').toggle()
         }
@@ -81,7 +81,7 @@
         const tid = GetQueryString('tid')
         if($('#postauthor0').length > 0 && tid) {
             const author_str = `${tid}:${$('#postauthor0').text()}`
-            if(post_author.indexOf(author_str) == -1)
+            if(!post_author.includes(author_str))
                 post_author.unshift(author_str) > 10 && post_author.pop()
             window.localStorage.setItem('hld__NGA_post_author', post_author.join(','))
         }
@@ -104,27 +104,37 @@
             const type = $(this).data('type')
             const user = $(this).data('user')
             if(type == 'ban') {
-                let ban_name = window.prompt(' 是否拉黑此用户？\n请检查用户名称，可能会出现解析异常', user)
+                let ban_name = window.prompt('是否拉黑此用户？\n请检查用户名称，可能会出现解析异常', user)
                 ban_name = $.trim(ban_name)
                 if(ban_name) {
-                    ban_list.push(ban_name)
+                    !ban_list.includes(ban_name) && ban_list.push(ban_name)
                     window.localStorage.setItem('hld__NGA_ban_list', ban_list.join(','))
-                    alert('已加进黑名单，重载以屏蔽此用户')
+                    reRender()
                 }
             }
             if(type == 'mark') {
-                let remark = window.prompt('请输入要备注的名称，此后以此备注高亮显示代替原ID', '')
+                const exists_remark = mark_list.find(v => v.startsWith(user))
+                let current_remark = exists_remark ? exists_remark.split(':')[1] : ''
+                let remark = window.prompt('请输入要备注的名称，此后以此备注高亮显示代替原ID\n留空则清除备注（清空备注重载生效）', current_remark)
                 remark = $.trim(remark)
-                if(remark.indexOf(':') > -1) {
+                if(remark.includes(':')) {
                     alert('备注不能包含“:”为脚本保留符号')
-                }else if(remark) {
-                    mark_list.push(`${user}:${remark}`)
+                } else{
+                    const r = `${user}:${remark}`
+                    const check = mark_list.findIndex(v => v.startsWith(user))
+                    remark == '' ? check > -1 && mark_list.splice(check, 1) : check > -1 ? mark_list[check] = r : mark_list.push(r)
                     window.localStorage.setItem('hld__NGA_mark_list', mark_list.join(','))
+                    reRender()
                 }
             }
         })
         //隐藏版头
-        setting.hideHeader && $('#toppedtopic').hide()
+        if(setting.hideHeader) {
+            $('#toppedtopic, #sub_forums').hide()
+            let $toggle_header_btn = $('<button style="position: absolute;right: 16px;">切换显示版头</button>')
+            $toggle_header_btn.click(()=>$('#toppedtopic, #sub_forums').toggle())
+            $('#toptopics > div > h3').append($toggle_header_btn)
+        }
         //名单管理
         $('body').on('click', '#hld__list_manage', function(){
             $('body').append(`<div id="hld__banlist_panel">
@@ -168,21 +178,25 @@
             url_list.push($(this).data('srcorg') || $(this).data('srclazy') || $(this).attr('src'))
         })
         let $imgBox = $('<div id="hld__img_full" title="点击背景关闭"><div id="loader"></div></div>')
-        let $img = $('<img title="鼠标滚轮放大/缩小\n左键拖动移动">')
+        let $imgContainer = $('<div class="hld__img_container hld__zoom-target"></div>')
+        let $img = $('<img title="鼠标滚轮放大/缩小\n左键拖动移动" class="hld__img hld__zoom-target">')
 
         const renderImg = (index) => {
             let timer = null
             $('#loader').show()
-            $img.attr('src', url_list[index]).height($(window).height() * 0.85).hide()
+            $imgContainer.css({
+                'top': $(window).height() * 0.03 + 'px',
+                'left': (($(window).width() - ($(window).height()) * 0.85) / 2) + 'px',
+                'width': $(window).height() * 0.85 + 'px',
+                'height': $(window).height() * 0.85 + 'px'
+            })
+            $img.css({'width': '', 'height': ''}).attr('src', url_list[index]).hide()
             timer = setInterval(()=>{
                 const w = $img.width()
+                const h = $img.height()
                 if(w > 0) {
-                    const t = ($(window).height() -$img.height()) / 2 - $(window).height() * 0.05
-                    const l = ($(window).width() - w) / 2
-                    $img.css({
-                        'top':  t + 'px',
-                        'left': l + 'px'
-                    }).show()
+                    w > h ? $img.css({'width': '100%', 'height': 'auto'}) : $img.css({'height': '100%', 'width': 'auto'})
+                    $img.show()
                     $('#loader').hide()
                     clearInterval(timer)
                 }
@@ -191,33 +205,25 @@
         //当前图片
         renderImg(current_index)
         $img.mousedown(function (e) {
-            var endx = 0;
-            var endy = 0;
-
-            var left = parseInt($img.css("left"))
-            var top = parseInt($img.css("top"))
-
-            var downx = e.pageX
-            var downy = e.pageY
-
+            let endx = 0;
+            let endy = 0;
+            let left = parseInt($imgContainer.css("left"))
+            let top = parseInt($imgContainer.css("top"))
+            let downx = e.pageX
+            let downy = e.pageY
             e.preventDefault()
             $(document).on("mousemove", function (es) {
-                var endx = es.pageX - downx + left
-                var endy = es.pageY - downy + top
-                $img.css("left", endx + "px").css("top", endy + "px")
+                let endx = es.pageX - downx + left
+                let endy = es.pageY - downy + top
+                $imgContainer.css("left", endx + "px").css("top", endy + "px")
                 return false
             });
         })
+        $img.mouseup(function () {$(document).unbind("mousemove")})
 
-        $img.mouseup(function () {
-            //鼠标弹起时给div取消事件
-            $(document).unbind("mousemove")
-        })
-
-        $imgBox.append($img)
-        $imgBox.click(function(e){
-            $(e.target).attr('id') == 'hld__img_full' && $(this).remove()
-        })
+        $imgContainer.append($img)
+        $imgBox.append($imgContainer)
+        $imgBox.click(function(e){!$(e.target).hasClass('hld__img') && $(this).remove()})
         $imgBox.append(`<div class="hld__if_control">
 <div class="change prev-img" title="本楼内上一张"><div></div></div>
 <div class="change rotate-right" title="逆时针旋转90°"><div></div></div>
@@ -248,23 +254,36 @@
             const delta = (e.originalEvent.wheelDelta && (e.originalEvent.wheelDelta > 0 ? 1 : -1))||
                   (e.originalEvent.detail && (e.originalEvent.detail > 0 ? -1 : 1));
 
-            const offset_y = $img.height() * 0.2
-            const offset_x = $img.width() * 0.2
-            if(delta > 0) {
-                $img.css({
-                    'height': ($img.height() + offset_y) + 'px',
-                    'top': ($img.position().top - offset_y / 2) + 'px',
-                    'left': ($img.position().left - offset_x / 2) + 'px'
-                })
-            }
-            if(delta < 0) {
-                $img.css({
-                    'height': ($img.height() - offset_y) + 'px',
-                    'top': ($img.position().top + offset_y / 2) + 'px',
-                    'left': ($img.position().left + offset_x / 2) + 'px'
-                })
-            }
+            if($imgContainer.width() > 50) {
+                const offset_y = $imgContainer.height() * 0.2
+                const offset_x = $imgContainer.width() * 0.2
+                let offset_top = offset_y / 2
+                let offset_left = offset_x / 2
 
+                if($(e.target).hasClass('hld__zoom-target')) {
+                    const target_offset_x = Math.round(e.clientX - $imgContainer.position().left)
+                    const target_offset_y = Math.round(e.clientY - $imgContainer.position().top)
+                    offset_left = (target_offset_x / ($imgContainer.height() / 2)) * offset_left
+                    offset_top = (target_offset_y / ($imgContainer.height() / 2)) * offset_top
+                }
+
+                if(delta > 0) {
+                    $imgContainer.css({
+                        'width': ($imgContainer.height() + offset_y) + 'px',
+                        'height': ($imgContainer.height() + offset_y) + 'px',
+                        'top': ($imgContainer.position().top - offset_top) + 'px',
+                        'left': ($imgContainer.position().left - offset_left) + 'px'
+                    })
+                }
+                if(delta < 0) {
+                    $imgContainer.css({
+                        'width': ($imgContainer.height() - offset_y) + 'px',
+                        'height': ($imgContainer.height() - offset_y) + 'px',
+                        'top': ($imgContainer.position().top + offset_top) + 'px',
+                        'left': ($imgContainer.position().left + offset_left) + 'px'
+                    })
+                }
+            }
             e.stopPropagation()
             return false
         })
@@ -276,7 +295,7 @@
     setting.linkTargetBlank && $('.topic').attr('target', '_blank')
     const runMark = () => {
         $('.topicrow .author[hld-render!=ok]').each(function(){
-            ban_list.indexOf($(this).text()) > -1 && $(this).parents('tbody').remove()
+            ban_list.includes($(this).text()) && $(this).parents('tbody').remove()
             for(let m of mark_list) {
                 const t = m.split(':')
                 if(t[0] == $(this).text()) {
@@ -291,12 +310,11 @@
         //楼内
         $('.forumbox.postbox[hld-render!=ok]').each(function(){
             //隐藏头像
-            let $dom = $(this)
             setting.hideAvatar && $(this).find('.avatar').css('display', 'none')
             //隐藏表情
             $(this).find('img').each(function(){
                 const classs = $(this).attr('class');
-                if(classs && classs.indexOf('smile') > -1) {
+                if(classs && classs.includes('smile')) {
                     const alt = $(this).attr('alt')
                     const $alt = $('<span class="smile_alt_text">[' + alt + ']</span>')
                     setting.hideSmile ? $(this).hide() : $alt.hide()
@@ -334,35 +352,43 @@
                 })
             }
             //标记拉黑备注
-            if(setting.authorMark) {
-                $(this).find('.b').each(function(){
-                    let name = $(this).text().replace('[', '').replace(']', '')
-                    if(setting.markAndBan) {
-                        if(ban_list.indexOf(name) > -1) {
-                            if(setting.banMode == 'STRICT') {
-                                if($(this).parents('div.comment_c').length > 0) $(this).parents('div.comment_c').remove()
-                                else $dom.remove()
-                            }else {
-                                if($(this).hasClass('author')) {
-                                    if($(this).parents('div.comment_c').length > 0) $(this).parents('div.comment_c').remove()
-                                    else $dom.remove()
-                                }else {
-                                    $(this).parent().html('<span class="hld__banned">此用户在你的黑名单中，已屏蔽其言论</span>')
-                                }
-                            }
-                        }
-                        for(let m of mark_list) {
-                            const t = m.split(':')
-                            if(t[0] == name) {
-                                $(this).html(`<b>${t[1]}(${name})</b>`)
-                            }
-                        }
-                    }
-                    name == $('#hld__post-author').val() && $(this).append('<span class="hld__post-author">[楼主]</span>')
-                })
-            }
+            setting.authorMark && markDom($(this))
             //添加标志位
             $(this).attr('hld-render', 'ok')
+        })
+    }
+    const reRender = () => {
+        $('.forumbox.postbox').each(function(){
+            markDom($(this))
+        })
+    }
+    const markDom = $el => {
+        $el.find('.b').each(function(){
+            $(this).find('span.hld__post-author, span.hld__remark').remove()
+            let name = $(this).attr('hld-mark-before-name') || $(this).text().replace('[', '').replace(']', '')
+            if(setting.markAndBan) {
+                if(ban_list.includes(name)) {
+                    if(setting.banMode == 'STRICT') {
+                        if($(this).parents('div.comment_c').length > 0) $(this).parents('div.comment_c').remove()
+                        else $(this).parents('.forumbox.postbox').remove()
+                    }else {
+                        if($(this).hasClass('author')) {
+                            if($(this).parents('div.comment_c').length > 0) $(this).parents('div.comment_c').remove()
+                            else $(this).parents('.forumbox.postbox').remove()
+                        }else {
+                            $(this).parent().html('<span class="hld__banned">此用户在你的黑名单中，已屏蔽其言论</span>')
+                        }
+                    }
+                }
+                for(let m of mark_list) {
+                    const t = m.split(':')
+                    if(t[0] == name) {
+                        $(this).attr('hld-mark-before-name', name).append(`<span class="hld__remark"> (${t[1]}) </span>`)
+                    }
+                }
+            }
+            if(name == $('#hld__post-author').val() && $(this).find('span.hld__post-author').length == 0)
+                $(this).append('<span class="hld__post-author">[楼主]</span>')
         })
     }
     if(setting.imgResize) {
@@ -379,7 +405,7 @@
 <p><label><input type="checkbox" id="hld__cb_hideSmile"> 隐藏表情（快捷键切换显示[<b>W</b>]）</label></p>
 <p><label><input type="checkbox" id="hld__cb_hideImage"> 隐藏贴内图片（快捷键切换显示[<b>E</b>]）</label></p>
 <p><label><input type="checkbox" id="hld__cb_hideSign"> 隐藏签名</label></p>
-<p><label><input type="checkbox" id="hld__cb_hideHeader"> 隐藏版头/版规</label></p>
+<p><label><input type="checkbox" id="hld__cb_hideHeader"> 隐藏版头/版规/子版入口</label></p>
 <p class="hld__sp-section">功能强化</p>
 <p><label><input type="checkbox" id="hld__cb_linkTargetBlank"> 论坛列表新窗口打开</label></p>
 <p><label><input type="checkbox" id="hld__cb_imgResize"> 贴内图片功能增强</label></p>
@@ -429,7 +455,7 @@
     })
     //导入
     $('body').on('click', '#hld__import__data', function(){
-        let base_str = window.prompt('导入字符串', '')
+        let base_str = window.prompt('导入字符串\n注意，导入会覆盖你当前所有的设置以及名单列表！', '')
         base_str = $.trim(base_str)
         if(base_str) {
             let str = Base64.decode(base_str)
@@ -474,19 +500,7 @@
         return null;
     }
     function Uniq(array){
-        let temp = {}, r = [], len = array.length, val, type;
-        for (let i = 0; i < len; i++) {
-            val = array[i];
-            type = typeof val;
-            if (!temp[val]) {
-                temp[val] = [type];
-                r.push(val);
-            } else if (temp[val].indexOf(type) < 0) {
-                temp[val].push(type);
-                r.push(val);
-            }
-        }
-        return r;
+        return [...new Set(array)]
     }
     function RemoveBlank(array) {
         let r = [];
@@ -528,11 +542,13 @@ z-index: 99999;
 /*align-items: center;*/
 /*justify-content: center;*/
 }
-#hld__img_full img{
+.hld__img_container {
 position: absolute;
-display:block;
-width:auto;
-max-width:auto;
+display: flex;
+justify-content: center;
+align-items: center;
+}
+#hld__img_full img{
 cursor: move;
 transition: transform .2s ease;
 }
@@ -705,6 +721,10 @@ overflow: hidden;
 }
 .hld__extra-icon:hover{
 text-decoration:none;
+}
+span.hld__remark{
+color:#666;
+font-size:0.8em;
 }
 span.hld__banned {
 color:#ba2026;
