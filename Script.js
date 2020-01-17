@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://www.hldww.com/
-// @version      1.7
+// @version      1.8
 // @require https://cdn.staticfile.org/jquery/3.4.0/jquery.min.js
 // @description  NGA论坛显示优化，功能增强，防止突然蹦出一对??而导致的突然性的社会死亡
 // @author       HLD
@@ -115,7 +115,7 @@
             if(type == 'mark') {
                 const exists_remark = mark_list.find(v => v.startsWith(user))
                 let current_remark = exists_remark ? exists_remark.split(':')[1] : ''
-                let remark = window.prompt('请输入要备注的名称，此后以此备注高亮显示代替原ID\n留空则清除备注（清空备注重载生效）', current_remark)
+                let remark = window.prompt('请输入要备注的名称，备注名显示在原名字的后面\n留空则为取消备注', current_remark)
                 remark = $.trim(remark)
                 if(remark.includes(':')) {
                     alert('备注不能包含“:”为脚本保留符号')
@@ -289,7 +289,6 @@
         })
 
         $('body').append($imgBox)
-
     }
     //新页面打开连接
     setting.linkTargetBlank && $('.topic').attr('target', '_blank')
@@ -299,7 +298,7 @@
             for(let m of mark_list) {
                 const t = m.split(':')
                 if(t[0] == $(this).text()) {
-                    $(this).html(`<b>${t[1]}(${$(this).text()})</b>`)
+                    $(this).append(`<span class="hld__remark"> (${t[1]}) </span>`)
                 }
             }
             //添加标志位
@@ -322,7 +321,7 @@
                 }else if(!classs && $(this).attr('onload')) {
                     $(this).attr('hld__imglist', 'ready')
                     if(setting.imgResize) {
-                        $(this).width() > 200 && $(this).css({'outline': '', 'outline-offset': '', 'cursor': 'pointer', 'min-width': '200px', 'min-height': 'auto', 'width': '200px', 'height': 'auto', 'margin:': '5px'})
+                        $(this).width() > 200 && $(this).css({'outline': '', 'outline-offset': '', 'cursor': 'alias', 'min-width': '200px', 'min-height': 'auto', 'width': '200px', 'height': 'auto', 'margin:': '5px'}).attr('title', '点击大图显示')
                     }
                     let $imgB = $('<button class="switch-img" style="display:none">图</button>')
                     $imgB.on('click', function(){
@@ -394,6 +393,8 @@
     if(setting.imgResize) {
         $('#m_posts').on('click', '.postcontent img[hld__imglist=ready]', function(){
             resizeImg($(this))
+            e.stopPropagation()
+            return false
         })
     }
     //设置面板
@@ -528,7 +529,8 @@
     style.type = "text/css"
     style.appendChild(document.createTextNode(`
 .postcontent img {
-margin: 0 5px 5px 0;
+margin: 0 5px 5px 0 !important;
+box-shadow: none !important;
 }
 #hld__img_full{
 position: fixed;
