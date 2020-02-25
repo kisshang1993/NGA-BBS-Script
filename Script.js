@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://www.hldww.com/
-// @version      1.8
+// @version      1.9
 // @require https://cdn.staticfile.org/jquery/3.4.0/jquery.min.js
 // @description  NGA论坛显示优化，功能增强，防止突然蹦出一对??而导致的突然性的社会死亡
 // @author       HLD
@@ -22,12 +22,14 @@
         linkTargetBlank: true,
         imgResize: true,
         authorMark: true,
+        keywordsBlock: true,
         markAndBan: true,
         banMode: 'SIMPLE'
     }
     let post_author = []
     let ban_list = []
     let mark_list = []
+    let keywords_list = []
 
     //同步配置
     if(window.localStorage.getItem('hld__NGA_setting')){
@@ -93,6 +95,10 @@
             }
         }
     }
+    if(setting.keywordsBlock) {
+        const local_keywords_list = window.localStorage.getItem('hld__NGA_keywords_list')
+        local_keywords_list && (keywords_list = local_keywords_list.split(','))
+    }
     //拉黑备注
     if(setting.markAndBan) {
         const local_ban_list = window.localStorage.getItem('hld__NGA_ban_list')
@@ -135,32 +141,51 @@
             $toggle_header_btn.click(()=>$('#toppedtopic, #sub_forums').toggle())
             $('#toptopics > div > h3').append($toggle_header_btn)
         }
+        //关键字管理
+        $('body').on('click', '#hld__keywords_manage', function(){
+            $('body').append(`<div id="hld__keywords_panel" class="hld__list_panel">
+<a href="javascript:void(0)" class="hld__setting-close">×</a>
+<div>
+<div class="hld__list-c"><p>屏蔽关键字</p><textarea row="20" id="hld__keywords_list_textarea"></textarea><p class="hld__list-desc">一行一条</p></div>
+</div>
+<button class="hld__btn hld__save-btn">保存列表</button>
+</div>`)
+            $('#hld__keywords_list_textarea').val(keywords_list.join('\n'))
+        })
         //名单管理
         $('body').on('click', '#hld__list_manage', function(){
-            $('body').append(`<div id="hld__banlist_panel">
-<a href="javascript:void(0)" id="hld__banlist_panel_close" class="hld__setting-close">×</a>
+            $('body').append(`<div id="hld__banlist_panel"  class="hld__list_panel">
+<a href="javascript:void(0)" class="hld__setting-close">×</a>
 <div>
 <div class="hld__list-c"><p>黑名单</p><textarea row="20" id="hld__ban_list_textarea"></textarea><p class="hld__list-desc">一行一条</p></div>
 <div class="hld__list-c"><p>备注名单</p><textarea row="20" id="hld__mark_list_textarea"></textarea><p class="hld__list-desc">一行一条，格式为<用户名>:<备注> 如“abc123:菜鸡”</p></div>
 </div>
-<button class="hld__btn hld__save-btn" id="hld__save_list">保存名单列表</button>
+<button class="hld__btn hld__save-btn">保存列表</button>
 </div>`)
             $('#hld__ban_list_textarea').val(ban_list.join('\n'))
             $('#hld__mark_list_textarea').val(mark_list.join('\n'))
         })
-        $('body').on('click', '#hld__banlist_panel_close', function(){
-            $('#hld__banlist_panel').remove()
+        $('body').on('click', '.hld__list_panel > .hld__setting-close', function(){
+            $('.hld__list_panel').remove()
         })
-        $('body').on('click', '#hld__save_list', function(){
-            ban_list = $('#hld__ban_list_textarea').val().split('\n')
-            ban_list = RemoveBlank(ban_list)
-            ban_list = Uniq(ban_list)
-            mark_list = $('#hld__mark_list_textarea').val().split('\n')
-            mark_list = RemoveBlank(mark_list)
-            mark_list = Uniq(mark_list)
-            window.localStorage.setItem('hld__NGA_ban_list', ban_list.join(','))
-            window.localStorage.setItem('hld__NGA_mark_list', mark_list.join(','))
-            $('#hld__banlist_panel').remove()
+        $('body').on('click', '.hld__save-btn', function(){
+            if($('#hld__keywords_panel').length > 0) {
+                keywords_list = $('#hld__keywords_list_textarea').val().split('\n')
+                keywords_list = RemoveBlank(keywords_list)
+                keywords_list = Uniq(keywords_list)
+                window.localStorage.setItem('hld__NGA_keywords_list', keywords_list.join(','))
+            }
+            if($('#hld__banlist_panel').length > 0) {
+                ban_list = $('#hld__ban_list_textarea').val().split('\n')
+                ban_list = RemoveBlank(ban_list)
+                ban_list = Uniq(ban_list)
+                mark_list = $('#hld__mark_list_textarea').val().split('\n')
+                mark_list = RemoveBlank(mark_list)
+                mark_list = Uniq(mark_list)
+                window.localStorage.setItem('hld__NGA_ban_list', ban_list.join(','))
+                window.localStorage.setItem('hld__NGA_mark_list', mark_list.join(','))
+            }
+            $('.hld__list_panel').remove()
         })
     }
     //动态检测
@@ -292,13 +317,26 @@
     }
     //新页面打开连接
     setting.linkTargetBlank && $('.topic').attr('target', '_blank')
+    //列表页渲染函数
     const runMark = () => {
-        $('.topicrow .author[hld-render!=ok]').each(function(){
-            ban_list.includes($(this).text()) && $(this).parents('tbody').remove()
-            for(let m of mark_list) {
-                const t = m.split(':')
-                if(t[0] == $(this).text()) {
-                    $(this).append(`<span class="hld__remark"> (${t[1]}) </span>`)
+        $('.topicrow[hld-render!=ok]').each(function(){
+            if(setting.markAndBan) {
+                ban_list.includes($(this).text()) && $(this).parents('tbody').remove()
+                for(let m of mark_list) {
+                    const t = m.split(':')
+                    if(t[0] == $(this).text()) {
+                        $(this).append(`<span class="hld__remark"> (${t[1]}) </span>`)
+                    }
+                }
+            }
+            if(setting.keywordsBlock && keywords_list.length > 0) {
+                const title = $(this).find('.c2>a').text()
+                for(let keyword of keywords_list) {
+                    if(title.includes(keyword)) {
+                        console.warn(`【NGA优化摸鱼体验脚本-关键字屏蔽】标题：${title}  连接：${$(this).find('.c2>a').attr('href')}`)
+                        $(this).remove()
+                        break
+                    }
                 }
             }
             //添加标志位
@@ -308,6 +346,51 @@
     const runDom = () => {
         //楼内
         $('.forumbox.postbox[hld-render!=ok]').each(function(){
+            //关键字屏蔽
+            if(setting.keywordsBlock && keywords_list.length > 0) {
+                const $postcontent = $(this).find('.postcontent')
+                const $postcontent_clone = $postcontent.clone()
+                const consoleLog = (text) => console.warn(`【NGA优化摸鱼体验脚本-关键字屏蔽】内容：${text}`)
+                let postcontent_quote = ''
+                let postcontent_text = ''
+
+                if($postcontent.find('.quote').length > 0) {
+                    $postcontent_clone.find('.quote').remove()
+                    let postcontent_text = $postcontent.find('.quote').text()
+                    const end_index = postcontent_text.indexOf(')')
+                    postcontent_quote = postcontent_text.substring(end_index + 1)
+                }
+
+                postcontent_text = $postcontent_clone.text()
+
+                for(let keyword of keywords_list) {
+                    if(postcontent_text && postcontent_text.includes(keyword)) {
+                        consoleLog(postcontent_text)
+                        $(this).remove()
+                        break
+                    }
+                    if(postcontent_quote && postcontent_quote.includes(keyword)) {
+                        consoleLog(postcontent_quote)
+                        $postcontent.find('.quote').remove()
+                    }
+                }
+                const $comment_c_list = $(this).find('.comment_c')
+                if($comment_c_list.length > 0) {
+                    let postcontent_reply = ''
+                    $comment_c_list.each(function(){
+                        let postcontent_reply_text = $(this).find('.ubbcode').text()
+                        const end_index = postcontent_reply_text.indexOf(')')
+                        postcontent_reply = postcontent_reply_text.substring(end_index + 1)
+                        for(let keyword of keywords_list) {
+                            if(postcontent_reply && postcontent_reply.includes(keyword)) {
+                                consoleLog(postcontent_reply)
+                                $(this).remove()
+                            }
+                        }
+                    })
+                }
+
+            }
             //隐藏头像
             setting.hideAvatar && $(this).find('.avatar').css('display', 'none')
             //隐藏表情
@@ -401,22 +484,30 @@
     let $panel_dom = $(`<div id="hld__setting_panel">
 <a href="javascript:eval($(\'hld__setting_panel\').style.display=\'none\')" class="hld__setting-close">×</a>
 <p class="hld__sp-title"><a title="更新地址" href="https://greasyfork.org/zh-CN/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C" target="_blank">NGA优化摸鱼插件设置</a></p>
+<div class="hld__field">
 <p class="hld__sp-section">显示优化</p>
 <p><label><input type="checkbox" id="hld__cb_hideAvatar"> 隐藏头像（快捷键切换显示[<b>Q</b>]）</label></p>
 <p><label><input type="checkbox" id="hld__cb_hideSmile"> 隐藏表情（快捷键切换显示[<b>W</b>]）</label></p>
 <p><label><input type="checkbox" id="hld__cb_hideImage"> 隐藏贴内图片（快捷键切换显示[<b>E</b>]）</label></p>
 <p><label><input type="checkbox" id="hld__cb_hideSign"> 隐藏签名</label></p>
 <p><label><input type="checkbox" id="hld__cb_hideHeader"> 隐藏版头/版规/子版入口</label></p>
+</div>
+<div class="hld__field">
 <p class="hld__sp-section">功能强化</p>
 <p><label><input type="checkbox" id="hld__cb_linkTargetBlank"> 论坛列表新窗口打开</label></p>
 <p><label><input type="checkbox" id="hld__cb_imgResize"> 贴内图片功能增强</label></p>
 <p><label><input type="checkbox" id="hld__cb_authorMark"> 高亮楼主</label></p>
-<p><label><input type="checkbox" id="hld__cb_markAndBan" enable="hld__sp_fold"> 拉黑/备注功能</label></p>
-<div class="hld__sp-fold" id="hld__sp_fold" data-id="hld__rb_banMode">
+<p><label><input type="checkbox" id="hld__cb_keywordsBlock" enable="hld__keywordsBlock_fold"> 关键字屏蔽</label></p>
+<div class="hld__sp-fold" id="hld__keywordsBlock_fold" data-id="hld__cb_keywordsBlock">
+<p><button id="hld__keywords_manage">管理关键字</button></p>
+</div>
+<p><label><input type="checkbox" id="hld__cb_markAndBan" enable="hld__markAndBan_fold"> 拉黑/备注功能</label></p>
+<div class="hld__sp-fold" id="hld__markAndBan_fold" data-id="hld__rb_banMode">
 <p class="hld__f-title">拉黑模式</p>
 <p><label title="仅抽被拉黑者的楼，不抽回复的被拉黑者的楼"><input type="radio" name="hld__rb_banMode" value="SIMPLE" >仅屏蔽被拉黑者的回复</label></p>
 <p><label title="一刀切模式，只要楼内与被拉者有关，一律抽楼"><input type="radio" name="hld__rb_banMode" value="STRICT">包含回复被拉黑者的回复</label></p>
 <p><button id="hld__list_manage">名单管理</button></p>
+</div>
 </div>
 <div class="hld__buttons">
 <span>
@@ -450,7 +541,8 @@
             name: 'NGA-BBS',
             setting: setting,
             ban_list: ban_list,
-            mark_list: mark_list
+            mark_list: mark_list,
+            keywords_list: keywords_list
         }
         window.prompt('导出成功，请复制以下代码以备份', Base64.encode(JSON.stringify(obj)))
     })
@@ -470,6 +562,7 @@
                     window.localStorage.setItem('hld__NGA_setting', JSON.stringify(setting))
                     window.localStorage.setItem('hld__NGA_ban_list', ban_list.join(','))
                     window.localStorage.setItem('hld__NGA_mark_list', mark_list.join(','))
+                    window.localStorage.setItem('hld__NGA_keywords_list', keywords_list.join(','))
                     $panel_dom.hide()
                     alert('导入成功，刷新生效')
 
@@ -608,39 +701,64 @@ transform: scale(1.2) rotate(180deg);
 #hld__setting {
 color:#6666CC;
 }
-#hld__banlist_panel {
+.hld__list_panel {
 position:fixed;
 top:150px;
 left:50%;
 transform: translateX(-50%);
 background:#fff8e7;
-width:370px;
 height:300px;
 padding: 15px 20px;
 border-radius: 10px;
 box-shadow: 0 0 10px #666;
 border: 1px solid #591804;
 }
-#hld__banlist_panel > div{
+#hld__banlist_panel {
+width:370px;
+}
+#hld__banlist_panel {
+width:370px;
+}
+#hld__keywords_panel {
+width:182px;
+}
+.hld__list_panel > div{
 display:flex;
 justify-content: space-between;
 }
-#hld__banlist_panel .hld__list-c{
+.hld__list_panel .hld__list-c{
 width: 45%;
 }
-#hld__banlist_panel .hld__list-c textarea{
+#hld__keywords_panel .hld__list-c{
+width: 100%;
+}
+.hld__list_panel .hld__list-c textarea{
+box-sizing: border-box;
+padding: 0;
+margin: 0;
 height:200px;
 width:100%;
 resize: none;
 }
-#hld__banlist_panel .hld__list-desc {
+.hld__list_panel .hld__list-desc {
 font-size:9px;
 color:#666;
 }
-#hld__banlist_panel .hld__list-c > p:first-child{
+.hld__list_panel .hld__list-c > p:first-child{
 weight:bold;
 font-size:14px;
 margin-bottom:10px;
+}
+.hld__updated {
+position:fixed;
+top:  10px;
+right: 10px;
+width: 200px;
+height:40px;
+border-radius: 5px;
+box-shadow: 0 0 10px #666;
+border: 1px solid #591804;
+background: #fff0cd;
 }
 #hld__setting_panel {
 display:none;
@@ -649,11 +767,15 @@ top:70px;
 left:50%;
 transform: translateX(-50%);
 background:#fff8e7;
-width:242px;
+width:526px;
 padding: 15px 20px;
 border-radius: 10px;
 box-shadow: 0 0 10px #666;
 border: 1px solid #591804;
+}
+#hld__setting_panel > div.hld__field{
+float:left;
+width:50%;
 }
 #hld__setting_panel p{
 margin-bottom:10px;
@@ -738,8 +860,10 @@ padding-left:23px;
 font-weight:bold;
 }
 .hld__buttons {
+clear:both;
 display:flex;
 justify-content: space-between;
+padding-top: 15px;
 }
 #loader{
 display:none;
