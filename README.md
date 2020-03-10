@@ -4,6 +4,10 @@
 NGA论坛显示优化，功能增强，提升浏览体验
 可以有效防止突然蹦出一对??而导致的突然性的社会死亡[手动扇子脸]
 
+#### 安装指引
+ 1. 安装在浏览器：[[安装教程]](https://greasyfork.org/zh-CN/help/installing-user-scripts)
+ 2. 安装在广告过滤器：找到广告过滤器中的用户脚本管理页面，添加用户脚本，填入[[脚本地址]](https://greasyfork.org/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C/code/NGA%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C.user.js)安装
+
 #### 功能列表
 + 隐藏头像（快捷键切换显示[Q]）
 + 隐藏表情，使用中文替代（快捷键切换显示[W]）
