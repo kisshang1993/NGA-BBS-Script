@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://www.hldww.com/
-// @version      1.9
+// @version      2.0
 // @require https://cdn.staticfile.org/jquery/3.4.0/jquery.min.js
 // @description  NGA论坛显示优化，功能增强，防止突然蹦出一对??而导致的突然性的社会死亡
 // @author       HLD
@@ -13,6 +13,7 @@
 (function() {
     'use strict';
 
+    const default_shortcut = [81,87,69,37,39]
     let setting = {
         hideAvatar: true,
         hideSmile: true,
@@ -24,13 +25,29 @@
         authorMark: true,
         keywordsBlock: true,
         markAndBan: true,
-        banMode: 'SIMPLE'
+        banMode: 'SIMPLE',
+        shortcutKeys: default_shortcut
     }
     let post_author = []
     let ban_list = []
     let mark_list = []
     let keywords_list = []
 
+    const shortcut_name = ['隐藏头像', '隐藏表情', '隐藏图片', '楼内上一张图', '楼内下一张图']
+    const shortcut_code = {'A':65,'B':66,'C':67,'D':68,'E':69,'F':70,'G':71,
+                           'H':72,'I':73,'J':74,'K':75,'L':76,'M':77,'N':78,
+                           'O':79,'P':80,'Q':81,'R':82,'S':83,'T':84,
+                           'U':85,'V':86,'W':87,'X':88,'Y':89,'Z':90,
+                           '0':48,'1':49,'2':50,'3':51,'4':52,'5':53,'6':54,'7':55,'8':56,'9':57,
+                           'LEFT':37,'RIGHT':39,'UP':38,'DOWN':40,'':0
+                          }
+    const getCodeName = (code) => {
+        let keyname = ''
+        for(let [n, c] of Object.entries(shortcut_code)) {
+            c == code && (keyname = n)
+        }
+        return keyname
+    }
     //同步配置
     if(window.localStorage.getItem('hld__NGA_setting')){
         let local_setting = JSON.parse(window.localStorage.getItem('hld__NGA_setting'))
@@ -49,11 +66,11 @@
             return;
         }
         //切换显示头像
-        if(event.keyCode == 81){
+        if(event.keyCode == setting.shortcutKeys[0]){
             $('.avatar').toggle()
         }
         //切换显示表情
-        if(event.keyCode == 87){
+        if(event.keyCode == setting.shortcutKeys[1]){
             $('img').each(function(){
                 const classs = $(this).attr('class');
                 if(classs && classs.includes('smile')) $(this).toggle()
@@ -61,7 +78,7 @@
             $('.smile_alt_text').toggle()
         }
         //切换显示图片
-        if(event.keyCode == 69){
+        if(event.keyCode == setting.shortcutKeys[2]){
             $('.postcontent img').each(function(){
                 const classs = $(this).attr('class');
                 if(!classs && $(this).width() > 24) {
@@ -75,6 +92,25 @@
                 }
             })
         }
+        //关闭大图
+        if(event.keyCode == 27){
+            if($('#hld__img_full').length > 0) {
+                $('#hld__img_full').remove()
+            }
+        }
+        //上一张图片
+        if(event.keyCode == setting.shortcutKeys[3]){
+            if($('#hld__img_full').length > 0) {
+                $('#hld__img_full .prev-img').click()
+            }
+        }
+        //下一张图片
+        if(event.keyCode == setting.shortcutKeys[4]){
+            if($('#hld__img_full').length > 0) {
+                $('#hld__img_full .next-img').click()
+            }
+        }
+
     })
     //查找楼主
     if(setting.authorMark) {
@@ -141,6 +177,26 @@
             $toggle_header_btn.click(()=>$('#toppedtopic, #sub_forums').toggle())
             $('#toptopics > div > h3').append($toggle_header_btn)
         }
+        //快捷键管理
+        $('body').on('click', '#hld__shortcut_manage', function(){
+            let $shortcutPanel = $(`<div id="hld__shortcut_panel" class="hld__list_panel">
+<a href="javascript:void(0)" class="hld__setting-close">×</a>
+<div><div><p>编辑快捷键</p><div class="hld__float-left"><table class="hld__table"><thead><tr><td>功能</td><td width="60">快捷键</td></tr></thead>
+<tbody></tbody></table></div><div class="hld__float-left hld__shortcut-desc"><p><b>支持的快捷键范围</b></p><p>键盘 <code>A</code>~<code>Z</code></p><p>左箭头 <code>LEFT</code></p><p>右箭头 <code>RIGHT</code></p><p>上箭头 <code>UP</code></p><p>下箭头 <code>DOWN</code></p><p><i>* 留空则取消快捷键</i></p>
+</div>
+<div></div></div>
+</div>
+<div class="hld__btn-groups">
+<button class="hld__btn" data-type="reset_shortcut">重置按键</button>
+<button class="hld__btn" data-type="save_shortcut">保存快捷键</button>
+</div>
+</div>`)
+            for(let [index, sn] of shortcut_name.entries()) {
+                const keycode = setting.shortcutKeys[index]
+                $shortcutPanel.find('.hld__table tbody').append(`<tr><td>${sn}</td><td><input type="text" value="${getCodeName(keycode)}"></td></tr>`)
+            }
+            $('body').append($shortcutPanel)
+        })
         //关键字管理
         $('body').on('click', '#hld__keywords_manage', function(){
             $('body').append(`<div id="hld__keywords_panel" class="hld__list_panel">
@@ -148,7 +204,7 @@
 <div>
 <div class="hld__list-c"><p>屏蔽关键字</p><textarea row="20" id="hld__keywords_list_textarea"></textarea><p class="hld__list-desc">一行一条</p></div>
 </div>
-<button class="hld__btn hld__save-btn">保存列表</button>
+<div class="hld__btn-groups"><button class="hld__btn" data-type="save_keywords">保存列表</button></div>
 </div>`)
             $('#hld__keywords_list_textarea').val(keywords_list.join('\n'))
         })
@@ -160,7 +216,7 @@
 <div class="hld__list-c"><p>黑名单</p><textarea row="20" id="hld__ban_list_textarea"></textarea><p class="hld__list-desc">一行一条</p></div>
 <div class="hld__list-c"><p>备注名单</p><textarea row="20" id="hld__mark_list_textarea"></textarea><p class="hld__list-desc">一行一条，格式为<用户名>:<备注> 如“abc123:菜鸡”</p></div>
 </div>
-<button class="hld__btn hld__save-btn">保存列表</button>
+<div class="hld__btn-groups"><button class="hld__btn" data-type="save_banlist">保存列表</button></div>
 </div>`)
             $('#hld__ban_list_textarea').val(ban_list.join('\n'))
             $('#hld__mark_list_textarea').val(mark_list.join('\n'))
@@ -168,14 +224,15 @@
         $('body').on('click', '.hld__list_panel > .hld__setting-close', function(){
             $('.hld__list_panel').remove()
         })
-        $('body').on('click', '.hld__save-btn', function(){
-            if($('#hld__keywords_panel').length > 0) {
+        $('body').on('click', '.hld__btn', function(){
+            const type = $(this).data('type')
+            if(type == 'save_keywords') {
                 keywords_list = $('#hld__keywords_list_textarea').val().split('\n')
                 keywords_list = RemoveBlank(keywords_list)
                 keywords_list = Uniq(keywords_list)
                 window.localStorage.setItem('hld__NGA_keywords_list', keywords_list.join(','))
             }
-            if($('#hld__banlist_panel').length > 0) {
+            if(type == 'save_banlist') {
                 ban_list = $('#hld__ban_list_textarea').val().split('\n')
                 ban_list = RemoveBlank(ban_list)
                 ban_list = Uniq(ban_list)
@@ -184,6 +241,23 @@
                 mark_list = Uniq(mark_list)
                 window.localStorage.setItem('hld__NGA_ban_list', ban_list.join(','))
                 window.localStorage.setItem('hld__NGA_mark_list', mark_list.join(','))
+            }
+            if(type == 'reset_shortcut') {
+                setting.shortcutKeys = default_shortcut
+                window.localStorage.setItem('hld__NGA_setting', JSON.stringify(setting))
+                popMsg('重置成功，刷新页面生效')
+            }
+            if(type == 'save_shortcut') {
+                let shortcut_keys = []
+                $('.hld__table tbody>tr').each(function(){
+                    const v = $(this).find('input').val().trim().toUpperCase()
+                    if(Object.keys(shortcut_code).includes(v)) shortcut_keys.push(shortcut_code[v])
+                    else popMsg(`${v}是个无效的快捷键`)
+                })
+                if(shortcut_keys.length != setting.shortcutKeys.length) return
+                setting.shortcutKeys = shortcut_keys
+                window.localStorage.setItem('hld__NGA_setting', JSON.stringify(setting))
+                popMsg('保存成功，刷新页面生效')
             }
             $('.hld__list_panel').remove()
         })
@@ -250,10 +324,10 @@
         $imgBox.append($imgContainer)
         $imgBox.click(function(e){!$(e.target).hasClass('hld__img') && $(this).remove()})
         $imgBox.append(`<div class="hld__if_control">
-<div class="change prev-img" title="本楼内上一张"><div></div></div>
+<div class="change prev-img" title="本楼内上一张(快捷键${getCodeName(setting.shortcutKeys[3])})"><div></div></div>
 <div class="change rotate-right" title="逆时针旋转90°"><div></div></div>
 <div class="change rotate-left" title="顺时针旋转90°"><div></div></div>
-<div class="change next-img" title="本楼内下一张"><div></div></div>
+<div class="change next-img" title="本楼内下一张(快捷键${getCodeName(setting.shortcutKeys[4])})"><div></div></div>
 </div>`)
         $imgBox.on('click', '.change', function(){
             if($(this).hasClass('prev-img') && current_index - 1 >= 0)
@@ -483,14 +557,15 @@
     //设置面板
     let $panel_dom = $(`<div id="hld__setting_panel">
 <a href="javascript:eval($(\'hld__setting_panel\').style.display=\'none\')" class="hld__setting-close">×</a>
-<p class="hld__sp-title"><a title="更新地址" href="https://greasyfork.org/zh-CN/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C" target="_blank">NGA优化摸鱼插件设置</a></p>
+<p class="hld__sp-title"><a title="更新地址" href="https://greasyfork.org/zh-CN/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C" target="_blank">NGA优化摸鱼插件<span class="hld__script-info">v${GM_info.script.version}</span></a></p>
 <div class="hld__field">
 <p class="hld__sp-section">显示优化</p>
-<p><label><input type="checkbox" id="hld__cb_hideAvatar"> 隐藏头像（快捷键切换显示[<b>Q</b>]）</label></p>
-<p><label><input type="checkbox" id="hld__cb_hideSmile"> 隐藏表情（快捷键切换显示[<b>W</b>]）</label></p>
-<p><label><input type="checkbox" id="hld__cb_hideImage"> 隐藏贴内图片（快捷键切换显示[<b>E</b>]）</label></p>
+<p><label><input type="checkbox" id="hld__cb_hideAvatar"> 隐藏头像（快捷键切换显示[<b>${getCodeName(setting.shortcutKeys[0])}</b>]）</label></p>
+<p><label><input type="checkbox" id="hld__cb_hideSmile"> 隐藏表情（快捷键切换显示[<b>${getCodeName(setting.shortcutKeys[1])}</b>]）</label></p>
+<p><label><input type="checkbox" id="hld__cb_hideImage"> 隐藏贴内图片（快捷键切换显示[<b>${getCodeName(setting.shortcutKeys[2])}</b>]）</label></p>
 <p><label><input type="checkbox" id="hld__cb_hideSign"> 隐藏签名</label></p>
 <p><label><input type="checkbox" id="hld__cb_hideHeader"> 隐藏版头/版规/子版入口</label></p>
+<p><button id="hld__shortcut_manage">编辑快捷键</button></p>
 </div>
 <div class="hld__field">
 <p class="hld__sp-section">功能强化</p>
@@ -707,7 +782,6 @@ top:150px;
 left:50%;
 transform: translateX(-50%);
 background:#fff8e7;
-height:300px;
 padding: 15px 20px;
 border-radius: 10px;
 box-shadow: 0 0 10px #666;
@@ -741,6 +815,7 @@ width:100%;
 resize: none;
 }
 .hld__list_panel .hld__list-desc {
+margin-top:5px;
 font-size:9px;
 color:#666;
 }
@@ -820,15 +895,30 @@ button.hld__btn:hover {
 background: #591804;
 color: #fff0cd;
 }
-button.hld__save-btn {
+.hld__btn-groups {
+display:flex;
+justify-content: center !important;
 margin-top:10px;
-margin-left: 50%;
-transform: translateX(-50%);
 }
-
 .hld__post-author {
 color:#F00;
 font-weight:bold;
+}
+.hld__table{
+margin-top:10px;
+width:200px;
+}
+.hld__table tr td:last-child{
+text-align:center;
+}
+.hld__table input[type=text] {
+width:48px;
+text-transform:uppercase;
+text-align:center;
+}
+.hld__table td{
+border: 1px solid #c0c0c0;
+padding: 3px 6px;
 }
 .hld__extra-icon {
 padding: 0 2px;
@@ -889,7 +979,30 @@ transform: rotate(0deg);
 transform: rotate(360deg);
 }
 }
-
+code {
+padding: 2px 4px;
+font-size: 90%;
+font-weight:bold;
+color: #c7254e;
+background-color: #f9f2f4;
+border-radius: 4px;
+}
+.hld__float-left {
+float:left;
+}
+.hld__shortcut-desc {
+width:120px;
+margin-left:20px;
+padding-top:6px
+}
+.hld__shortcut-desc p{
+margin-bottom:5px;
+}
+.hld__script-info {
+margin-left:4px;
+font-size:70%;
+color:#666;
+}
 `))
     document.getElementsByTagName("head")[0].appendChild(style)
 
