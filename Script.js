@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://www.hldww.com/
-// @version      2.0
+// @version      2.1
 // @require https://cdn.staticfile.org/jquery/3.4.0/jquery.min.js
 // @description  NGA论坛显示优化，功能增强，防止突然蹦出一对??而导致的突然性的社会死亡
 // @author       HLD
@@ -10,10 +10,10 @@
 // @match        *://nga.178.com/*
 // ==/UserScript==
 
-(function() {
+(function () {
     'use strict';
 
-    const default_shortcut = [81,87,69,37,39]
+    const default_shortcut = [81, 87, 69, 37, 39]
     let setting = {
         hideAvatar: true,
         hideSmile: true,
@@ -34,152 +34,147 @@
     let keywords_list = []
 
     const shortcut_name = ['隐藏头像', '隐藏表情', '隐藏图片', '楼内上一张图', '楼内下一张图']
-    const shortcut_code = {'A':65,'B':66,'C':67,'D':68,'E':69,'F':70,'G':71,
-                           'H':72,'I':73,'J':74,'K':75,'L':76,'M':77,'N':78,
-                           'O':79,'P':80,'Q':81,'R':82,'S':83,'T':84,
-                           'U':85,'V':86,'W':87,'X':88,'Y':89,'Z':90,
-                           '0':48,'1':49,'2':50,'3':51,'4':52,'5':53,'6':54,'7':55,'8':56,'9':57,
-                           'LEFT':37,'RIGHT':39,'UP':38,'DOWN':40,'':0
-                          }
+    const shortcut_code = {
+        'A': 65, 'B': 66, 'C': 67, 'D': 68, 'E': 69, 'F': 70, 'G': 71,
+        'H': 72, 'I': 73, 'J': 74, 'K': 75, 'L': 76, 'M': 77, 'N': 78,
+        'O': 79, 'P': 80, 'Q': 81, 'R': 82, 'S': 83, 'T': 84,
+        'U': 85, 'V': 86, 'W': 87, 'X': 88, 'Y': 89, 'Z': 90,
+        '0': 48, '1': 49, '2': 50, '3': 51, '4': 52, '5': 53, '6': 54, '7': 55, '8': 56, '9': 57,
+        'LEFT': 37, 'RIGHT': 39, 'UP': 38, 'DOWN': 40, '': 0
+    }
     const getCodeName = (code) => {
         let keyname = ''
-        for(let [n, c] of Object.entries(shortcut_code)) {
+        for (let [n, c] of Object.entries(shortcut_code)) {
             c == code && (keyname = n)
         }
         return keyname
     }
     //同步配置
-    if(window.localStorage.getItem('hld__NGA_setting')){
+    if (window.localStorage.getItem('hld__NGA_setting')) {
         let local_setting = JSON.parse(window.localStorage.getItem('hld__NGA_setting'))
-        for(let k in setting) {
+        for (let k in setting) {
             !local_setting.hasOwnProperty(k) && (local_setting[k] = setting[k])
         }
-        for(let k in local_setting) {
+        for (let k in local_setting) {
             !setting.hasOwnProperty(k) && delete local_setting[k]
         }
         setting = local_setting
     }
-    //注册按键
-    $('body').keyup(function(event){
-        if (/textarea|select|input/i.test(event.target.nodeName)
-            || /text|password|number|email|url|range|date|month/i.test(event.target.type)) {
-            return;
+    const initHtml = () => {
+        //注册按键
+        $('body').keyup(function (event) {
+            if (/textarea|select|input/i.test(event.target.nodeName)
+                || /text|password|number|email|url|range|date|month/i.test(event.target.type)) {
+                return;
+            }
+            //切换显示头像
+            if (event.keyCode == setting.shortcutKeys[0]) {
+                $('.avatar').toggle()
+            }
+            //切换显示表情
+            if (event.keyCode == setting.shortcutKeys[1]) {
+                $('img').each(function () {
+                    const classs = $(this).attr('class');
+                    if (classs && classs.includes('smile')) $(this).toggle()
+                })
+                $('.smile_alt_text').toggle()
+            }
+            //切换显示图片
+            if (event.keyCode == setting.shortcutKeys[2]) {
+                $('.postcontent img').each(function () {
+                    const classs = $(this).attr('class');
+                    if (!classs && $(this).width() > 24) {
+                        if ($(this).is(":hidden")) {
+                            $(this).show()
+                            $('.switch-img').hide()
+                        } else {
+                            $('.switch-img').css('display', 'inline')
+                            $(this).hide()
+                        }
+                    }
+                })
+            }
+            //关闭大图
+            if (event.keyCode == 27) {
+                if ($('#hld__img_full').length > 0) {
+                    $('#hld__img_full').remove()
+                }
+            }
+            //上一张图片
+            if (event.keyCode == setting.shortcutKeys[3]) {
+                if ($('#hld__img_full').length > 0) {
+                    $('#hld__img_full .prev-img').click()
+                }
+            }
+            //下一张图片
+            if (event.keyCode == setting.shortcutKeys[4]) {
+                if ($('#hld__img_full').length > 0) {
+                    $('#hld__img_full .next-img').click()
+                }
+            }
+
+        })
+        //查找楼主
+        if (setting.authorMark) {
+            const local_post_author = window.localStorage.getItem('hld__NGA_post_author')
+            local_post_author && (post_author = local_post_author.split(','))
+            const tid = GetQueryString('tid')
+            if ($('#postauthor0').length > 0 && tid) {
+                const author_str = `${tid}:${$('#postauthor0').text()}`
+                if (!post_author.includes(author_str))
+                    post_author.unshift(author_str) > 10 && post_author.pop()
+                window.localStorage.setItem('hld__NGA_post_author', post_author.join(','))
+            }
+            for (let pa of post_author) {
+                const t = pa.split(':')
+                if (t[0] == tid) {
+                    $('body').append(`<input type="hidden" value="${t[1]}" id="hld__post-author">`)
+                    break
+                }
+            }
         }
-        //切换显示头像
-        if(event.keyCode == setting.shortcutKeys[0]){
-            $('.avatar').toggle()
+        if (setting.keywordsBlock) {
+            const local_keywords_list = window.localStorage.getItem('hld__NGA_keywords_list')
+            local_keywords_list && (keywords_list = local_keywords_list.split(','))
         }
-        //切换显示表情
-        if(event.keyCode == setting.shortcutKeys[1]){
-            $('img').each(function(){
-                const classs = $(this).attr('class');
-                if(classs && classs.includes('smile')) $(this).toggle()
-            })
-            $('.smile_alt_text').toggle()
-        }
-        //切换显示图片
-        if(event.keyCode == setting.shortcutKeys[2]){
-            $('.postcontent img').each(function(){
-                const classs = $(this).attr('class');
-                if(!classs && $(this).width() > 24) {
-                    if($(this).is(":hidden")) {
-                        $(this).show()
-                        $('.switch-img').hide()
-                    }else {
-                        $('.switch-img').css('display', 'inline')
-                        $(this).hide()
+        //拉黑备注
+        if (setting.markAndBan) {
+            const local_ban_list = window.localStorage.getItem('hld__NGA_ban_list')
+            local_ban_list && (ban_list = local_ban_list.split(','))
+            const local_mark_list = window.localStorage.getItem('hld__NGA_mark_list')
+            local_mark_list && (mark_list = local_mark_list.split(','))
+            //绑定事件
+            $('body').on('click', '.hld__extra-icon', function () {
+                const type = $(this).data('type')
+                const user = $(this).data('user')
+                if (type == 'ban') {
+                    let ban_name = window.prompt('是否拉黑此用户？\n请检查用户名称，可能会出现解析异常', user)
+                    ban_name = $.trim(ban_name)
+                    if (ban_name) {
+                        !ban_list.includes(ban_name) && ban_list.push(ban_name)
+                        window.localStorage.setItem('hld__NGA_ban_list', ban_list.join(','))
+                        reRender()
+                    }
+                }
+                if (type == 'mark') {
+                    const exists_remark = mark_list.find(v => v.startsWith(user))
+                    let current_remark = exists_remark ? exists_remark.split(':')[1] : ''
+                    let remark = window.prompt('请输入要备注的名称，备注名显示在原名字的后面\n留空则为取消备注', current_remark)
+                    remark = $.trim(remark)
+                    if (remark.includes(':')) {
+                        alert('备注不能包含“:”为脚本保留符号')
+                    } else {
+                        const r = `${user}:${remark}`
+                        const check = mark_list.findIndex(v => v.startsWith(user))
+                        remark == '' ? check > -1 && mark_list.splice(check, 1) : check > -1 ? mark_list[check] = r : mark_list.push(r)
+                        window.localStorage.setItem('hld__NGA_mark_list', mark_list.join(','))
+                        reRender()
                     }
                 }
             })
-        }
-        //关闭大图
-        if(event.keyCode == 27){
-            if($('#hld__img_full').length > 0) {
-                $('#hld__img_full').remove()
-            }
-        }
-        //上一张图片
-        if(event.keyCode == setting.shortcutKeys[3]){
-            if($('#hld__img_full').length > 0) {
-                $('#hld__img_full .prev-img').click()
-            }
-        }
-        //下一张图片
-        if(event.keyCode == setting.shortcutKeys[4]){
-            if($('#hld__img_full').length > 0) {
-                $('#hld__img_full .next-img').click()
-            }
-        }
-
-    })
-    //查找楼主
-    if(setting.authorMark) {
-        const local_post_author = window.localStorage.getItem('hld__NGA_post_author')
-        local_post_author && (post_author = local_post_author.split(','))
-        const tid = GetQueryString('tid')
-        if($('#postauthor0').length > 0 && tid) {
-            const author_str = `${tid}:${$('#postauthor0').text()}`
-            if(!post_author.includes(author_str))
-                post_author.unshift(author_str) > 10 && post_author.pop()
-            window.localStorage.setItem('hld__NGA_post_author', post_author.join(','))
-        }
-        for(let pa of post_author) {
-            const t = pa.split(':')
-            if(t[0] == tid) {
-                $('body').append(`<input type="hidden" value="${t[1]}" id="hld__post-author">`)
-                break
-            }
-        }
-    }
-    if(setting.keywordsBlock) {
-        const local_keywords_list = window.localStorage.getItem('hld__NGA_keywords_list')
-        local_keywords_list && (keywords_list = local_keywords_list.split(','))
-    }
-    //拉黑备注
-    if(setting.markAndBan) {
-        const local_ban_list = window.localStorage.getItem('hld__NGA_ban_list')
-        local_ban_list && (ban_list = local_ban_list.split(','))
-        const local_mark_list = window.localStorage.getItem('hld__NGA_mark_list')
-        local_mark_list && (mark_list = local_mark_list.split(','))
-        //绑定事件
-        $('body').on('click', '.hld__extra-icon', function(){
-            const type = $(this).data('type')
-            const user = $(this).data('user')
-            if(type == 'ban') {
-                let ban_name = window.prompt('是否拉黑此用户？\n请检查用户名称，可能会出现解析异常', user)
-                ban_name = $.trim(ban_name)
-                if(ban_name) {
-                    !ban_list.includes(ban_name) && ban_list.push(ban_name)
-                    window.localStorage.setItem('hld__NGA_ban_list', ban_list.join(','))
-                    reRender()
-                }
-            }
-            if(type == 'mark') {
-                const exists_remark = mark_list.find(v => v.startsWith(user))
-                let current_remark = exists_remark ? exists_remark.split(':')[1] : ''
-                let remark = window.prompt('请输入要备注的名称，备注名显示在原名字的后面\n留空则为取消备注', current_remark)
-                remark = $.trim(remark)
-                if(remark.includes(':')) {
-                    alert('备注不能包含“:”为脚本保留符号')
-                } else{
-                    const r = `${user}:${remark}`
-                    const check = mark_list.findIndex(v => v.startsWith(user))
-                    remark == '' ? check > -1 && mark_list.splice(check, 1) : check > -1 ? mark_list[check] = r : mark_list.push(r)
-                    window.localStorage.setItem('hld__NGA_mark_list', mark_list.join(','))
-                    reRender()
-                }
-            }
-        })
-        //隐藏版头
-        if(setting.hideHeader) {
-            $('#toppedtopic, #sub_forums').hide()
-            let $toggle_header_btn = $('<button style="position: absolute;right: 16px;">切换显示版头</button>')
-            $toggle_header_btn.click(()=>$('#toppedtopic, #sub_forums').toggle())
-            $('#toptopics > div > h3').append($toggle_header_btn)
-        }
-        //快捷键管理
-        $('body').on('click', '#hld__shortcut_manage', function(){
-            let $shortcutPanel = $(`<div id="hld__shortcut_panel" class="hld__list_panel">
+            //快捷键管理
+            $('body').on('click', '#hld__shortcut_manage', function () {
+                let $shortcutPanel = $(`<div id="hld__shortcut_panel" class="hld__list_panel">
 <a href="javascript:void(0)" class="hld__setting-close">×</a>
 <div><div><p>编辑快捷键</p><div class="hld__float-left"><table class="hld__table"><thead><tr><td>功能</td><td width="60">快捷键</td></tr></thead>
 <tbody></tbody></table></div><div class="hld__float-left hld__shortcut-desc"><p><b>支持的快捷键范围</b></p><p>键盘 <code>A</code>~<code>Z</code></p><p>左箭头 <code>LEFT</code></p><p>右箭头 <code>RIGHT</code></p><p>上箭头 <code>UP</code></p><p>下箭头 <code>DOWN</code></p><p><i>* 留空则取消快捷键</i></p>
@@ -191,26 +186,26 @@
 <button class="hld__btn" data-type="save_shortcut">保存快捷键</button>
 </div>
 </div>`)
-            for(let [index, sn] of shortcut_name.entries()) {
-                const keycode = setting.shortcutKeys[index]
-                $shortcutPanel.find('.hld__table tbody').append(`<tr><td>${sn}</td><td><input type="text" value="${getCodeName(keycode)}"></td></tr>`)
-            }
-            $('body').append($shortcutPanel)
-        })
-        //关键字管理
-        $('body').on('click', '#hld__keywords_manage', function(){
-            $('body').append(`<div id="hld__keywords_panel" class="hld__list_panel">
+                for (let [index, sn] of shortcut_name.entries()) {
+                    const keycode = setting.shortcutKeys[index]
+                    $shortcutPanel.find('.hld__table tbody').append(`<tr><td>${sn}</td><td><input type="text" value="${getCodeName(keycode)}"></td></tr>`)
+                }
+                $('body').append($shortcutPanel)
+            })
+            //关键字管理
+            $('body').on('click', '#hld__keywords_manage', function () {
+                $('body').append(`<div id="hld__keywords_panel" class="hld__list_panel">
 <a href="javascript:void(0)" class="hld__setting-close">×</a>
 <div>
 <div class="hld__list-c"><p>屏蔽关键字</p><textarea row="20" id="hld__keywords_list_textarea"></textarea><p class="hld__list-desc">一行一条</p></div>
 </div>
 <div class="hld__btn-groups"><button class="hld__btn" data-type="save_keywords">保存列表</button></div>
 </div>`)
-            $('#hld__keywords_list_textarea').val(keywords_list.join('\n'))
-        })
-        //名单管理
-        $('body').on('click', '#hld__list_manage', function(){
-            $('body').append(`<div id="hld__banlist_panel"  class="hld__list_panel">
+                $('#hld__keywords_list_textarea').val(keywords_list.join('\n'))
+            })
+            //名单管理
+            $('body').on('click', '#hld__list_manage', function () {
+                $('body').append(`<div id="hld__banlist_panel"  class="hld__list_panel">
 <a href="javascript:void(0)" class="hld__setting-close">×</a>
 <div>
 <div class="hld__list-c"><p>黑名单</p><textarea row="20" id="hld__ban_list_textarea"></textarea><p class="hld__list-desc">一行一条</p></div>
@@ -218,62 +213,92 @@
 </div>
 <div class="hld__btn-groups"><button class="hld__btn" data-type="save_banlist">保存列表</button></div>
 </div>`)
-            $('#hld__ban_list_textarea').val(ban_list.join('\n'))
-            $('#hld__mark_list_textarea').val(mark_list.join('\n'))
-        })
-        $('body').on('click', '.hld__list_panel > .hld__setting-close', function(){
-            $('.hld__list_panel').remove()
-        })
-        $('body').on('click', '.hld__btn', function(){
-            const type = $(this).data('type')
-            if(type == 'save_keywords') {
-                keywords_list = $('#hld__keywords_list_textarea').val().split('\n')
-                keywords_list = RemoveBlank(keywords_list)
-                keywords_list = Uniq(keywords_list)
-                window.localStorage.setItem('hld__NGA_keywords_list', keywords_list.join(','))
-            }
-            if(type == 'save_banlist') {
-                ban_list = $('#hld__ban_list_textarea').val().split('\n')
-                ban_list = RemoveBlank(ban_list)
-                ban_list = Uniq(ban_list)
-                mark_list = $('#hld__mark_list_textarea').val().split('\n')
-                mark_list = RemoveBlank(mark_list)
-                mark_list = Uniq(mark_list)
-                window.localStorage.setItem('hld__NGA_ban_list', ban_list.join(','))
-                window.localStorage.setItem('hld__NGA_mark_list', mark_list.join(','))
-            }
-            if(type == 'reset_shortcut') {
-                setting.shortcutKeys = default_shortcut
-                window.localStorage.setItem('hld__NGA_setting', JSON.stringify(setting))
-                popMsg('重置成功，刷新页面生效')
-            }
-            if(type == 'save_shortcut') {
-                let shortcut_keys = []
-                $('.hld__table tbody>tr').each(function(){
-                    const v = $(this).find('input').val().trim().toUpperCase()
-                    if(Object.keys(shortcut_code).includes(v)) shortcut_keys.push(shortcut_code[v])
-                    else popMsg(`${v}是个无效的快捷键`)
-                })
-                if(shortcut_keys.length != setting.shortcutKeys.length) return
-                setting.shortcutKeys = shortcut_keys
-                window.localStorage.setItem('hld__NGA_setting', JSON.stringify(setting))
-                popMsg('保存成功，刷新页面生效')
-            }
-            $('.hld__list_panel').remove()
-        })
+                $('#hld__ban_list_textarea').val(ban_list.join('\n'))
+                $('#hld__mark_list_textarea').val(mark_list.join('\n'))
+            })
+            $('body').on('click', '.hld__list_panel > .hld__setting-close', function () {
+                $('.hld__list_panel').remove()
+            })
+            $('body').on('click', '.hld__btn', function () {
+                const type = $(this).data('type')
+                if (type == 'save_keywords') {
+                    keywords_list = $('#hld__keywords_list_textarea').val().split('\n')
+                    keywords_list = RemoveBlank(keywords_list)
+                    keywords_list = Uniq(keywords_list)
+                    window.localStorage.setItem('hld__NGA_keywords_list', keywords_list.join(','))
+                }
+                if (type == 'save_banlist') {
+                    ban_list = $('#hld__ban_list_textarea').val().split('\n')
+                    ban_list = RemoveBlank(ban_list)
+                    ban_list = Uniq(ban_list)
+                    mark_list = $('#hld__mark_list_textarea').val().split('\n')
+                    mark_list = RemoveBlank(mark_list)
+                    mark_list = Uniq(mark_list)
+                    window.localStorage.setItem('hld__NGA_ban_list', ban_list.join(','))
+                    window.localStorage.setItem('hld__NGA_mark_list', mark_list.join(','))
+                }
+                if (type == 'reset_shortcut') {
+                    setting.shortcutKeys = default_shortcut
+                    window.localStorage.setItem('hld__NGA_setting', JSON.stringify(setting))
+                    popMsg('重置成功，刷新页面生效')
+                }
+                if (type == 'save_shortcut') {
+                    let shortcut_keys = []
+                    $('.hld__table tbody>tr').each(function () {
+                        const v = $(this).find('input').val().trim().toUpperCase()
+                        if (Object.keys(shortcut_code).includes(v)) shortcut_keys.push(shortcut_code[v])
+                        else popMsg(`${v}是个无效的快捷键`)
+                    })
+                    if (shortcut_keys.length != setting.shortcutKeys.length) return
+                    setting.shortcutKeys = shortcut_keys
+                    window.localStorage.setItem('hld__NGA_setting', JSON.stringify(setting))
+                    popMsg('保存成功，刷新页面生效')
+                }
+                $('.hld__list_panel').remove()
+            })
+        }
+        //隐藏版头
+        if (setting.hideHeader) {
+            $('#toppedtopic, #sub_forums').hide()
+            let $toggle_header_btn = $('<button style="position: absolute;right: 16px;">切换显示版头</button>')
+            $toggle_header_btn.click(() => $('#toppedtopic, #sub_forums').toggle())
+            $('#toptopics > div > h3').append($toggle_header_btn)
+        }
+        //新页面打开连接
+        if (setting.linkTargetBlank) {
+            $('.topic, .nav_link').each(function () {
+                $(this).data('href', $(this).attr('href')).attr('href', 'javascript:void(0)')
+            })
+            $('.topic').click(function () {
+                window.open($(this).data('href'))
+            })
+
+            $('.nav_link').click(function () {
+                window.location.href = $(this).data('href')
+            })
+        }
+        if (setting.imgResize) {
+            $('#mc').on('click', '.postcontent img[hld__imglist=ready]', function () {
+                resizeImg($(this))
+                e.stopPropagation()
+                return false
+            })
+        }
     }
+    initHtml()
+
     //动态检测
-    setInterval(()=>{
+    setInterval(() => {
         $('.forumbox.postbox[hld-render!=ok]').length > 0 && runDom()
-        if(setting.markAndBan && $('.topicrow .author[hld-render!=ok]').length > 0) runMark()
+        if (setting.markAndBan && $('.topicrow .author[hld-render!=ok]').length > 0) runMark()
         $('#hld__setting').length == 0 && $('#startmenu > tbody > tr > td.last').append('<div><div class="item"><a id="hld__setting" href="javascript:eval($(\'hld__setting_panel\').style.display=\'block\')" title="打开NGA优化摸鱼插件设置面板">NGA优化摸鱼插件设置</a></div></div>')
     }, 100)
     //大图
     const resizeImg = (el) => {
-        if($('#hld__img_full').length > 0) return
+        if ($('#hld__img_full').length > 0) return
         let url_list = []
         let current_index = el.parent().find('[hld__imglist=ready]').index(el)
-        el.parent().find('[hld__imglist=ready]').each(function(){
+        el.parent().find('[hld__imglist=ready]').each(function () {
             url_list.push($(this).data('srcorg') || $(this).data('srclazy') || $(this).attr('src'))
         })
         let $imgBox = $('<div id="hld__img_full" title="点击背景关闭"><div id="loader"></div></div>')
@@ -289,12 +314,12 @@
                 'width': $(window).height() * 0.85 + 'px',
                 'height': $(window).height() * 0.85 + 'px'
             })
-            $img.css({'width': '', 'height': ''}).attr('src', url_list[index]).hide()
-            timer = setInterval(()=>{
+            $img.css({ 'width': '', 'height': '' }).attr('src', url_list[index]).hide()
+            timer = setInterval(() => {
                 const w = $img.width()
                 const h = $img.height()
-                if(w > 0) {
-                    w > h ? $img.css({'width': '100%', 'height': 'auto'}) : $img.css({'height': '100%', 'width': 'auto'})
+                if (w > 0) {
+                    w > h ? $img.css({ 'width': '100%', 'height': 'auto' }) : $img.css({ 'height': '100%', 'width': 'auto' })
                     $img.show()
                     $('#loader').hide()
                     clearInterval(timer)
@@ -318,30 +343,30 @@
                 return false
             });
         })
-        $img.mouseup(function () {$(document).unbind("mousemove")})
+        $img.mouseup(function () { $(document).unbind("mousemove") })
 
         $imgContainer.append($img)
         $imgBox.append($imgContainer)
-        $imgBox.click(function(e){!$(e.target).hasClass('hld__img') && $(this).remove()})
+        $imgBox.click(function (e) { !$(e.target).hasClass('hld__img') && $(this).remove() })
         $imgBox.append(`<div class="hld__if_control">
 <div class="change prev-img" title="本楼内上一张(快捷键${getCodeName(setting.shortcutKeys[3])})"><div></div></div>
 <div class="change rotate-right" title="逆时针旋转90°"><div></div></div>
 <div class="change rotate-left" title="顺时针旋转90°"><div></div></div>
 <div class="change next-img" title="本楼内下一张(快捷键${getCodeName(setting.shortcutKeys[4])})"><div></div></div>
 </div>`)
-        $imgBox.on('click', '.change', function(){
-            if($(this).hasClass('prev-img') && current_index - 1 >= 0)
+        $imgBox.on('click', '.change', function () {
+            if ($(this).hasClass('prev-img') && current_index - 1 >= 0)
                 renderImg(--current_index)
 
-            if($(this).hasClass('next-img') && current_index + 1 < url_list.length)
+            if ($(this).hasClass('next-img') && current_index + 1 < url_list.length)
                 renderImg(++current_index)
 
-            if($(this).hasClass('rotate-right') || $(this).hasClass('rotate-left')) {
+            if ($(this).hasClass('rotate-right') || $(this).hasClass('rotate-left')) {
                 let deg = ($img.data('rotate-deg') || 0) - ($(this).hasClass('rotate-right') ? 90 : -90)
-                if(deg >= 360 || deg <= -360) deg = 0
+                if (deg >= 360 || deg <= -360) deg = 0
                 $img.css('transform', `rotate(${deg}deg)`)
                 $img.data('rotate-deg', deg)
-            }else {
+            } else {
                 $img.css('transform', '')
                 $img.data('rotate-deg', 0)
             }
@@ -350,23 +375,23 @@
         })
 
         $imgBox.on("mousewheel DOMMouseScroll", function (e) {
-            const delta = (e.originalEvent.wheelDelta && (e.originalEvent.wheelDelta > 0 ? 1 : -1))||
-                  (e.originalEvent.detail && (e.originalEvent.detail > 0 ? -1 : 1));
+            const delta = (e.originalEvent.wheelDelta && (e.originalEvent.wheelDelta > 0 ? 1 : -1)) ||
+                (e.originalEvent.detail && (e.originalEvent.detail > 0 ? -1 : 1));
 
-            if($imgContainer.width() > 50) {
+            if ($imgContainer.width() > 50) {
                 const offset_y = $imgContainer.height() * 0.2
                 const offset_x = $imgContainer.width() * 0.2
                 let offset_top = offset_y / 2
                 let offset_left = offset_x / 2
 
-                if($(e.target).hasClass('hld__zoom-target')) {
+                if ($(e.target).hasClass('hld__zoom-target')) {
                     const target_offset_x = Math.round(e.clientX - $imgContainer.position().left)
                     const target_offset_y = Math.round(e.clientY - $imgContainer.position().top)
                     offset_left = (target_offset_x / ($imgContainer.height() / 2)) * offset_left
                     offset_top = (target_offset_y / ($imgContainer.height() / 2)) * offset_top
                 }
 
-                if(delta > 0) {
+                if (delta > 0) {
                     $imgContainer.css({
                         'width': ($imgContainer.height() + offset_y) + 'px',
                         'height': ($imgContainer.height() + offset_y) + 'px',
@@ -374,7 +399,7 @@
                         'left': ($imgContainer.position().left - offset_left) + 'px'
                     })
                 }
-                if(delta < 0) {
+                if (delta < 0) {
                     $imgContainer.css({
                         'width': ($imgContainer.height() - offset_y) + 'px',
                         'height': ($imgContainer.height() - offset_y) + 'px',
@@ -389,24 +414,23 @@
 
         $('body').append($imgBox)
     }
-    //新页面打开连接
-    setting.linkTargetBlank && $('.topic').attr('target', '_blank')
+
     //列表页渲染函数
     const runMark = () => {
-        $('.topicrow[hld-render!=ok]').each(function(){
-            if(setting.markAndBan) {
-                ban_list.includes($(this).text()) && $(this).parents('tbody').remove()
-                for(let m of mark_list) {
+        $('.topicrow[hld-render!=ok]').each(function () {
+            if (setting.markAndBan) {
+                ban_list.includes($(this).find('.author').text()) && $(this).parents('tbody').remove()
+                for (let m of mark_list) {
                     const t = m.split(':')
-                    if(t[0] == $(this).text()) {
+                    if (t[0] == $(this).text()) {
                         $(this).append(`<span class="hld__remark"> (${t[1]}) </span>`)
                     }
                 }
             }
-            if(setting.keywordsBlock && keywords_list.length > 0) {
+            if (setting.keywordsBlock && keywords_list.length > 0) {
                 const title = $(this).find('.c2>a').text()
-                for(let keyword of keywords_list) {
-                    if(title.includes(keyword)) {
+                for (let keyword of keywords_list) {
+                    if (title.includes(keyword)) {
                         console.warn(`【NGA优化摸鱼体验脚本-关键字屏蔽】标题：${title}  连接：${$(this).find('.c2>a').attr('href')}`)
                         $(this).remove()
                         break
@@ -419,16 +443,16 @@
     }
     const runDom = () => {
         //楼内
-        $('.forumbox.postbox[hld-render!=ok]').each(function(){
+        $('.forumbox.postbox[hld-render!=ok]').each(function () {
             //关键字屏蔽
-            if(setting.keywordsBlock && keywords_list.length > 0) {
+            if (setting.keywordsBlock && keywords_list.length > 0) {
                 const $postcontent = $(this).find('.postcontent')
                 const $postcontent_clone = $postcontent.clone()
                 const consoleLog = (text) => console.warn(`【NGA优化摸鱼体验脚本-关键字屏蔽】内容：${text}`)
                 let postcontent_quote = ''
                 let postcontent_text = ''
 
-                if($postcontent.find('.quote').length > 0) {
+                if ($postcontent.find('.quote').length > 0) {
                     $postcontent_clone.find('.quote').remove()
                     let postcontent_text = $postcontent.find('.quote').text()
                     const end_index = postcontent_text.indexOf(')')
@@ -437,26 +461,26 @@
 
                 postcontent_text = $postcontent_clone.text()
 
-                for(let keyword of keywords_list) {
-                    if(postcontent_text && postcontent_text.includes(keyword)) {
+                for (let keyword of keywords_list) {
+                    if (postcontent_text && postcontent_text.includes(keyword)) {
                         consoleLog(postcontent_text)
                         $(this).remove()
                         break
                     }
-                    if(postcontent_quote && postcontent_quote.includes(keyword)) {
+                    if (postcontent_quote && postcontent_quote.includes(keyword)) {
                         consoleLog(postcontent_quote)
                         $postcontent.find('.quote').remove()
                     }
                 }
                 const $comment_c_list = $(this).find('.comment_c')
-                if($comment_c_list.length > 0) {
+                if ($comment_c_list.length > 0) {
                     let postcontent_reply = ''
-                    $comment_c_list.each(function(){
+                    $comment_c_list.each(function () {
                         let postcontent_reply_text = $(this).find('.ubbcode').text()
                         const end_index = postcontent_reply_text.indexOf(')')
                         postcontent_reply = postcontent_reply_text.substring(end_index + 1)
-                        for(let keyword of keywords_list) {
-                            if(postcontent_reply && postcontent_reply.includes(keyword)) {
+                        for (let keyword of keywords_list) {
+                            if (postcontent_reply && postcontent_reply.includes(keyword)) {
                                 consoleLog(postcontent_reply)
                                 $(this).remove()
                             }
@@ -468,25 +492,25 @@
             //隐藏头像
             setting.hideAvatar && $(this).find('.avatar').css('display', 'none')
             //隐藏表情
-            $(this).find('img').each(function(){
+            $(this).find('img').each(function () {
                 const classs = $(this).attr('class');
-                if(classs && classs.includes('smile')) {
+                if (classs && classs.includes('smile')) {
                     const alt = $(this).attr('alt')
                     const $alt = $('<span class="smile_alt_text">[' + alt + ']</span>')
                     setting.hideSmile ? $(this).hide() : $alt.hide()
                     $(this).after($alt)
-                }else if(!classs && $(this).attr('onload')) {
+                } else if (!classs && $(this).attr('onload')) {
                     $(this).attr('hld__imglist', 'ready')
-                    if(setting.imgResize) {
-                        $(this).width() > 200 && $(this).css({'outline': '', 'outline-offset': '', 'cursor': 'alias', 'min-width': '200px', 'min-height': 'auto', 'width': '200px', 'height': 'auto', 'margin:': '5px'}).attr('title', '点击大图显示')
+                    if (setting.imgResize) {
+                        $(this).width() > 200 && $(this).css({ 'outline': '', 'outline-offset': '', 'cursor': 'alias', 'min-width': '200px', 'min-height': 'auto', 'width': '200px', 'height': 'auto', 'margin:': '5px' }).attr('title', '点击大图显示')
                     }
                     let $imgB = $('<button class="switch-img" style="display:none">图</button>')
-                    $imgB.on('click', function(){
+                    $imgB.on('click', function () {
                         $(this).prev('img').toggle()
                         $(this).text($(this).prev('img').is(':hidden') ? '图' : '隐藏')
                     })
                     $(this).removeAttr('onload')
-                    if(setting.hideImage) {
+                    if (setting.hideImage) {
                         $(this).hide();
                         $imgB.show()
                     }
@@ -496,12 +520,12 @@
             //隐藏签名
             setting.hideSign && $(this).find('.sign, .sigline').css('display', 'none')
             //添加拉黑标记菜单及功能
-            if(setting.markAndBan) {
-                $(this).find('.small_colored_text_btn.block_txt_c2.stxt').each(function(){
+            if (setting.markAndBan) {
+                $(this).find('.small_colored_text_btn.block_txt_c2.stxt').each(function () {
                     let current_user = ''
-                    if($(this).parents('td').prev('td').html() == '') {
+                    if ($(this).parents('td').prev('td').html() == '') {
                         current_user = $(this).parents('table').prev('.posterinfo').children('.author').text()
-                    }else {
+                    } else {
                         current_user = $(this).parents('td').prev('td').find('.author').text()
                     }
                     $(this).append(`<a class="hld__extra-icon" data-type="mark" title="备注此用户" data-user="${current_user}"><svg t="1578453291663" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="15334" width="32" height="32"><path d="M978.488889 494.933333l-335.644445 477.866667-415.288888 45.511111c-45.511111 5.688889-91.022222-28.444444-102.4-73.955555L22.755556 540.444444 358.4 56.888889C398.222222 0 477.866667-11.377778 529.066667 28.444444l420.977777 295.822223c56.888889 39.822222 68.266667 113.777778 28.444445 170.666666zM187.733333 927.288889c5.688889 11.377778 17.066667 22.755556 28.444445 22.755555l386.844444-39.822222 318.577778-455.111111c22.755556-22.755556 17.066667-56.888889-11.377778-73.955555L489.244444 85.333333c-22.755556-17.066667-56.888889-11.377778-79.644444 11.377778l-318.577778 455.111111 96.711111 375.466667z" fill="#3970fe" p-id="15335" data-spm-anchor-id="a313x.7781069.0.i43" class="selected"></path><path d="M574.577778 745.244444c-56.888889 85.333333-176.355556 108.088889-261.688889 45.511112-85.333333-56.888889-108.088889-176.355556-45.511111-261.688889s176.355556-108.088889 261.688889-45.511111c85.333333 56.888889 102.4 176.355556 45.511111 261.688888z m-56.888889-39.822222c39.822222-56.888889 22.755556-130.844444-28.444445-170.666666s-130.844444-22.755556-170.666666 28.444444c-39.822222 56.888889-22.755556 130.844444 28.444444 170.666667s130.844444 22.755556 170.666667-28.444445z" fill="#3970fe" p-id="15336" data-spm-anchor-id="a313x.7781069.0.i44" class="selected"></path></svg></a><a class="hld__extra-icon" title="拉黑此用户(屏蔽所有言论)" data-type="ban"  data-user="${current_user}"><svg t="1578452808565" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="9668" data-spm-anchor-id="a313x.7781069.0.i27" width="32" height="32"><path d="M512 1024A512 512 0 1 1 512 0a512 512 0 0 1 0 1024z m0-146.285714A365.714286 365.714286 0 1 0 512 146.285714a365.714286 365.714286 0 0 0 0 731.428572z" fill="#a20106" p-id="9669" data-spm-anchor-id="a313x.7781069.0.i28" class="selected"></path><path d="M828.708571 329.142857l-633.417142 365.714286 633.417142-365.714286z m63.341715-36.571428a73.142857 73.142857 0 0 1-26.770286 99.913142l-633.417143 365.714286a73.142857 73.142857 0 0 1-73.142857-126.683428l633.417143-365.714286A73.142857 73.142857 0 0 1 892.050286 292.571429z" fill="#a20106" p-id="9670" data-spm-anchor-id="a313x.7781069.0.i31" class="selected"></path></svg></a>`)
@@ -514,46 +538,40 @@
         })
     }
     const reRender = () => {
-        $('.forumbox.postbox').each(function(){
+        $('.forumbox.postbox').each(function () {
             markDom($(this))
         })
     }
     const markDom = $el => {
-        $el.find('.b').each(function(){
+        $el.find('.b').each(function () {
             $(this).find('span.hld__post-author, span.hld__remark').remove()
             let name = $(this).attr('hld-mark-before-name') || $(this).text().replace('[', '').replace(']', '')
-            if(setting.markAndBan) {
-                if(ban_list.includes(name)) {
-                    if(setting.banMode == 'STRICT') {
-                        if($(this).parents('div.comment_c').length > 0) $(this).parents('div.comment_c').remove()
+            if (setting.markAndBan) {
+                if (ban_list.includes(name)) {
+                    if (setting.banMode == 'STRICT') {
+                        if ($(this).parents('div.comment_c').length > 0) $(this).parents('div.comment_c').remove()
                         else $(this).parents('.forumbox.postbox').remove()
-                    }else {
-                        if($(this).hasClass('author')) {
-                            if($(this).parents('div.comment_c').length > 0) $(this).parents('div.comment_c').remove()
+                    } else {
+                        if ($(this).hasClass('author')) {
+                            if ($(this).parents('div.comment_c').length > 0) $(this).parents('div.comment_c').remove()
                             else $(this).parents('.forumbox.postbox').remove()
-                        }else {
+                        } else {
                             $(this).parent().html('<span class="hld__banned">此用户在你的黑名单中，已屏蔽其言论</span>')
                         }
                     }
                 }
-                for(let m of mark_list) {
+                for (let m of mark_list) {
                     const t = m.split(':')
-                    if(t[0] == name) {
+                    if (t[0] == name) {
                         $(this).attr('hld-mark-before-name', name).append(`<span class="hld__remark"> (${t[1]}) </span>`)
                     }
                 }
             }
-            if(name == $('#hld__post-author').val() && $(this).find('span.hld__post-author').length == 0)
+            if (name == $('#hld__post-author').val() && $(this).find('span.hld__post-author').length == 0)
                 $(this).append('<span class="hld__post-author">[楼主]</span>')
         })
     }
-    if(setting.imgResize) {
-        $('#m_posts').on('click', '.postcontent img[hld__imglist=ready]', function(){
-            resizeImg($(this))
-            e.stopPropagation()
-            return false
-        })
-    }
+
     //设置面板
     let $panel_dom = $(`<div id="hld__setting_panel">
 <a href="javascript:eval($(\'hld__setting_panel\').style.display=\'none\')" class="hld__setting-close">×</a>
@@ -595,23 +613,23 @@
 
     $('body').append($panel_dom)
     //本地恢复设置
-    for(let k in setting) {
-        if($('#hld__cb_' + k).length > 0) {
+    for (let k in setting) {
+        if ($('#hld__cb_' + k).length > 0) {
             $('#hld__cb_' + k)[0].checked = setting[k]
             const enable_dom_id = $('#hld__cb_' + k).attr('enable')
-            if(enable_dom_id) {
-                setting[k] ? $('#'+enable_dom_id).show() : $('#'+enable_dom_id).hide()
-                $('#'+enable_dom_id).find('input').each(function(){
+            if (enable_dom_id) {
+                setting[k] ? $('#' + enable_dom_id).show() : $('#' + enable_dom_id).hide()
+                $('#' + enable_dom_id).find('input').each(function () {
                     $(this).val() == setting[$(this).attr('name').substr(8)] && ($(this)[0].checked = true)
                 })
-                $('#hld__cb_' + k).on('click', function(){
-                    $(this)[0].checked ? $('#'+enable_dom_id).slideDown() : $('#'+enable_dom_id).slideUp()
+                $('#hld__cb_' + k).on('click', function () {
+                    $(this)[0].checked ? $('#' + enable_dom_id).slideDown() : $('#' + enable_dom_id).slideUp()
                 })
             }
         }
     }
     //导出设置
-    $('body').on('click', '#hld__export__data', function(){
+    $('body').on('click', '#hld__export__data', function () {
         let obj = {
             name: 'NGA-BBS',
             setting: setting,
@@ -622,12 +640,12 @@
         window.prompt('导出成功，请复制以下代码以备份', Base64.encode(JSON.stringify(obj)))
     })
     //导入
-    $('body').on('click', '#hld__import__data', function(){
+    $('body').on('click', '#hld__import__data', function () {
         let base_str = window.prompt('导入字符串\n注意，导入会覆盖你当前所有的设置以及名单列表！', '')
         base_str = $.trim(base_str)
-        if(base_str) {
+        if (base_str) {
             let str = Base64.decode(base_str)
-            if(str) {
+            if (str) {
                 let obj
                 try {
                     obj = JSON.parse(str)
@@ -641,15 +659,15 @@
                     $panel_dom.hide()
                     alert('导入成功，刷新生效')
 
-                }catch(err){
+                } catch (err) {
                     alert('配置有误，导入失败')
                 }
             }
         }
     })
     //保存
-    $('body').on('click', '#hld__save__data', function(){
-        for(let k in setting) {
+    $('body').on('click', '#hld__save__data', function () {
+        for (let k in setting) {
             $('input#hld__cb_' + k).length > 0 && (setting[k] = $('input#hld__cb_' + k)[0].checked)
             $(`input[name="hld__rb_${k}"]`).length > 0 && (setting[k] = $(`input[name="hld__rb_${k}"]:checked`).val())
         }
@@ -665,15 +683,15 @@
         var url = decodeURI(window.location.search.replace(/&amp;/g, "&"));
         var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)");
         var r = url.substr(1).match(reg);
-        if(r != null) return unescape(r[2]);
+        if (r != null) return unescape(r[2]);
         return null;
     }
-    function Uniq(array){
+    function Uniq(array) {
         return [...new Set(array)]
     }
     function RemoveBlank(array) {
         let r = [];
-        array.map(function(val, index) {
+        array.map(function (val, index) {
             if (val !== '' && val != undefined) {
                 r.push(val);
             }
@@ -687,7 +705,7 @@
         decode: (str) => {
             try {
                 return decodeURIComponent(escape(window.atob(str)))
-            }catch(err){
+            } catch (err) {
                 alert('字符串有误，导入失败')
             }
         }
