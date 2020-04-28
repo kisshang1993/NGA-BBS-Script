@@ -2,9 +2,9 @@
 [![Github](https://img.shields.io/github/stars/kisshang1993/NGA-BBS-Script?label=Star&style=social)](https://github.com/kisshang1993/NGA-BBS-Script) [![Greasy Fork](https://img.shields.io/badge/Greasy%20Fork-NGA优化摸鱼体验-brightgreen)](https://greasyfork.org/zh-CN/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C/) ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/kisshang1993/NGA-BBS-Script) ![GitHub](https://img.shields.io/github/license/kisshang1993/NGA-BBS-Script)
 
 NGA论坛显示优化，功能增强，提升浏览体验
-可以有效防止突然蹦出一对??而导致的突然性的社会死亡![扇子脸](https://img4.nga.178.com/ngabbs/post/smile/ac15.png)
+可以有效防止突然蹦出一对??而导致的突然性的社会死亡![扇子脸](https://pic.downk.cc/item/5ea7eb7ec2a9a83be5c6b56a.png)
 
-如果大家觉得此插件好用，独乐乐不如众乐乐，就请推荐给更多的人使用吧！![Yeah](https://img4.nga.178.com/ngabbs/post/smile/ac0.png)
+如果大家觉得此插件好用，独乐乐不如众乐乐，就请推荐给更多的人使用吧！![Yeah!](https://pic.downk.cc/item/5ea7eb7ec2a9a83be5c6b565.png)
 
 
 -------

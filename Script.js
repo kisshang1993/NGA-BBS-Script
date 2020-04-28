@@ -4,6 +4,7 @@
 // @version      2.2
 // @author       HLD
 // @description  NGA论坛显示优化，功能增强，防止突然蹦出一对??而导致的突然性的社会死亡
+// @license      GPL-3.0
 // @require https://cdn.staticfile.org/jquery/3.4.0/jquery.min.js
 // @match        *://bbs.nga.cn/*
 // @match        *://ngabbs.com/*
