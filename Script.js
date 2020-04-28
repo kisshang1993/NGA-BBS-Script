@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
-// @namespace    https://www.hldww.com/
-// @version      2.1
-// @require https://cdn.staticfile.org/jquery/3.4.0/jquery.min.js
-// @description  NGA论坛显示优化，功能增强，防止突然蹦出一对??而导致的突然性的社会死亡
+// @namespace    https://github.com/kisshang1993/NGA-BBS-Script
+// @version      2.2
 // @author       HLD
+// @description  NGA论坛显示优化，功能增强，防止突然蹦出一对??而导致的突然性的社会死亡
+// @require https://cdn.staticfile.org/jquery/3.4.0/jquery.min.js
 // @match        *://bbs.nga.cn/*
 // @match        *://ngabbs.com/*
 // @match        *://nga.178.com/*
@@ -18,6 +18,7 @@
         hideAvatar: true,
         hideSmile: true,
         hideImage: false,
+        imgEnhance: true,
         hideSign: true,
         hideHeader: false,
         linkTargetBlank: true,
@@ -49,6 +50,17 @@
         }
         return keyname
     }
+    //检查更新
+    if (window.localStorage.getItem('hld__NGA_version')) {
+        const current_version = +window.localStorage.getItem('hld__NGA_version')
+        if (GM_info.script.version > current_version) {
+            $('body').append(`<div id="hld__updated" class="animated-1s bounce"><a href="javascript:void(0)" class="hld__setting-close">×</a><b>NGA优化摸鱼插件已更新至v${GM_info.script.version}</b><br><a class="hld__readme" href="https://greasyfork.org/zh-CN/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C" target="_blank">查看更新内容</a></div>`)
+            $('body').on('click', '#hld__updated>a', function () {
+                $(this).parents('#hld__updated').remove()
+                window.localStorage.setItem('hld__NGA_version', GM_info.script.version)
+            })
+        }
+    } else window.localStorage.setItem('hld__NGA_version', GM_info.script.version)
     //同步配置
     if (window.localStorage.getItem('hld__NGA_setting')) {
         let local_setting = JSON.parse(window.localStorage.getItem('hld__NGA_setting'))
@@ -60,6 +72,7 @@
         }
         setting = local_setting
     }
+
     const initHtml = () => {
         //注册按键
         $('body').keyup(function (event) {
@@ -174,7 +187,7 @@
             })
             //快捷键管理
             $('body').on('click', '#hld__shortcut_manage', function () {
-                let $shortcutPanel = $(`<div id="hld__shortcut_panel" class="hld__list_panel">
+                let $shortcutPanel = $(`<div id="hld__shortcut_panel" class="hld__list_panel animated fadeInUp">
 <a href="javascript:void(0)" class="hld__setting-close">×</a>
 <div><div><p>编辑快捷键</p><div class="hld__float-left"><table class="hld__table"><thead><tr><td>功能</td><td width="60">快捷键</td></tr></thead>
 <tbody></tbody></table></div><div class="hld__float-left hld__shortcut-desc"><p><b>支持的快捷键范围</b></p><p>键盘 <code>A</code>~<code>Z</code></p><p>左箭头 <code>LEFT</code></p><p>右箭头 <code>RIGHT</code></p><p>上箭头 <code>UP</code></p><p>下箭头 <code>DOWN</code></p><p><i>* 留空则取消快捷键</i></p>
@@ -190,11 +203,11 @@
                     const keycode = setting.shortcutKeys[index]
                     $shortcutPanel.find('.hld__table tbody').append(`<tr><td>${sn}</td><td><input type="text" value="${getCodeName(keycode)}"></td></tr>`)
                 }
-                $('body').append($shortcutPanel)
+                $('#hld__setting_cover').append($shortcutPanel)
             })
             //关键字管理
             $('body').on('click', '#hld__keywords_manage', function () {
-                $('body').append(`<div id="hld__keywords_panel" class="hld__list_panel">
+                $('#hld__setting_cover').append(`<div id="hld__keywords_panel" class="hld__list_panel animated fadeInUp">
 <a href="javascript:void(0)" class="hld__setting-close">×</a>
 <div>
 <div class="hld__list-c"><p>屏蔽关键字</p><textarea row="20" id="hld__keywords_list_textarea"></textarea><p class="hld__list-desc">一行一条</p></div>
@@ -205,7 +218,7 @@
             })
             //名单管理
             $('body').on('click', '#hld__list_manage', function () {
-                $('body').append(`<div id="hld__banlist_panel"  class="hld__list_panel">
+                $('#hld__setting_cover').append(`<div id="hld__banlist_panel"  class="hld__list_panel animated fadeInUp">
 <a href="javascript:void(0)" class="hld__setting-close">×</a>
 <div>
 <div class="hld__list-c"><p>黑名单</p><textarea row="20" id="hld__ban_list_textarea"></textarea><p class="hld__list-desc">一行一条</p></div>
@@ -216,8 +229,8 @@
                 $('#hld__ban_list_textarea').val(ban_list.join('\n'))
                 $('#hld__mark_list_textarea').val(mark_list.join('\n'))
             })
-            $('body').on('click', '.hld__list_panel > .hld__setting-close', function () {
-                $('.hld__list_panel').remove()
+            $('body').on('click', '.hld__list_panel .hld__setting-close', function () {
+                $(this).parent().remove()
             })
             $('body').on('click', '.hld__btn', function () {
                 const type = $(this).data('type')
@@ -277,7 +290,7 @@
                 window.location.href = $(this).data('href')
             })
         }
-        if (setting.imgResize) {
+        if (setting.imgEnhance) {
             $('#mc').on('click', '.postcontent img[hld__imglist=ready]', function () {
                 resizeImg($(this))
                 e.stopPropagation()
@@ -291,7 +304,7 @@
     setInterval(() => {
         $('.forumbox.postbox[hld-render!=ok]').length > 0 && runDom()
         if (setting.markAndBan && $('.topicrow .author[hld-render!=ok]').length > 0) runMark()
-        $('#hld__setting').length == 0 && $('#startmenu > tbody > tr > td.last').append('<div><div class="item"><a id="hld__setting" href="javascript:eval($(\'hld__setting_panel\').style.display=\'block\')" title="打开NGA优化摸鱼插件设置面板">NGA优化摸鱼插件设置</a></div></div>')
+        $('#hld__setting').length == 0 && $('#startmenu > tbody > tr > td.last').append('<div><div class="item"><a id="hld__setting" href="javascript:eval($(\'hld__setting_cover\').style.display=\'flex\')" title="打开NGA优化摸鱼插件设置面板">NGA优化摸鱼插件设置</a></div></div>')
     }, 100)
     //大图
     const resizeImg = (el) => {
@@ -571,16 +584,16 @@
                 $(this).append('<span class="hld__post-author">[楼主]</span>')
         })
     }
-
     //设置面板
-    let $panel_dom = $(`<div id="hld__setting_panel">
-<a href="javascript:eval($(\'hld__setting_panel\').style.display=\'none\')" class="hld__setting-close">×</a>
+    let $panel_dom = $(`<div id="hld__setting_cover" class="animated zoomIn"><div id="hld__setting_panel">
+<a href="javascript:eval($(\'hld__setting_cover\').style.display=\'none\')" class="hld__setting-close">×</a>
 <p class="hld__sp-title"><a title="更新地址" href="https://greasyfork.org/zh-CN/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C" target="_blank">NGA优化摸鱼插件<span class="hld__script-info">v${GM_info.script.version}</span></a></p>
 <div class="hld__field">
 <p class="hld__sp-section">显示优化</p>
 <p><label><input type="checkbox" id="hld__cb_hideAvatar"> 隐藏头像（快捷键切换显示[<b>${getCodeName(setting.shortcutKeys[0])}</b>]）</label></p>
 <p><label><input type="checkbox" id="hld__cb_hideSmile"> 隐藏表情（快捷键切换显示[<b>${getCodeName(setting.shortcutKeys[1])}</b>]）</label></p>
 <p><label><input type="checkbox" id="hld__cb_hideImage"> 隐藏贴内图片（快捷键切换显示[<b>${getCodeName(setting.shortcutKeys[2])}</b>]）</label></p>
+<p><label><input type="checkbox" id="hld__cb_imgResize"> 贴内图片缩放(缩放至宽200px)</label></p>
 <p><label><input type="checkbox" id="hld__cb_hideSign"> 隐藏签名</label></p>
 <p><label><input type="checkbox" id="hld__cb_hideHeader"> 隐藏版头/版规/子版入口</label></p>
 <p><button id="hld__shortcut_manage">编辑快捷键</button></p>
@@ -588,7 +601,7 @@
 <div class="hld__field">
 <p class="hld__sp-section">功能强化</p>
 <p><label><input type="checkbox" id="hld__cb_linkTargetBlank"> 论坛列表新窗口打开</label></p>
-<p><label><input type="checkbox" id="hld__cb_imgResize"> 贴内图片功能增强</label></p>
+<p><label><input type="checkbox" id="hld__cb_imgEnhance"> 贴内图片功能增强</label></p>
 <p><label><input type="checkbox" id="hld__cb_authorMark"> 高亮楼主</label></p>
 <p><label><input type="checkbox" id="hld__cb_keywordsBlock" enable="hld__keywordsBlock_fold"> 关键字屏蔽</label></p>
 <div class="hld__sp-fold" id="hld__keywordsBlock_fold" data-id="hld__cb_keywordsBlock">
@@ -608,6 +621,7 @@
 <button class="hld__btn" id="hld__import__data" title="导入配置字符串">导入</button>
 </span>
 <button class="hld__btn" id="hld__save__data">保存设置</button>
+</div>
 </div>
 </div>`)
 
@@ -714,6 +728,88 @@
     let style = document.createElement("style")
     style.type = "text/css"
     style.appendChild(document.createTextNode(`
+.animated {
+animation-duration: .3s;
+animation-fill-mode: both;
+}
+.animated-1s {
+animation-duration: 1s;
+animation-fill-mode: both;
+}
+.zoomIn {
+animation-name: zoomIn;
+}
+@keyframes zoomIn {
+from {
+opacity: 0;
+-webkit-transform: scale3d(0.3, 0.3, 0.3);
+transform: scale3d(0.3, 0.3, 0.3);
+}
+50% {
+opacity: 1;
+}
+}
+@keyframes bounce {
+from,
+20%,
+53%,
+80%,
+to {
+-webkit-animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
+animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
+-webkit-transform: translate3d(0, 0, 0);
+transform: translate3d(0, 0, 0);
+}
+40%,
+43% {
+-webkit-animation-timing-function: cubic-bezier(0.755, 0.05, 0.855, 0.06);
+animation-timing-function: cubic-bezier(0.755, 0.05, 0.855, 0.06);
+-webkit-transform: translate3d(0, -30px, 0);
+transform: translate3d(0, -30px, 0);
+}
+70% {
+-webkit-animation-timing-function: cubic-bezier(0.755, 0.05, 0.855, 0.06);
+animation-timing-function: cubic-bezier(0.755, 0.05, 0.855, 0.06);
+-webkit-transform: translate3d(0, -15px, 0);
+transform: translate3d(0, -15px, 0);
+}
+90% {
+-webkit-transform: translate3d(0, -4px, 0);
+transform: translate3d(0, -4px, 0);
+}
+}
+.bounce {
+-webkit-animation-name: bounce;
+animation-name: bounce;
+-webkit-transform-origin: center bottom;
+transform-origin: center bottom;
+}
+@keyframes fadeInUp {
+from {
+opacity: 0;
+-webkit-transform: translate3d(0, 100%, 0);
+transform: translate3d(0, 100%, 0);
+}
+to {
+opacity: 1;
+-webkit-transform: translate3d(0, 0, 0);
+transform: translate3d(0, 0, 0);
+}
+}
+.fadeInUp {
+-webkit-animation-name: fadeInUp;
+animation-name: fadeInUp;
+}
+#hld__setting_cover {
+display:none;
+justify-content: center;
+align-items:center;
+position: fixed;
+top: 0;
+left: 0;
+right: 0;
+bottom: 0;
+}
 .postcontent img {
 margin: 0 5px 5px 0 !important;
 box-shadow: none !important;
@@ -796,9 +892,6 @@ color:#6666CC;
 }
 .hld__list_panel {
 position:fixed;
-top:150px;
-left:50%;
-transform: translateX(-50%);
 background:#fff8e7;
 padding: 15px 20px;
 border-radius: 10px;
@@ -842,23 +935,23 @@ weight:bold;
 font-size:14px;
 margin-bottom:10px;
 }
-.hld__updated {
+#hld__updated {
 position:fixed;
-top:  10px;
-right: 10px;
+top:  20px;
+right: 20px;
 width: 200px;
-height:40px;
+padding: 10px;
 border-radius: 5px;
-box-shadow: 0 0 10px #666;
+box-shadow: 0 0 15px #666;
 border: 1px solid #591804;
-background: #fff0cd;
+background: #fff8e7;
+}
+#hld__updated .hld__readme {
+text-decoration: underline;
+color: #591804;
 }
 #hld__setting_panel {
-display:none;
-position:fixed;
-top:70px;
-left:50%;
-transform: translateX(-50%);
+position: relative;
 background:#fff8e7;
 width:526px;
 padding: 15px 20px;
