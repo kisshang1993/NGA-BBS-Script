@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      2.2
+// @version      2.3
 // @author       HLD
 // @description  NGA论坛显示优化，功能增强，防止突然蹦出一对??而导致的突然性的社会死亡
 // @license      GPL-3.0
@@ -392,7 +392,7 @@
             const delta = (e.originalEvent.wheelDelta && (e.originalEvent.wheelDelta > 0 ? 1 : -1)) ||
                 (e.originalEvent.detail && (e.originalEvent.detail > 0 ? -1 : 1));
 
-            if ($imgContainer.width() > 50) {
+            if ($imgContainer.width() > 50 || delta > 0) {
                 const offset_y = $imgContainer.height() * 0.2
                 const offset_x = $imgContainer.width() * 0.2
                 let offset_top = offset_y / 2
