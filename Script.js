@@ -82,7 +82,7 @@
     }
     //注册按键
     $('body').keyup(function (event) {
-        if(isThreads()) return
+        if (isThreads()) return
         if (/textarea|select|input/i.test(event.target.nodeName)
             || /text|password|number|email|url|range|date|month/i.test(event.target.type)) {
             return;
@@ -278,13 +278,13 @@
     $('body').on('click', '.hld__list_panel .hld__setting-close', function () {
         $(this).parent().remove()
     })
-    
+
     //动态检测
     setInterval(() => {
         insertMenu()
         isThreads() && renderThreads()
         isPosts() && renderPosts()
-        
+
         /**
         $('.forumbox.postbox[hld-render!=ok]').length > 0 && runDom()
         if (setting.markAndBan && $('.topicrow .author[hld-render!=ok]').length > 0) runMark()
@@ -311,11 +311,11 @@
             const title = $(this).find('.c2>a').text()
             const author = $(this).find('.author').text()
             if (setting.markAndBan) {
-                if(ban_list.length > 0 && ban_list.includes(author)) {
+                if (ban_list.length > 0 && ban_list.includes(author)) {
                     console.warn(`【NGA优化摸鱼体验脚本-黑名单屏蔽】标题：${title}  连接：${$(this).find('.c2>a').attr('href')}`)
                     $(this).parents('tbody').remove()
                 }
-                if(mark_list.length > 0) {
+                if (mark_list.length > 0) {
                     for (let m of mark_list) {
                         const t = m.split(':')
                         if (t[0] == author) {
@@ -334,7 +334,7 @@
                 }
             }
             //新页面打开链接
-            if(setting.linkTargetBlank) {
+            if (setting.linkTargetBlank) {
                 let $link = $(this).find('.topic')
                 $link.data('href', $link.attr('href')).attr('href', 'javascript:void(0)')
                 $link.click(() => window.open($link.data('href')))
@@ -746,7 +746,7 @@
             }
         }
     }
-    
+
     //样式
     let style = document.createElement("style")
     style.type = "text/css"
