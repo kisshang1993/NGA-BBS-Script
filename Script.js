@@ -279,18 +279,15 @@
             $('#toptopics > div > h3').append($toggle_header_btn)
         }
         //新页面打开连接
-        if (setting.linkTargetBlank) {
-            $('.topic, .nav_link').each(function () {
-                $(this).data('href', $(this).attr('href')).attr('href', 'javascript:void(0)')
-            })
-            $('.topic').click(function () {
-                window.open($(this).data('href'))
-            })
-
-            $('.nav_link').click(function () {
-                window.location.href = $(this).data('href')
-            })
-        }
+        $('.topic, .nav_link').each(function () {
+            $(this).data('href', $(this).attr('href')).attr('href', 'javascript:void(0)')
+        })
+        $('.topic').click(function () {
+            setting.linkTargetBlank ? window.open($(this).data('href')) : window.location.href = $(this).data('href')
+        })
+        $('.nav_link').click(function () {
+            window.location.href = $(this).data('href')
+        })
         if (setting.imgEnhance) {
             $('#mc').on('click', '.postcontent img[hld__imglist=ready]', function () {
                 resizeImg($(this))
