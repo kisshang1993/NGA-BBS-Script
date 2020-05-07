@@ -154,6 +154,28 @@
             }
         }
     }
+
+    //快捷键-列表维护
+    $('body').on('click', '#hld__shortcut_manage', function () {
+        let $shortcutPanel = $(`<div id="hld__shortcut_panel" class="hld__list_panel animated fadeInUp">
+<a href="javascript:void(0)" class="hld__setting-close">×</a>
+<div><div><p>编辑快捷键</p><div class="hld__float-left"><table class="hld__table"><thead><tr><td>功能</td><td width="60">快捷键</td></tr></thead>
+<tbody></tbody></table></div><div class="hld__float-left hld__shortcut-desc"><p><b>支持的快捷键范围</b></p><p>键盘 <code>A</code>~<code>Z</code></p><p>左箭头 <code>LEFT</code></p><p>右箭头 <code>RIGHT</code></p><p>上箭头 <code>UP</code></p><p>下箭头 <code>DOWN</code></p><p><i>* 留空则取消快捷键</i></p>
+</div>
+<div></div></div>
+</div>
+<div class="hld__btn-groups">
+<button class="hld__btn" data-type="reset_shortcut">重置按键</button>
+<button class="hld__btn" data-type="save_shortcut">保存快捷键</button>
+</div>
+</div>`)
+        for (let [index, sn] of shortcut_name.entries()) {
+            const keycode = setting.shortcutKeys[index]
+            $shortcutPanel.find('.hld__table tbody').append(`<tr><td>${sn}</td><td><input type="text" value="${getCodeName(keycode)}"></td></tr>`)
+        }
+        $('#hld__setting_cover').append($shortcutPanel)
+    })
+
     //拉黑备注-列表维护
     if (setting.markAndBan) {
         const local_ban_list = window.localStorage.getItem('hld__NGA_ban_list')
@@ -189,26 +211,6 @@
                 }
             }
         })
-        //快捷键管理
-        $('body').on('click', '#hld__shortcut_manage', function () {
-            let $shortcutPanel = $(`<div id="hld__shortcut_panel" class="hld__list_panel animated fadeInUp">
-<a href="javascript:void(0)" class="hld__setting-close">×</a>
-<div><div><p>编辑快捷键</p><div class="hld__float-left"><table class="hld__table"><thead><tr><td>功能</td><td width="60">快捷键</td></tr></thead>
-<tbody></tbody></table></div><div class="hld__float-left hld__shortcut-desc"><p><b>支持的快捷键范围</b></p><p>键盘 <code>A</code>~<code>Z</code></p><p>左箭头 <code>LEFT</code></p><p>右箭头 <code>RIGHT</code></p><p>上箭头 <code>UP</code></p><p>下箭头 <code>DOWN</code></p><p><i>* 留空则取消快捷键</i></p>
-</div>
-<div></div></div>
-</div>
-<div class="hld__btn-groups">
-<button class="hld__btn" data-type="reset_shortcut">重置按键</button>
-<button class="hld__btn" data-type="save_shortcut">保存快捷键</button>
-</div>
-</div>`)
-            for (let [index, sn] of shortcut_name.entries()) {
-                const keycode = setting.shortcutKeys[index]
-                $shortcutPanel.find('.hld__table tbody').append(`<tr><td>${sn}</td><td><input type="text" value="${getCodeName(keycode)}"></td></tr>`)
-            }
-            $('#hld__setting_cover').append($shortcutPanel)
-        })
         //关键字管理
         $('body').on('click', '#hld__keywords_manage', function () {
             $('#hld__setting_cover').append(`<div id="hld__keywords_panel" class="hld__list_panel animated fadeInUp">
@@ -233,50 +235,50 @@
             $('#hld__ban_list_textarea').val(ban_list.join('\n'))
             $('#hld__mark_list_textarea').val(mark_list.join('\n'))
         })
-        $('body').on('click', '.hld__list_panel .hld__setting-close', function () {
-            $(this).parent().remove()
-        })
-        $('body').on('click', '.hld__btn', function () {
-            const type = $(this).data('type')
-            if (type == 'save_keywords') {
-                keywords_list = $('#hld__keywords_list_textarea').val().split('\n')
-                keywords_list = removeBlank(keywords_list)
-                keywords_list = uniq(keywords_list)
-                console.log(keywords_list)
-                window.localStorage.setItem('hld__NGA_keywords_list', keywords_list.join(','))
-            }
-            if (type == 'save_banlist') {
-                ban_list = $('#hld__ban_list_textarea').val().split('\n')
-                ban_list = removeBlank(ban_list)
-                ban_list = uniq(ban_list)
-                mark_list = $('#hld__mark_list_textarea').val().split('\n')
-                mark_list = removeBlank(mark_list)
-                mark_list = uniq(mark_list)
-                window.localStorage.setItem('hld__NGA_ban_list', ban_list.join(','))
-                window.localStorage.setItem('hld__NGA_mark_list', mark_list.join(','))
-            }
-            if (type == 'reset_shortcut') {
-                setting.shortcutKeys = default_shortcut
-                window.localStorage.setItem('hld__NGA_setting', JSON.stringify(setting))
-                popMsg('重置成功，刷新页面生效')
-            }
-            if (type == 'save_shortcut') {
-                let shortcut_keys = []
-                $('.hld__table tbody>tr').each(function () {
-                    const v = $(this).find('input').val().trim().toUpperCase()
-                    if (Object.keys(shortcut_code).includes(v)) shortcut_keys.push(shortcut_code[v])
-                    else popMsg(`${v}是个无效的快捷键`)
-                })
-                if (shortcut_keys.length != setting.shortcutKeys.length) return
-                setting.shortcutKeys = shortcut_keys
-                window.localStorage.setItem('hld__NGA_setting', JSON.stringify(setting))
-                popMsg('保存成功，刷新页面生效')
-            }
-            $('.hld__list_panel').remove()
-        })
     }
-
-
+    //集中面板按钮响应
+    $('body').on('click', '.hld__btn', function () {
+        const type = $(this).data('type')
+        if (type == 'save_keywords') {
+            keywords_list = $('#hld__keywords_list_textarea').val().split('\n')
+            keywords_list = removeBlank(keywords_list)
+            keywords_list = uniq(keywords_list)
+            console.log(keywords_list)
+            window.localStorage.setItem('hld__NGA_keywords_list', keywords_list.join(','))
+        }
+        if (type == 'save_banlist') {
+            ban_list = $('#hld__ban_list_textarea').val().split('\n')
+            ban_list = removeBlank(ban_list)
+            ban_list = uniq(ban_list)
+            mark_list = $('#hld__mark_list_textarea').val().split('\n')
+            mark_list = removeBlank(mark_list)
+            mark_list = uniq(mark_list)
+            window.localStorage.setItem('hld__NGA_ban_list', ban_list.join(','))
+            window.localStorage.setItem('hld__NGA_mark_list', mark_list.join(','))
+        }
+        if (type == 'reset_shortcut') {
+            setting.shortcutKeys = default_shortcut
+            window.localStorage.setItem('hld__NGA_setting', JSON.stringify(setting))
+            popMsg('重置成功，刷新页面生效')
+        }
+        if (type == 'save_shortcut') {
+            let shortcut_keys = []
+            $('.hld__table tbody>tr').each(function () {
+                const v = $(this).find('input').val().trim().toUpperCase()
+                if (Object.keys(shortcut_code).includes(v)) shortcut_keys.push(shortcut_code[v])
+                else popMsg(`${v}是个无效的快捷键`)
+            })
+            if (shortcut_keys.length != setting.shortcutKeys.length) return
+            setting.shortcutKeys = shortcut_keys
+            window.localStorage.setItem('hld__NGA_setting', JSON.stringify(setting))
+            popMsg('保存成功，刷新页面生效')
+        }
+        $('.hld__list_panel').remove()
+    })
+    $('body').on('click', '.hld__list_panel .hld__setting-close', function () {
+        $(this).parent().remove()
+    })
+    
     //动态检测
     setInterval(() => {
         insertMenu()
@@ -918,6 +920,7 @@ padding: 15px 20px;
 border-radius: 10px;
 box-shadow: 0 0 10px #666;
 border: 1px solid #591804;
+z-index: 9999;
 }
 #hld__banlist_panel {
 width:370px;
