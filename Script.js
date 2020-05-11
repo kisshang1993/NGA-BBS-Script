@@ -93,7 +93,6 @@
             || /text|password|number|email|url|range|date|month/i.test(event.target.type)) {
             return;
         }
-
         //切换显示头像
         if (event.keyCode == setting.shortcutKeys[0]) {
             $('.avatar').toggle()
@@ -139,8 +138,6 @@
                 $('#hld__img_full .next-img').click()
             }
         }
-
-
         //Excel模式
         if (setting.excelMode && event.keyCode == setting.shortcutKeys[5]) {
             switchExcelMode();
