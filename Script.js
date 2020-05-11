@@ -754,7 +754,7 @@
         popMsg('保存成功，刷新页面生效')
     })
     //打赏
-    $('body').on('click', '#hld__reward', function (){
+    $('body').on('click', '#hld__reward', function () {
         $('#hld__setting_cover').append(`<div class="hld__list-panel hld__reward-panel animated fadeInUp">
         <a href="javascript:void(0)" class="hld__setting-close">×</a>
         <div class="hld__reward-info">
