@@ -157,7 +157,7 @@
 
     //快捷键-列表维护
     $('body').on('click', '#hld__shortcut_manage', function () {
-        let $shortcutPanel = $(`<div id="hld__shortcut_panel" class="hld__list_panel animated fadeInUp">
+        let $shortcutPanel = $(`<div id="hld__shortcut_panel" class="hld__list-panel animated fadeInUp">
 <a href="javascript:void(0)" class="hld__setting-close">×</a>
 <div><div><p>编辑快捷键</p><div class="hld__float-left"><table class="hld__table"><thead><tr><td>功能</td><td width="60">快捷键</td></tr></thead>
 <tbody></tbody></table></div><div class="hld__float-left hld__shortcut-desc"><p><b>支持的快捷键范围</b></p><p>键盘 <code>A</code>~<code>Z</code></p><p>左箭头 <code>LEFT</code></p><p>右箭头 <code>RIGHT</code></p><p>上箭头 <code>UP</code></p><p>下箭头 <code>DOWN</code></p><p><i>* 留空则取消快捷键</i></p><br><p>如按键异常请尝试重置按键</p>
@@ -213,7 +213,7 @@
         })
         //关键字管理
         $('body').on('click', '#hld__keywords_manage', function () {
-            $('#hld__setting_cover').append(`<div id="hld__keywords_panel" class="hld__list_panel animated fadeInUp">
+            $('#hld__setting_cover').append(`<div id="hld__keywords_panel" class="hld__list-panel animated fadeInUp">
 <a href="javascript:void(0)" class="hld__setting-close">×</a>
 <div>
 <div class="hld__list-c"><p>屏蔽关键字</p><textarea row="20" id="hld__keywords_list_textarea"></textarea><p class="hld__list-desc">一行一条</p></div>
@@ -224,7 +224,7 @@
         })
         //名单管理
         $('body').on('click', '#hld__list_manage', function () {
-            $('#hld__setting_cover').append(`<div id="hld__banlist_panel"  class="hld__list_panel animated fadeInUp">
+            $('#hld__setting_cover').append(`<div id="hld__banlist_panel"  class="hld__list-panel animated fadeInUp">
 <a href="javascript:void(0)" class="hld__setting-close">×</a>
 <div>
 <div class="hld__list-c"><p>黑名单</p><textarea row="20" id="hld__ban_list_textarea"></textarea><p class="hld__list-desc">一行一条</p></div>
@@ -273,9 +273,9 @@
             window.localStorage.setItem('hld__NGA_setting', JSON.stringify(setting))
             popMsg('保存成功，刷新页面生效')
         }
-        $('.hld__list_panel').remove()
+        $('.hld__list-panel').remove()
     })
-    $('body').on('click', '.hld__list_panel .hld__setting-close', function () {
+    $('body').on('click', '.hld__list-panel .hld__setting-close', function () {
         $(this).parent().remove()
     })
 
@@ -683,6 +683,7 @@
     <span>
     <button class="hld__btn" id="hld__export__data" title="导出配置字符串，包含设置，黑名单，标记名单等等">导出</button>
     <button class="hld__btn" id="hld__import__data" title="导入配置字符串">导入</button>
+    <button class="hld__btn hld__reward" id="hld__reward" title="好活当赏"><span style="margin-right:3px">¥</span>赏</button>
     </span>
     <button class="hld__btn" id="hld__save__data">保存设置</button>
     </div>
@@ -751,6 +752,22 @@
         window.localStorage.setItem('hld__NGA_setting', JSON.stringify(setting))
         $panel_dom.hide()
         popMsg('保存成功，刷新页面生效')
+    })
+    //打赏
+    $('body').on('click', '#hld__reward', function (){
+        $('#hld__setting_cover').append(`<div class="hld__list-panel hld__reward-panel animated fadeInUp">
+        <a href="javascript:void(0)" class="hld__setting-close">×</a>
+        <div class="hld__reward-info">
+        <p><b>本脚本完全开源，并且长期维护，您若有功能需求，欢迎反馈</b></p>
+        <p>如果您觉得脚本好用<span class="hld__delete-line">帮助到更好的摸鱼</span>，您也可以选择支持我~<img src="https://pic.downk.cc/item/5eb8f768c2a9a83be5e0d7c4.png"></p>
+        </div>
+        <div>
+        <div class="hld__list-c"><img src="https://pic.downk.cc/item/5eb8eb58c2a9a83be5c4a0cb.png">
+        </div>
+        <div class="hld__list-c"><img src="https://pic.downk.cc/item/5eb8edaec2a9a83be5c94268.png">
+        </div>
+        </div>
+        </div>`)
     })
     //消息
     const popMsg = (msg) => {
@@ -954,7 +971,7 @@ transform: scale(1.2) rotate(180deg);
 #hld__setting {
 color:#6666CC;
 }
-.hld__list_panel {
+.hld__list-panel {
 position:fixed;
 background:#fff8e7;
 padding: 15px 20px;
@@ -972,17 +989,17 @@ width:370px;
 #hld__keywords_panel {
 width:182px;
 }
-.hld__list_panel > div{
+.hld__list-panel > div{
 display:flex;
 justify-content: space-between;
 }
-.hld__list_panel .hld__list-c{
+.hld__list-panel .hld__list-c{
 width: 45%;
 }
 #hld__keywords_panel .hld__list-c{
 width: 100%;
 }
-.hld__list_panel .hld__list-c textarea{
+.hld__list-panel .hld__list-c textarea{
 box-sizing: border-box;
 padding: 0;
 margin: 0;
@@ -990,12 +1007,12 @@ height:200px;
 width:100%;
 resize: none;
 }
-.hld__list_panel .hld__list-desc {
+.hld__list-panel .hld__list-desc {
 margin-top:5px;
 font-size:9px;
 color:#666;
 }
-.hld__list_panel .hld__list-c > p:first-child{
+.hld__list-panel .hld__list-c > p:first-child{
 weight:bold;
 font-size:14px;
 margin-bottom:10px;
@@ -1178,6 +1195,33 @@ margin-bottom:5px;
 margin-left:4px;
 font-size:70%;
 color:#666;
+}
+.hld__reward {
+    
+}
+.hld__reward-panel {
+    width: 500px;
+}
+
+.hld__reward-panel .hld__reward-info{
+    display: block;
+    font-size: 15px;
+    margin-bottom: 20px;
+    line-height: 20px;
+}
+.hld__delete-line {
+    text-decoration: line-through;
+    color: #666;
+}
+.hld__reward-panel .hld__list-c {
+    width: 50%;
+}
+.hld__reward-panel .hld__list-c:first-child {
+    margin-right: 15px;
+}
+.hld__reward-panel .hld__list-c>img{
+width: 100%;
+height: auto;
 }
 /* Excel */
 .hld__excel-body {
