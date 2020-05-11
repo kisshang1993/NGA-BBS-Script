@@ -1337,6 +1337,7 @@ height: auto;
     background: #fff;
     padding: 5px 0;
     margin: 0;
+    border: none;
     border-right: 1px solid #bbbbbb;
     border-bottom: 1px solid #bbbbbb;
     margin-right: -1px;
