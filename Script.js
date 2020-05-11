@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      2.3
+// @version      2.4
 // @author       HLD
 // @description  NGA论坛显示优化，功能增强，防止突然蹦出一对??而导致的突然性的社会死亡
 // @license      GPL-3.0
@@ -14,7 +14,7 @@
 (function () {
     'use strict';
 
-    const default_shortcut = [81, 87, 69, 37, 39]
+    const default_shortcut = [81, 87, 69, 37, 39, 82]
     let setting = {
         hideAvatar: true,
         hideSmile: true,
@@ -22,6 +22,7 @@
         imgEnhance: true,
         hideSign: true,
         hideHeader: true,
+        excelMode: false,
         linkTargetBlank: true,
         imgResize: true,
         authorMark: true,
@@ -35,7 +36,7 @@
     let mark_list = []
     let keywords_list = []
 
-    const shortcut_name = ['隐藏头像', '隐藏表情', '隐藏图片', '楼内上一张图', '楼内下一张图']
+    const shortcut_name = ['隐藏头像', '隐藏表情', '隐藏图片', '楼内上一张图', '楼内下一张图', '切换Excel模式']
     const shortcut_code = {
         'A': 65, 'B': 66, 'C': 67, 'D': 68, 'E': 69, 'F': 70, 'G': 71,
         'H': 72, 'I': 73, 'J': 74, 'K': 75, 'L': 76, 'M': 77, 'N': 78,
@@ -51,7 +52,6 @@
         }
         return keyname
     }
-
 
     //检查更新
     if (window.localStorage.getItem('hld__NGA_version')) {
@@ -69,6 +69,12 @@
         let local_setting = JSON.parse(window.localStorage.getItem('hld__NGA_setting'))
         for (let k in setting) {
             !local_setting.hasOwnProperty(k) && (local_setting[k] = setting[k])
+            if (k == 'shortcutKeys') {
+                if (local_setting[k].length < setting[k].length) {
+                    const offset_count = setting[k].length - local_setting[k].length
+                    local_setting[k] = local_setting[k].concat(setting[k].slice(-offset_count))
+                }
+            }
         }
         for (let k in local_setting) {
             !setting.hasOwnProperty(k) && delete local_setting[k]
@@ -82,11 +88,11 @@
     }
     //注册按键
     $('body').keyup(function (event) {
-        if (isThreads()) return
         if (/textarea|select|input/i.test(event.target.nodeName)
             || /text|password|number|email|url|range|date|month/i.test(event.target.type)) {
             return;
         }
+
         //切换显示头像
         if (event.keyCode == setting.shortcutKeys[0]) {
             $('.avatar').toggle()
@@ -133,26 +139,19 @@
             }
         }
 
+
+        //Excel模式
+        if (setting.excelMode && event.keyCode == setting.shortcutKeys[5]) {
+            switchExcelMode();
+        }
+
     })
 
-    //标记楼主
-    if (setting.authorMark) {
-        const local_post_author = window.localStorage.getItem('hld__NGA_post_author')
-        local_post_author && (post_author = local_post_author.split(','))
-        const tid = getQueryString('tid')
-        if ($('#postauthor0').length > 0 && tid) {
-            const author_str = `${tid}:${$('#postauthor0').text()}`
-            if (!post_author.includes(author_str))
-                post_author.unshift(author_str) > 10 && post_author.pop()
-            window.localStorage.setItem('hld__NGA_post_author', post_author.join(','))
-        }
-        for (let pa of post_author) {
-            const t = pa.split(':')
-            if (t[0] == tid) {
-                $('body').append(`<input type="hidden" value="${t[1]}" id="hld__post-author">`)
-                break
-            }
-        }
+    //Excel 模板
+    if (setting.excelMode) {
+        $('body').append('<div class="hld__excel-div hld__excel-header"><img src="https://pic.downk.cc/item/5eb65188c2a9a83be59c86ce.png"></div>')
+        $('body').append('<div class="hld__excel-div hld__excel-footer"><img src="https://pic.downk.cc/item/5eb62491c2a9a83be560bcf1.jpg"></div>')
+        $('body').append('<div class="hld__excel-div hld__excel-setting"><img src="https://pic.downk.cc/item/5ea7eb7ec2a9a83be5c6b56a.png"><a href="javascript:eval($(\'hld__setting_cover\').style.display=\'flex\')" title="打开NGA优化摸鱼插件设置面板">摸鱼</div>')
     }
 
     //快捷键-列表维护
@@ -160,7 +159,7 @@
         let $shortcutPanel = $(`<div id="hld__shortcut_panel" class="hld__list_panel animated fadeInUp">
 <a href="javascript:void(0)" class="hld__setting-close">×</a>
 <div><div><p>编辑快捷键</p><div class="hld__float-left"><table class="hld__table"><thead><tr><td>功能</td><td width="60">快捷键</td></tr></thead>
-<tbody></tbody></table></div><div class="hld__float-left hld__shortcut-desc"><p><b>支持的快捷键范围</b></p><p>键盘 <code>A</code>~<code>Z</code></p><p>左箭头 <code>LEFT</code></p><p>右箭头 <code>RIGHT</code></p><p>上箭头 <code>UP</code></p><p>下箭头 <code>DOWN</code></p><p><i>* 留空则取消快捷键</i></p>
+<tbody></tbody></table></div><div class="hld__float-left hld__shortcut-desc"><p><b>支持的快捷键范围</b></p><p>键盘 <code>A</code>~<code>Z</code></p><p>左箭头 <code>LEFT</code></p><p>右箭头 <code>RIGHT</code></p><p>上箭头 <code>UP</code></p><p>下箭头 <code>DOWN</code></p><p><i>* 留空则取消快捷键</i></p><br><p>如按键异常请尝试重置按键</p>
 </div>
 <div></div></div>
 </div>
@@ -281,20 +280,19 @@
 
     //动态检测
     setInterval(() => {
-        insertMenu()
+        alwaysDetect()
         isThreads() && renderThreads()
         isPosts() && renderPosts()
-
-        /**
-        $('.forumbox.postbox[hld-render!=ok]').length > 0 && runDom()
-        if (setting.markAndBan && $('.topicrow .author[hld-render!=ok]').length > 0) runMark()
-        
-         */
     }, 100)
 
-    //检测页面类型
-    const insertMenu = () => {
+    //持续监测
+    const alwaysDetect = () => {
+        //insert Menu
         $('#hld__setting').length == 0 && $('#startmenu > tbody > tr > td.last').append('<div><div class="item"><a id="hld__setting" href="javascript:eval($(\'hld__setting_cover\').style.display=\'flex\')" title="打开NGA优化摸鱼插件设置面板">NGA优化摸鱼插件设置</a></div></div>')
+        if ($('.hld__excel-body').length > 0) {
+            $(document).attr('title') != '工作簿1' && $(document).attr('title', '工作簿1');
+            $('#hld__excel_icon').length == 0 && $('head').append('<link id= "hld__excel_icon" rel="shortcut icon" type="image/png" href="https://pic.downk.cc/item/5eb678a5c2a9a83be5d2e70a.png" />')
+        }
     }
     const isThreads = () => $('#m_threads').length > 0
     const isPosts = () => $('#m_posts').length > 0
@@ -347,8 +345,34 @@
 
     //论坛详情
     const renderPosts = () => {
+        //标记楼主
+        if (setting.authorMark) {
+            const author = $('#postauthor0').text().replace('[楼主]', '')
+            if (author && $('#hld__post-author').val() != author) {
+                const local_post_author = window.localStorage.getItem('hld__NGA_post_author')
+                local_post_author && (post_author = local_post_author.split(','))
+                const tid = getQueryString('tid')
+                if (tid) {
+                    const author_str = `${tid}:${author}`
+                    if (!post_author.includes(author_str))
+                        post_author.unshift(author_str) > 10 && post_author.pop()
+                    window.localStorage.setItem('hld__NGA_post_author', post_author.join(','))
+                }
+                for (let pa of post_author) {
+                    const t = pa.split(':')
+                    if (t[0] == tid) {
+                        if ($('#hld__post-author').length == 0) $('body').append(`<input type="hidden" value="${t[1]}" id="hld__post-author">`)
+                        else $('#hld__post-author').val(t[1])
+                        break
+                    }
+                }
+            }
+        }
         //回复列表
         $('.forumbox.postbox[hld-render!=ok]').each(function () {
+            if ($(this).find('.small_colored_text_btn.block_txt_c2.stxt').length == 0) return true
+            //excel 序号
+            $(this).find('.postrow>td:first-child').before('<td class="c0"></td>')
             //关键字屏蔽
             if (setting.keywordsBlock && keywords_list.length > 0) {
                 const $postcontent = $(this).find('.postcontent')
@@ -445,11 +469,17 @@
                 })
             }
             //标记拉黑备注
-            setting.authorMark && markDom($(this))
+            markDom($(this))
             //添加标志位
             $(this).attr('hld-render', 'ok')
         })
     }
+
+    //Excel
+    const switchExcelMode = () => {
+        $('body').toggleClass('hld__excel-body')
+    }
+    //setting.excelMode && switchExcelMode()
 
     //大图
     const resizeImg = (el) => {
@@ -600,8 +630,10 @@
                     }
                 }
             }
-            if (name == $('#hld__post-author').val() && $(this).find('span.hld__post-author').length == 0)
-                $(this).append('<span class="hld__post-author">[楼主]</span>')
+            if (setting.authorMark) {
+                if (name == $('#hld__post-author').val() && $(this).find('span.hld__post-author').length == 0)
+                    $(this).append('<span class="hld__post-author">[楼主]</span>')
+            }
         })
     }
 
@@ -618,6 +650,15 @@
     <p><label><input type="checkbox" id="hld__cb_imgResize"> 贴内图片缩放(缩放至宽200px)</label></p>
     <p><label><input type="checkbox" id="hld__cb_hideSign"> 隐藏签名</label></p>
     <p><label><input type="checkbox" id="hld__cb_hideHeader"> 隐藏版头/版规/子版入口</label></p>
+    <p><label><input type="checkbox" id="hld__cb_excelMode" enable="hld__excelMode_fold"> Excel模式（快捷键切换显示[<b>${getCodeName(setting.shortcutKeys[5])}</b>]）</label></p>
+    <div class="hld__sp-fold" id="hld__excelMode_fold" data-id="hld__cb_excelMode">
+    <div style="padding: 5px;margin-right: 40px;margin-bottom: 15px;border: 2px dashed #591804;">
+    <p><b>注意：此功能目前为实验模式</b></p>
+    <p>此模式处于测试阶段，可能会有BUG，如遇到请及时反馈</p>
+    <p>在实验模式中，开启功能后需要手动切换显示（当前快捷键[<b>${getCodeName(setting.shortcutKeys[5])}</b>]）</p>
+    <p>更多说明请至脚本发布页面阅读README中的更新说明</p>
+    </div>
+    </div>
     <p><button id="hld__shortcut_manage">编辑快捷键</button></p>
     </div>
     <div class="hld__field">
@@ -650,7 +691,6 @@
     //本地恢复设置
     for (let k in setting) {
         if ($('#hld__cb_' + k).length > 0) {
-            console.log('#hld__cb_' + k)
             $('#hld__cb_' + k)[0].checked = setting[k]
             const enable_dom_id = $('#hld__cb_' + k).attr('enable')
             if (enable_dom_id) {
@@ -1137,6 +1177,249 @@ margin-bottom:5px;
 margin-left:4px;
 font-size:70%;
 color:#666;
+}
+/* Excel */
+.hld__excel-body {
+    background: #fff !important;
+}
+.hld__excel-body #mainmenu,
+.hld__excel-body .catenew,
+.hld__excel-body #toptopics,
+.hld__excel-body #m_pbtntop,
+.hld__excel-body #m_fopts,
+.hld__excel-body #b_nav,
+.hld__excel-body #fast_post_c,
+.hld__excel-body #custombg,
+.hld__excel-body #m_threads th,
+.hld__excel-body #m_posts th,
+.hld__excel-body .r_container,
+.hld__excel-body #footer,
+.hld__excel-body .clickextend {
+    display: none !important;
+}
+.hld__excel-body #mmc {
+    margin-top: 195px;
+}
+.hld__excel-div {
+    display: none;
+}
+.hld__excel-body .hld__excel-div,
+.hld__excel-body .hld__excel-setting {
+    display: block;
+}
+.hld__excel-body .hld__excel-setting {
+    position: fixed;
+    width: 60px;
+    height: 20px;
+    top: 5px;
+    left: 1745px;
+    background: #f2f4f7;
+    z-index: 999;
+}
+.hld__excel-body .hld__excel-setting img {
+    width: 20px;
+    height: auto;
+    vertical-align:middle;
+}
+.hld__excel-body .hld__excel-setting a{
+    margin-left: 5px;
+    vertical-align:middle;
+}
+.hld__excel-body .hld__excel-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 196px;
+    border-bottom: 1px solid #bbbbbb;
+}
+.hld__excel-body .hld__excel-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    height: 50px;
+}
+.hld__excel-body #m_nav {
+    position: fixed;
+    top: 136px;
+    left: 261px;
+    margin: 0;
+    padding: 0;
+    z-index: 99;
+}
+.hld__excel-body #m_nav .nav_spr {
+    display: block;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+    box-shadow: none;
+    background: none;
+}
+
+.hld__excel-body #m_nav .nav_spr span{
+    color: #000;
+    font-size: 16px;
+    vertical-align: unset;
+    font-weight: normal;
+}
+
+.hld__excel-body #m_nav .nav_root,
+.hld__excel-body #m_nav .nav_link{
+    background: none;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    color: #000;
+    border-radius: 0;
+    font-weight: normal;
+}
+.hld__excel-body #m_threads {
+    margin: 0;
+}
+.hld__excel-body #topicrows {
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    margin: 0;
+    background-color: #fff;
+    counter-reset:num;
+    border-spacing: 0;
+}
+.hld__excel-body #topicrows tbody{
+    border-spacing: 0;
+}
+.hld__excel-body .topicrow {
+    border-spacing: 0;
+}
+.hld__excel-body #topicrows td{
+    background: #fff;
+    padding: 5px 0;
+    margin: 0;
+    border-right: 1px solid #bbbbbb;
+    border-bottom: 1px solid #bbbbbb;
+    margin-right: -1px;
+}
+.hld__excel-body .topicrow .c1 {
+    width: 33px;
+    background: #e8e8e8 !important;
+}
+.hld__excel-body .topicrow .c1 a{
+    display: none;
+}
+.hld__excel-body .topicrow .c1:before {
+    content: counter(num);
+    counter-increment: num;
+    color: #777777;
+    font-size: 16px;
+}
+.hld__excel-body .topicrow .c2 {
+    padding-left: 5px !important;
+}
+.hld__excel-body .topicrow .c3{
+    color: #1a3959 !important;
+}
+.hld__excel-body .block_txt {
+    background: #fff !important;
+    color: #1a3959 !important;
+    border-radius: 0;
+    padding: 0 !important;
+    min-width: 0 !important;
+    font-weight: normal;
+}
+.hld__excel-body #m_posts .block_txt {
+    font-weight: bold;
+}
+.hld__excel-body .topicrow .postdate,
+.hld__excel-body .topicrow .replydate {
+    display: inline;
+    margin: 10px;
+}
+.hld__excel-body #m_pbtnbtm{
+    margin: 0;
+    border-bottom: 1px solid #bbbbbb;
+}
+.hld__excel-body #pagebbtm,
+.hld__excel-body #m_pbtnbtm .right_ {
+    margin: 0;
+}
+.hld__excel-body #pagebbtm:before {
+    display: block;
+    line-height: 35px;
+    width: 33px;
+    float: left;
+    content: "#";
+    border-right: 1px solid #bbbbbb;
+    color: #777;
+    font-size: 16px;
+    background: #e8e8e8;
+}
+.hld__excel-body #m_pbtnbtm td{
+    line-height: 35px;
+    padding: 0 5px;
+}
+.hld__excel-body #m_pbtnbtm .stdbtn {
+    box-shadow: none;
+    border: none;
+    padding: 0;
+    padding-left: 5px;
+    background: #fff;
+    border-radius: 0;
+}
+.hld__excel-body #m_pbtnbtm .stdbtn .invert {
+    color: #591804;
+}
+.hld__excel-body #m_pbtnbtm td a {
+    background: #fff;
+    padding: 0;
+    border: 0;
+}
+.hld__excel-body #m_posts .comment_c .comment_c_1 {
+    border-top-color: #bbbbbb;
+}
+.hld__excel-body #m_posts .comment_c .comment_c_2 {
+    border-color: #bbbbbb;
+}
+.hld__excel-body #m_posts {
+    border: 0;
+    box-shadow: none;
+    padding-bottom: 0;
+    margin: 0;
+    counter-reset:num;
+}
+.hld__excel-body #m_posts td {
+    background: #fff;
+    border-right: 1px solid #bbbbbb;
+    border-bottom: 1px solid #bbbbbb;
+}
+.hld__excel-body #m_posts .c0 {
+    width: 32px;
+    color: #777;
+    font-size: 16px;
+    background: #e8e8e8;
+    text-align: center;
+}
+.hld__excel-body #m_posts .c0:before {
+    content:counter(num);
+    counter-increment: num;
+}
+.hld__excel-body #m_posts .vertmod {
+    background: #fff !important;
+    color: #ccc;
+}
+.hld__excel-body #m_posts a[name="uid"]:before {
+    content: "UID:"
+}
+.hld__excel-body #m_posts .white,
+.hld__excel-body #m_posts .block_txt_c2,
+.hld__excel-body #m_posts .block_txt_c0 {
+    background: #fff;
+    color: #777777;
+}
+.hld__excel-body #m_posts .quote {
+    background: #fff;
+    border-color: #bbbbbb;
+}
+.hld__excel-body #m_posts button {
+    background: #eee;
 }
 `))
     document.getElementsByTagName("head")[0].appendChild(style)

@@ -4,16 +4,19 @@
 NGA论坛显示优化，功能增强，提升浏览体验
 可以有效防止突然蹦出一对??而导致的突然性的社会死亡![扇子脸](https://pic.downk.cc/item/5ea7eb7ec2a9a83be5c6b56a.png)
 
-如果大家觉得此插件好用，独乐乐不如众乐乐，就请推荐给更多的人使用吧！![Yeah!](https://pic.downk.cc/item/5ea7eb7ec2a9a83be5c6b565.png)
+脚本还在完善阶段，摸鱼永无止境，如有想添加的功能或实现，欢迎提出需求![GoodJob](https://pic.downk.cc/item/5eb61d2bc2a9a83be556237f.png)
 
+最后，如果大家觉得此插件好用，独乐乐不如众乐乐，就请推荐给更多的人使用吧！![Yeah!](https://pic.downk.cc/item/5ea7eb7ec2a9a83be5c6b565.png)
 
 -------
 
 
 
 ### 最近更新 *
-- 修复图片缩小后偶尔会无法放大的问题
-- 重新适配了改版后的论坛框架，修复了部分功能失效的问题
+- 新增Excel模式（扶我起来，我还能摸！）
+- Excel模式中为了模拟Excel的界面效果隐藏了很多原有的元素，调整了部分功能的位置（例如导航栏移动到了excel的编辑栏），如要使用被隐藏掉的原有功能，请切换关闭Excel模式回到原版操作
+- Excel模式只适配了列表页与文章详情页，其他页面及功能（如回复，弹框等）均无适配
+- Excel目前处于实验模式中，有BUG请及时反馈
 
 ### 安装指引
 
@@ -27,6 +30,7 @@ NGA论坛显示优化，功能增强，提升浏览体验
 + 隐藏头像（默认快捷键切换显示[Q]）
 + 隐藏表情，使用中文替代（默认快捷键切换显示[W]）
 + 隐藏楼内图片（默认快捷键切换显示[E]）
++ Excel模式（默认快捷键切换显示[R]）
 + 贴内图片缩放（最大缩放至宽度200px）
 + 隐藏签名
 + 隐藏版头/版规/子版（使用一个按钮进行切换）
@@ -55,8 +59,13 @@ NGA论坛显示优化，功能增强，提升浏览体验
 
 ![](https://pic.superbed.cn/item/5e15a38876085c32896b70fe.jpg)
 
+#### 论坛Excel模式，WPS风格，默认快捷切换键[**`R`**]
+**使用Excel为了提升体验，最好关闭【帖子列表打开时使用新标签栏】功能*
+
+![](https://pic.downk.cc/item/5eb8a98ec2a9a83be54dce2d.png)
+
 #### 可以手动配置快捷键，避免与其他插件冲突
-![](https://pic.downk.cc/item/5e71f828e83c3a1e3aec9e9e.png)
+![](https://pic.downk.cc/item/5eb8a98ec2a9a83be54dce37.png)
 
 #### 图片缩放功能，贴内图片宽度调整到200px，更易于浏览
 
@@ -73,31 +82,43 @@ NGA论坛显示优化，功能增强，提升浏览体验
 *注意：必须进入主楼一次才能标记楼主*
 
 #### 拉黑名单与备注功能
-操作面板  
+
+操作面板
+
 ![](https://pic.superbed.cn/item/5e15a37176085c32896b6e68.jpg)
 
-备注（微博风格）  
+备注（微博风格）
+
 ![](https://pic.downk.cc/item/5e181f5b7f9a96fec152409b.jpg)
 
-名单管理  
+名单管理
+
 ![](https://pic.superbed.cn/item/5e15a37176085c32896b6e64.jpg)
 
 
 #### 关键字屏蔽
+
 含有屏蔽内容的标题，回复，贴条等全部都会被删除
 *可以在控制台中看到删除的内容*
 
 
 #### 大部分功能均可以启用或关闭，管理面板位置在右上角的[个人中心] -> [NGA优化摸鱼插件设置]
 
+普通模式下
+
 ![](https://pic.superbed.cn/item/5e15a38876085c32896b7100.jpg)
 
-![](https://pic.downk.cc/item/5e71f828e83c3a1e3aec9e93.png)
+Excel模式下
 
+![](https://pic.downk.cc/item/5eb8a98ec2a9a83be54dce30.png)
 
+设置面板
+
+![](https://pic.downk.cc/item/5eb8a98ec2a9a83be54dce33.png)
 
 
 ## FAQ
+
 **Q：部分表情没有隐藏**
 
 A：那其实不是用编辑器添加的表情，是张图片
