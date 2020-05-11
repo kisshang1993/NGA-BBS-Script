@@ -1241,6 +1241,7 @@ height: auto;
 }
 .hld__excel-body #mmc {
     margin-top: 195px;
+    margin-bottom: 35px;
 }
 .hld__excel-div {
     display: none;
