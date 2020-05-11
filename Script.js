@@ -57,8 +57,9 @@
     if (window.localStorage.getItem('hld__NGA_version')) {
         const current_version = +window.localStorage.getItem('hld__NGA_version')
         if (GM_info.script.version > current_version) {
-            $('body').append(`<div id="hld__updated" class="animated-1s bounce"><a href="javascript:void(0)" class="hld__setting-close">×</a><b>NGA优化摸鱼插件已更新至v${GM_info.script.version}</b><br><a class="hld__readme" href="https://greasyfork.org/zh-CN/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C" target="_blank">查看更新内容</a></div>`)
-            $('body').on('click', '#hld__updated>a', function () {
+            const focus = '<br><p>* 重点更新：新增Excel模式</p><br>'
+            $('body').append(`<div id="hld__updated" class="animated-1s bounce"><p><a href="javascript:void(0)" class="hld__setting-close">×</a><b>NGA优化摸鱼插件已更新至v${GM_info.script.version}</b></p>${focus}<p><a class="hld__readme" href="https://greasyfork.org/zh-CN/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C" target="_blank">查看更新内容</a></p></div>`)
+            $('body').on('click', '#hld__updated a', function () {
                 $(this).parents('#hld__updated').remove()
                 window.localStorage.setItem('hld__NGA_version', GM_info.script.version)
             })
