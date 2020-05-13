@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      2.4
+// @version      2.5
 // @author       HLD
 // @description  NGA论坛显示优化，功能增强，防止突然蹦出一对??而导致的突然性的社会死亡
 // @license      GPL-3.0
@@ -35,6 +35,7 @@
     let ban_list = []
     let mark_list = []
     let keywords_list = []
+    let before_url = window.location.href
 
     const shortcut_name = ['隐藏头像', '隐藏表情', '隐藏图片', '楼内上一张图', '楼内下一张图', '切换Excel模式']
     const shortcut_code = {
@@ -57,7 +58,7 @@
     if (window.localStorage.getItem('hld__NGA_version')) {
         const current_version = +window.localStorage.getItem('hld__NGA_version')
         if (GM_info.script.version > current_version) {
-            const focus = '<br><p>* 重点更新：新增Excel模式</p><br>'
+            const focus = '<br><p>* 近期焦点更新：新增Excel模式</p><br>'
             $('body').append(`<div id="hld__updated" class="animated-1s bounce"><p><a href="javascript:void(0)" class="hld__setting-close">×</a><b>NGA优化摸鱼插件已更新至v${GM_info.script.version}</b></p>${focus}<p><a class="hld__readme" href="https://greasyfork.org/zh-CN/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C" target="_blank">查看更新内容</a></p></div>`)
             $('body').on('click', '#hld__updated a', function () {
                 $(this).parents('#hld__updated').remove()
@@ -96,6 +97,7 @@
         //切换显示头像
         if (event.keyCode == setting.shortcutKeys[0]) {
             $('.avatar').toggle()
+            popNotification(`${$('.avatar:hidden').length == 0 ? '显示' : '隐藏'}头像`)
         }
         //切换显示表情
         if (event.keyCode == setting.shortcutKeys[1]) {
@@ -104,21 +106,21 @@
                 if (classs && classs.includes('smile')) $(this).toggle()
             })
             $('.smile_alt_text').toggle()
+            popNotification(`${$('.smile_alt_text:hidden').length > 0 ? '显示' : '隐藏'}表情`)
         }
         //切换显示图片
         if (event.keyCode == setting.shortcutKeys[2]) {
-            $('.postcontent img').each(function () {
-                const classs = $(this).attr('class');
-                if (!classs && $(this).width() > 24) {
-                    if ($(this).is(":hidden")) {
-                        $(this).show()
-                        $('.switch-img').hide()
-                    } else {
-                        $('.switch-img').css('display', 'inline')
-                        $(this).hide()
-                    }
-                }
+            if ($('.hld__img-resize:hidden').length < $('.switch-img').length) {
+                $('.hld__img-resize').hide()
+                $('.switch-img').text('图').show()
+                popNotification(`隐藏图片`)
+                return
+            }
+            $('.hld__img-resize').each(function () {
+                $(this).toggle()
+                $(this).is(':hidden') ? $(this).next('button.switch-img').show() : $(this).next('button.switch-img').hide()
             })
+            popNotification(`${$('.switch-img:hidden').length > 0 ? '显示' : '隐藏'}图片`)
         }
         //关闭大图
         if (event.keyCode == 27) {
@@ -140,16 +142,17 @@
         }
         //Excel模式
         if (setting.excelMode && event.keyCode == setting.shortcutKeys[5]) {
-            switchExcelMode();
+            switchExcelMode()
+            popNotification($('.hld__excel-body').length > 0 ? 'Excel模式' : '普通模式')
         }
-
     })
 
     //Excel 模板
     if (setting.excelMode) {
         $('body').append('<div class="hld__excel-div hld__excel-header"><img src="https://pic.downk.cc/item/5eb65188c2a9a83be59c86ce.png"></div>')
         $('body').append('<div class="hld__excel-div hld__excel-footer"><img src="https://pic.downk.cc/item/5eb62491c2a9a83be560bcf1.jpg"></div>')
-        $('body').append('<div class="hld__excel-div hld__excel-setting"><img src="https://pic.downk.cc/item/5ea7eb7ec2a9a83be5c6b56a.png"><a href="javascript:eval($(\'hld__setting_cover\').style.display=\'flex\')" title="打开NGA优化摸鱼插件设置面板">摸鱼</div>')
+        $('body').append('<div class="hld__excel-div hld__excel-setting"><img src="https://pic.downk.cc/item/5ea7eb7ec2a9a83be5c6b56a.png"><a id="hld__excel_setting" href="javascript:void(0)" title="打开NGA优化摸鱼插件设置面板">摸鱼</div>')
+        $('#hld__excel_setting').click(()=>$('#hld__setting_cover').css('display', 'flex'))
     }
 
     //快捷键-列表维护
@@ -286,7 +289,21 @@
     //持续监测
     const alwaysDetect = () => {
         //insert Menu
-        $('#hld__setting').length == 0 && $('#startmenu > tbody > tr > td.last').append('<div><div class="item"><a id="hld__setting" href="javascript:eval($(\'hld__setting_cover\').style.display=\'flex\')" title="打开NGA优化摸鱼插件设置面板">NGA优化摸鱼插件设置</a></div></div>')
+        if($('.hld__setting-box').length == 0) {
+            $('#startmenu > tbody > tr > td.last').append('<div><div class="item hld__setting-box"></div></div>')
+            let $entry = $('<a id="hld__setting" title="打开NGA优化摸鱼插件设置面板">NGA优化摸鱼插件设置</a>')
+            $entry.click(()=>$('#hld__setting_cover').css('display', 'flex'))
+            $('#hld__setting_close').click(()=>$('#hld__setting_cover').fadeOut(200))
+            $('.hld__setting-box').append($entry)
+        }
+        if(window.location.href != before_url) {
+            before_url = window.location.href
+            if(before_url.includes('thread.php') || before_url.includes('read.php')) {
+                $('.hld__excel-body').length == 0 && $('body').addClass('hld__excel-body')
+            }else {
+                $('.hld__excel-body').length > 0 && $('body').removeClass('hld__excel-body')
+            }
+        }
         if ($('.hld__excel-body').length > 0) {
             $(document).attr('title') != '工作簿1' && $(document).attr('title', '工作簿1');
             $('#hld__excel_icon').length == 0 && $('head').append('<link id= "hld__excel_icon" rel="shortcut icon" type="image/png" href="https://pic.downk.cc/item/5eb678a5c2a9a83be5d2e70a.png" />')
@@ -294,6 +311,12 @@
     }
     const isThreads = () => $('#m_threads').length > 0
     const isPosts = () => $('#m_posts').length > 0
+    const switchExcelMode = () => {
+        $('body').toggleClass('hld__excel-body')
+    }
+    if(setting.excelMode) {
+        if(before_url.includes('thread.php') || before_url.includes('read.php')) switchExcelMode()
+    }
     //论坛列表
     const renderThreads = () => {
         //隐藏版头
@@ -414,7 +437,6 @@
                         }
                     })
                 }
-
             }
             //隐藏头像
             setting.hideAvatar && $(this).find('.avatar').css('display', 'none')
@@ -429,7 +451,7 @@
                 } else if (!classs && $(this).attr('onload')) {
                     $(this).attr('hld__imglist', 'ready')
                     if (setting.imgResize) {
-                        $(this).width() > 200 && $(this).css({ 'outline': '', 'outline-offset': '', 'cursor': 'alias', 'min-width': '200px', 'min-height': 'auto', 'width': '200px', 'height': 'auto', 'margin:': '5px' }).attr('title', '点击大图显示')
+                        $(this).addClass('hld__img-resize').attr('title', '点击大图显示')
                     }
                     let $imgB = $('<button class="switch-img" style="display:none">图</button>')
                     $imgB.on('click', function () {
@@ -472,12 +494,6 @@
             $(this).attr('hld-render', 'ok')
         })
     }
-
-    //Excel
-    const switchExcelMode = () => {
-        $('body').toggleClass('hld__excel-body')
-    }
-    //setting.excelMode && switchExcelMode()
 
     //大图
     const resizeImg = (el) => {
@@ -635,10 +651,9 @@
         })
     }
 
-
     //设置面板
     let $panel_dom = $(`<div id="hld__setting_cover" class="animated zoomIn"><div id="hld__setting_panel">
-    <a href="javascript:eval($(\'hld__setting_cover\').style.display=\'none\')" class="hld__setting-close">×</a>
+   <a href="javascript:void(0)" id="hld__setting_close" class="hld__setting-close">×</a>
     <p class="hld__sp-title"><a title="更新地址" href="https://greasyfork.org/zh-CN/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C" target="_blank">NGA优化摸鱼插件<span class="hld__script-info">v${GM_info.script.version}</span></a></p>
     <div class="hld__field">
     <p class="hld__sp-section">显示优化</p>
@@ -648,15 +663,7 @@
     <p><label><input type="checkbox" id="hld__cb_imgResize"> 贴内图片缩放(缩放至宽200px)</label></p>
     <p><label><input type="checkbox" id="hld__cb_hideSign"> 隐藏签名</label></p>
     <p><label><input type="checkbox" id="hld__cb_hideHeader"> 隐藏版头/版规/子版入口</label></p>
-    <p><label><input type="checkbox" id="hld__cb_excelMode" enable="hld__excelMode_fold"> Excel模式（快捷键切换显示[<b>${getCodeName(setting.shortcutKeys[5])}</b>]）</label></p>
-    <div class="hld__sp-fold" id="hld__excelMode_fold" data-id="hld__cb_excelMode">
-    <div style="padding: 5px;margin-right: 40px;margin-bottom: 15px;border: 2px dashed #591804;">
-    <p><b>注意：此功能目前为实验模式</b></p>
-    <p>此模式处于测试阶段，可能会有BUG，如遇到请及时反馈</p>
-    <p>在实验模式中，开启功能后需要手动切换显示（当前快捷键[<b>${getCodeName(setting.shortcutKeys[5])}</b>]）</p>
-    <p>更多说明请至脚本发布页面阅读README中的更新说明</p>
-    </div>
-    </div>
+    <p><label><input type="checkbox" id="hld__cb_excelMode"> Excel模式（快捷键切换显示[<b>${getCodeName(setting.shortcutKeys[5])}</b>]）</label></p>
     <p><button id="hld__shortcut_manage">编辑快捷键</button></p>
     </div>
     <div class="hld__field">
@@ -755,7 +762,7 @@
         $('#hld__setting_cover').append(`<div class="hld__list-panel hld__reward-panel animated fadeInUp">
         <a href="javascript:void(0)" class="hld__setting-close">×</a>
         <div class="hld__reward-info">
-        <p><b>本脚本完全开源，并且长期维护，您若有功能需求，欢迎反馈</b></p>
+        <p><b>本脚本完全开源，并且长期维护<br>您若有好的功能需求或者建议，欢迎反馈</b></p>
         <p>如果您觉得脚本好用<span class="hld__delete-line">帮助到更好的摸鱼</span>，您也可以选择支持我~<img src="https://pic.downk.cc/item/5eb8f768c2a9a83be5e0d7c4.png"></p>
         </div>
         <div>
@@ -769,6 +776,15 @@
     //消息
     const popMsg = (msg) => {
         alert(msg)
+    }
+    //通知
+    const popNotification = (msg) => {
+        $('#hld__noti_container').length == 0 && $('body').append('<div id="hld__noti_container"></div>')
+        let $msg_box = $(`<div class="hld__noti-msg">${msg}</div>`)
+        $('#hld__noti_container').append($msg_box)
+        $msg_box.slideDown(100)
+        setTimeout(() => { $msg_box.fadeOut(500) }, 1000)
+        setTimeout(() => { $msg_box.remove() }, 1500)
     }
     function getQueryString(name) {
         var url = decodeURI(window.location.search.replace(/&amp;/g, "&"));
@@ -806,665 +822,132 @@
     let style = document.createElement("style")
     style.type = "text/css"
     style.appendChild(document.createTextNode(`
-.animated {
-animation-duration: .3s;
-animation-fill-mode: both;
-}
-.animated-1s {
-animation-duration: 1s;
-animation-fill-mode: both;
-}
-.zoomIn {
-animation-name: zoomIn;
-}
-@keyframes zoomIn {
-from {
-opacity: 0;
--webkit-transform: scale3d(0.3, 0.3, 0.3);
-transform: scale3d(0.3, 0.3, 0.3);
-}
-50% {
-opacity: 1;
-}
-}
-@keyframes bounce {
-from,
-20%,
-53%,
-80%,
-to {
--webkit-animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
-animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
--webkit-transform: translate3d(0, 0, 0);
-transform: translate3d(0, 0, 0);
-}
-40%,
-43% {
--webkit-animation-timing-function: cubic-bezier(0.755, 0.05, 0.855, 0.06);
-animation-timing-function: cubic-bezier(0.755, 0.05, 0.855, 0.06);
--webkit-transform: translate3d(0, -30px, 0);
-transform: translate3d(0, -30px, 0);
-}
-70% {
--webkit-animation-timing-function: cubic-bezier(0.755, 0.05, 0.855, 0.06);
-animation-timing-function: cubic-bezier(0.755, 0.05, 0.855, 0.06);
--webkit-transform: translate3d(0, -15px, 0);
-transform: translate3d(0, -15px, 0);
-}
-90% {
--webkit-transform: translate3d(0, -4px, 0);
-transform: translate3d(0, -4px, 0);
-}
-}
-.bounce {
--webkit-animation-name: bounce;
-animation-name: bounce;
--webkit-transform-origin: center bottom;
-transform-origin: center bottom;
-}
-@keyframes fadeInUp {
-from {
-opacity: 0;
--webkit-transform: translate3d(0, 100%, 0);
-transform: translate3d(0, 100%, 0);
-}
-to {
-opacity: 1;
--webkit-transform: translate3d(0, 0, 0);
-transform: translate3d(0, 0, 0);
-}
-}
-.fadeInUp {
--webkit-animation-name: fadeInUp;
-animation-name: fadeInUp;
-}
-#hld__setting_cover {
-display:none;
-justify-content: center;
-align-items:center;
-position: fixed;
-top: 0;
-left: 0;
-right: 0;
-bottom: 0;
-}
-.postcontent img {
-margin: 0 5px 5px 0 !important;
-box-shadow: none !important;
-}
-#hld__img_full{
-position: fixed;
-top: 0;
-left: 0;
-right: 0;
-bottom: 0;
-background: rgba(0, 0, 0, 0.6);
-z-index: 99999;
-/*display: flex;*/
-/*align-items: center;*/
-/*justify-content: center;*/
-}
-.hld__img_container {
-position: absolute;
-display: flex;
-justify-content: center;
-align-items: center;
-}
-#hld__img_full img{
-cursor: move;
-transition: transform .2s ease;
-}
-#hld__img_full .hld__imgcenter{
-top: 50%;
-left: 50%;
-transform: translate(-50%, -50%);
-}
-.hld__if_control {
-position: absolute;
-display:flex;
-left:50%;
-bottom: 15px;
-width: 160px;
-margin-left:-80px;
-height: 40px;
-background: rgba(0, 0, 0, 0.6);
-z-index:9999999;
-}
-#hld__img_full .change {
-width: 40px;
-height: 40px;
-cursor:pointer;
-}
-#hld__img_full .rotate-right,
-#hld__img_full .rotate-left{
-background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACQAAAAgCAYAAAB6kdqOAAADYElEQVRYR8WYS8hWVRSGn3cipg0qCExBKYxKQVJRIh1olF0GXpIIoVIUBZWahZeJOpDEQYMcWCBZQRFCZkpGJGgD0yJSwSyVIO0yMrpObPLK+tvnY3f8zu1Tfxfsydlrrf3uve5HXAPZfgR4HJiY1r3Av8BvwCXgOPChpCNtj1FbxoLPdhy+AHgaeLil/DngHWCHpL/qZDoBsj0P+LQliH5s3yVQO6t0dAW0GdhUUvYP8DXwc1q3AncBYb4pFQfvlrS8314nQKHA9n5gDnAKWCfpi6rbJvM+CSwFppf4jkiaW5btDGhQc9leBbwKjM50vC5pda5z2ACl170P+AS4OwOxRVK4whANK6AsUk8DkzNQiyXtvZmAJqVAuCWB6vnTTXmhZL5yxK6UtOsqQLaD8UdJbw3qwG3kbEdqiHQxNvHvlbT4f4Bsn08lIHg2SNrWRnm68e3APUBk4ouSLjfJ2n4DiOgLuiTpzh4g248Cn5WUrJFUmVUzJ80Vx+efgBeaapjtZ4A92ZnTckCvAOv73Oo5Se9W3db2i8BrFfuTJZ2peynbzvYX5IC+AaZWCM+XdKC8Z/s24PeaA49Kmt0A6JfMj1YMAbIdQAJQFf0JLCybwPaDwIkauSG/aAAUjl2UlXUFoJeB7Q1OeBFYJKkH3Hbkk29r5H6VNG4QQMeAh5qiAjgpqWdW2yOBePI7KmQPSJrfyWS2J0TeaQGmYJmbm64UumU1EyX90MmpG6KkrOsPYLykv/MN2wuBjcCM9D3q0kuS4vUqyfYyYHfGME22D6f+pk72SyD6nv11ucV2NGSRFAN4I9l+D1iSGP9LjLYPAtFEVdEhSY81au/IYPuB8ElgRPGqvdJhO7JlhOfnwAfAE6WoWyHpzY5n1rLb3prMXPD1L67Fru3IsHGLoJgaZkmK0eaayfZMINygoOb2w/azwPuZ0EfA82WHHgRdqVyEinYNmu2PgafymwDLJF0YEEj4avhsTu1bWNsxykRhLcI5FIUjhpJ9XUClJj+6gpy6N/mpkYqpM9qTnGI8fruukbthY5DtGP4C1KI+rxI5JzJ9rHD+UcM2KNpeC6wBoqgOQtd3lA4E6bUKYONbooqxJyL2+v5syA+3PSaVnPuBGACLFb9ivgfOAl9FyWkqsLneKyNmUcarECm7AAAAAElFTkSuQmCC) center no-repeat;
-background-size: 25px;
-}
-#hld__img_full .rotate-right {
-transform: rotateY(180deg);
-}
-#hld__img_full .rotate-left:hover {
-transform: scale(1.2);
-}
-#hld__img_full .rotate-right:hover {
-transform: scale(1.2) rotateY(180deg);
-}
-#hld__img_full .next-img:hover {
-transform: scale(1.2) rotate(180deg);
-}
-#hld__img_full .prev-img,
-#hld__img_full .next-img{
-background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABmUlEQVRYR+3WsUtWURjH8e8z+J/4J7QF4vL+C5ZBiAoh6lCDDQmBoIMOOiiIoBCBU+DiUENRQUWigiAuCjoo5JAmkQ41/OTCEzxEwznnvr4u750vfD/nOfdcjnHLj91ynzagqROQ1AC2zOxH6tY2DSBpAnju4Ttmtp2CaApA0hTwLAT7zexFSwCSZoCxENsDuszs/MYBkuaAxyG0A9wzs/2UePVO8RZIWgBGQmgTuG9mh6nxYoCkJeBRCH3x+HFOvAggaQUYCKGPQK+ZfcuNZwMkvQQehtA7X/n3kngWQNIn4G4IvfGVX5TGkwGSDoDOEFr3+GWdeA7gN9DhsV9Aw8y+1o3nAN4D3SF45BPYqItI/g9IGgcmQ7A6ctXX/7kOIhlQRSQ9BaZD8NQRH0oRWQBHPAFmQ/DMj+LbEkQ2wBGjwHwI/nTE61xEEcARQ8BiCF45ojqiyU8xwBGDwHKo/XHEWqqgFsARfcC/l4+W34geAKth1T1m9iplCrUn8DciqceP6C4wbGYnLQWkxP73TtMm0Aa0J1A6gWvfCH8hDgZXwQAAAABJRU5ErkJggg==) center no-repeat;
-}
-#hld__img_full .next-img {
-transform: rotate(180deg);
-}
-#hld__img_full .prev-img:hover {
-transform: scale(1.2);
-}
-#hld__img_full .next-img:hover {
-transform: scale(1.2) rotate(180deg);
-}
-#hld__setting {
-color:#6666CC;
-}
-.hld__list-panel {
-position:fixed;
-background:#fff8e7;
-padding: 15px 20px;
-border-radius: 10px;
-box-shadow: 0 0 10px #666;
-border: 1px solid #591804;
-z-index: 9999;
-}
-#hld__banlist_panel {
-width:370px;
-}
-#hld__banlist_panel {
-width:370px;
-}
-#hld__keywords_panel {
-width:182px;
-}
-.hld__list-panel > div{
-display:flex;
-justify-content: space-between;
-}
-.hld__list-panel .hld__list-c{
-width: 45%;
-}
-#hld__keywords_panel .hld__list-c{
-width: 100%;
-}
-.hld__list-panel .hld__list-c textarea{
-box-sizing: border-box;
-padding: 0;
-margin: 0;
-height:200px;
-width:100%;
-resize: none;
-}
-.hld__list-panel .hld__list-desc {
-margin-top:5px;
-font-size:9px;
-color:#666;
-}
-.hld__list-panel .hld__list-c > p:first-child{
-weight:bold;
-font-size:14px;
-margin-bottom:10px;
-}
-#hld__updated {
-position:fixed;
-top:  20px;
-right: 20px;
-width: 200px;
-padding: 10px;
-border-radius: 5px;
-box-shadow: 0 0 15px #666;
-border: 1px solid #591804;
-background: #fff8e7;
-}
-#hld__updated .hld__readme {
-text-decoration: underline;
-color: #591804;
-}
-#hld__setting_panel {
-position: relative;
-background:#fff8e7;
-width:526px;
-padding: 15px 20px;
-border-radius: 10px;
-box-shadow: 0 0 10px #666;
-border: 1px solid #591804;
-}
-#hld__setting_panel > div.hld__field{
-float:left;
-width:50%;
-}
-#hld__setting_panel p{
-margin-bottom:10px;
-}
-#hld__setting_panel .hld__sp-title {
-font-size: 15px;
-font-weight: bold;
-text-align: center;
-}
-#hld__setting_panel .hld__sp-section{
-font-weight: bold;
-margin-top: 20px;
-}
-.hld__setting-close{
-position: absolute;
-top: 5px;
-right: 5px;
-padding: 3px 6px;
-background: #fff0cd;
-color: #591804;
-transition: all .2s ease;
-cursor:pointer;
-border-radius: 4px;
-text-decoration: none;
-}
-.hld__setting-close:hover{
-background: #591804;
-color: #fff0cd;
-text-decoration: none;
-}
-#hld__setting_panel button {
-transition: all .2s ease;
-cursor:pointer;
-}
-button.hld__btn {
-padding: 3px 8px;
-border: 1px solid #591804;
-background: #fff8e7;
-color: #591804;
-}
-button.hld__btn:hover {
-background: #591804;
-color: #fff0cd;
-}
-.hld__btn-groups {
-display:flex;
-justify-content: center !important;
-margin-top:10px;
-}
-.hld__post-author {
-color:#F00;
-font-weight:bold;
-}
-.hld__table{
-margin-top:10px;
-width:200px;
-}
-.hld__table tr td:last-child{
-text-align:center;
-}
-.hld__table input[type=text] {
-width:48px;
-text-transform:uppercase;
-text-align:center;
-}
-.hld__table td{
-border: 1px solid #c0c0c0;
-padding: 3px 6px;
-}
-.hld__extra-icon {
-padding: 0 2px;
-cursor:pointer;
-background-repeat: no-repeat;
-background-position: center;
-}
-.hld__extra-icon svg{
-width:10px;
-height:10px;
-vertical-align: -0.15em;
-fill: currentColor;
-overflow: hidden;
-}
-.hld__extra-icon:hover{
-text-decoration:none;
-}
-span.hld__remark{
-color:#666;
-font-size:0.8em;
-}
-span.hld__banned {
-color:#ba2026;
-}
-.hld__sp-fold {
-padding-left:23px;
-}
-.hld__sp-fold .hld__f-title {
-font-weight:bold;
-}
-.hld__buttons {
-clear:both;
-display:flex;
-justify-content: space-between;
-padding-top: 15px;
-}
-#loader{
-display:none;
-position: absolute;
-top: 50%;
-left: 50%;
-margin-top:-10px;
-margin-left:-10px;
-width: 20px;
-height: 20px;
-border: 6px dotted #FFF;
-border-radius: 50%;
--webkit-animation: 1s loader linear infinite;
-animation: 1s loader linear infinite;
-}
-@keyframes loader {
-0% {
--webkit-transform: rotate(0deg);
-transform: rotate(0deg);
-}
-100% {
--webkit-transform: rotate(360deg);
-transform: rotate(360deg);
-}
-}
-code {
-padding: 2px 4px;
-font-size: 90%;
-font-weight:bold;
-color: #c7254e;
-background-color: #f9f2f4;
-border-radius: 4px;
-}
-.hld__float-left {
-float:left;
-}
-.hld__shortcut-desc {
-width:120px;
-margin-left:20px;
-padding-top:6px
-}
-.hld__shortcut-desc p{
-margin-bottom:5px;
-}
-.hld__script-info {
-margin-left:4px;
-font-size:70%;
-color:#666;
-}
-.hld__reward {
-    
-}
-.hld__reward-panel {
-    width: 500px;
-}
-
-.hld__reward-panel .hld__reward-info{
-    display: block;
-    font-size: 15px;
-    margin-bottom: 20px;
-    line-height: 20px;
-}
-.hld__delete-line {
-    text-decoration: line-through;
-    color: #666;
-}
-.hld__reward-panel .hld__list-c {
-    width: 50%;
-}
-.hld__reward-panel .hld__list-c:first-child {
-    margin-right: 15px;
-}
-.hld__reward-panel .hld__list-c>img{
-width: 100%;
-height: auto;
-}
-/* Excel */
-.hld__excel-body {
-    background: #fff !important;
-}
-.hld__excel-body #mainmenu,
-.hld__excel-body .catenew,
-.hld__excel-body #toptopics,
-.hld__excel-body #m_pbtntop,
-.hld__excel-body #m_fopts,
-.hld__excel-body #b_nav,
-.hld__excel-body #fast_post_c,
-.hld__excel-body #custombg,
-.hld__excel-body #m_threads th,
-.hld__excel-body #m_posts th,
-.hld__excel-body .r_container,
-.hld__excel-body #footer,
-.hld__excel-body .clickextend {
-    display: none !important;
-}
-.hld__excel-body #mmc {
-    margin-top: 195px;
-    margin-bottom: 35px;
-}
-.hld__excel-div {
-    display: none;
-}
-.hld__excel-body .hld__excel-div,
-.hld__excel-body .hld__excel-setting {
-    display: block;
-}
-.hld__excel-body .hld__excel-setting {
-    position: fixed;
-    width: 60px;
-    height: 20px;
-    top: 5px;
-    left: 1745px;
-    background: #f2f4f7;
-    z-index: 999;
-}
-.hld__excel-body .hld__excel-setting img {
-    width: 20px;
-    height: auto;
-    vertical-align:middle;
-}
-.hld__excel-body .hld__excel-setting a{
-    margin-left: 5px;
-    vertical-align:middle;
-}
-.hld__excel-body .hld__excel-header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 196px;
-    border-bottom: 1px solid #bbbbbb;
-}
-.hld__excel-body .hld__excel-footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    height: 50px;
-}
-.hld__excel-body #m_nav {
-    position: fixed;
-    top: 136px;
-    left: 261px;
-    margin: 0;
-    padding: 0;
-    z-index: 99;
-}
-.hld__excel-body #m_nav .nav_spr {
-    display: block;
-    border: 0;
-    border-radius: 0;
-    padding: 0;
-    box-shadow: none;
-    background: none;
-}
-
-.hld__excel-body #m_nav .nav_spr span{
-    color: #000;
-    font-size: 16px;
-    vertical-align: unset;
-    font-weight: normal;
-}
-
-.hld__excel-body #m_nav .nav_root,
-.hld__excel-body #m_nav .nav_link{
-    background: none;
-    border: none;
-    box-shadow: none;
-    padding: 0;
-    color: #000;
-    border-radius: 0;
-    font-weight: normal;
-}
-.hld__excel-body #m_threads {
-    margin: 0;
-}
-.hld__excel-body #topicrows {
-    border: none;
-    box-shadow: none;
-    border-radius: 0;
-    margin: 0;
-    background-color: #fff;
-    counter-reset:num;
-    border-spacing: 0;
-}
-.hld__excel-body #topicrows tbody{
-    border-spacing: 0;
-}
-.hld__excel-body .topicrow {
-    border-spacing: 0;
-}
-.hld__excel-body #topicrows td{
-    background: #fff;
-    padding: 5px 0;
-    margin: 0;
-    border: none;
-    border-right: 1px solid #bbbbbb;
-    border-bottom: 1px solid #bbbbbb;
-    margin-right: -1px;
-}
-.hld__excel-body .topicrow .c1 {
-    width: 33px;
-    background: #e8e8e8 !important;
-}
-.hld__excel-body .topicrow .c1 a{
-    display: none;
-}
-.hld__excel-body .topicrow .c1:before {
-    content: counter(num);
-    counter-increment: num;
-    color: #777777;
-    font-size: 16px;
-}
-.hld__excel-body .topicrow .c2 {
-    padding-left: 5px !important;
-}
-.hld__excel-body .topicrow .c3{
-    color: #1a3959 !important;
-}
-.hld__excel-body .block_txt {
-    background: #fff !important;
-    color: #1a3959 !important;
-    border-radius: 0;
-    padding: 0 !important;
-    min-width: 0 !important;
-    font-weight: normal;
-}
-.hld__excel-body #m_posts .block_txt {
-    font-weight: bold;
-}
-.hld__excel-body .topicrow .postdate,
-.hld__excel-body .topicrow .replydate {
-    display: inline;
-    margin: 10px;
-}
-.hld__excel-body #m_pbtnbtm{
-    margin: 0;
-    border-bottom: 1px solid #bbbbbb;
-}
-.hld__excel-body #pagebbtm,
-.hld__excel-body #m_pbtnbtm .right_ {
-    margin: 0;
-}
-.hld__excel-body #pagebbtm:before {
-    display: block;
-    line-height: 35px;
-    width: 33px;
-    float: left;
-    content: "#";
-    border-right: 1px solid #bbbbbb;
-    color: #777;
-    font-size: 16px;
-    background: #e8e8e8;
-}
-.hld__excel-body #m_pbtnbtm td{
-    line-height: 35px;
-    padding: 0 5px;
-}
-.hld__excel-body #m_pbtnbtm .stdbtn {
-    box-shadow: none;
-    border: none;
-    padding: 0;
-    padding-left: 5px;
-    background: #fff;
-    border-radius: 0;
-}
-.hld__excel-body #m_pbtnbtm .stdbtn .invert {
-    color: #591804;
-}
-.hld__excel-body #m_pbtnbtm td a {
-    background: #fff;
-    padding: 0;
-    border: 0;
-}
-.hld__excel-body #m_posts .comment_c .comment_c_1 {
-    border-top-color: #bbbbbb;
-}
-.hld__excel-body #m_posts .comment_c .comment_c_2 {
-    border-color: #bbbbbb;
-}
-.hld__excel-body #m_posts {
-    border: 0;
-    box-shadow: none;
-    padding-bottom: 0;
-    margin: 0;
-    counter-reset:num;
-}
-.hld__excel-body #m_posts td {
-    background: #fff;
-    border-right: 1px solid #bbbbbb;
-    border-bottom: 1px solid #bbbbbb;
-}
-.hld__excel-body #m_posts .c0 {
-    width: 32px;
-    color: #777;
-    font-size: 16px;
-    background: #e8e8e8;
-    text-align: center;
-}
-.hld__excel-body #m_posts .c0:before {
-    content:counter(num);
-    counter-increment: num;
-}
-.hld__excel-body #m_posts .vertmod {
-    background: #fff !important;
-    color: #ccc;
-}
-.hld__excel-body #m_posts a[name="uid"]:before {
-    content: "UID:"
-}
-.hld__excel-body #m_posts .white,
-.hld__excel-body #m_posts .block_txt_c2,
-.hld__excel-body #m_posts .block_txt_c0 {
-    background: #fff;
-    color: #777777;
-}
-.hld__excel-body #m_posts .quote {
-    background: #fff;
-    border-color: #bbbbbb;
-}
-.hld__excel-body #m_posts button {
-    background: #eee;
-}
+.animated {animation-duration:.3s;animation-fill-mode:both;}
+.animated-1s {animation-duration:1s;animation-fill-mode:both;}
+.zoomIn {animation-name:zoomIn;}
+.bounce {-webkit-animation-name:bounce;animation-name:bounce;-webkit-transform-origin:center bottom;transform-origin:center bottom;}
+.fadeInUp {-webkit-animation-name:fadeInUp;animation-name:fadeInUp;}
+#loader {display:none;position:absolute;top:50%;left:50%;margin-top:-10px;margin-left:-10px;width:20px;height:20px;border:6px dotted #FFF;border-radius:50%;-webkit-animation:1s loader linear infinite;animation:1s loader linear infinite;}
+@keyframes loader {0% {-webkit-transform:rotate(0deg);transform:rotate(0deg);}100% {-webkit-transform:rotate(360deg);transform:rotate(360deg);}}
+@keyframes zoomIn {from {opacity:0;-webkit-transform:scale3d(0.3,0.3,0.3);transform:scale3d(0.3,0.3,0.3);}50% {opacity:1;}}
+@keyframes bounce {from,20%,53%,80%,to {-webkit-animation-timing-function:cubic-bezier(0.215,0.61,0.355,1);animation-timing-function:cubic-bezier(0.215,0.61,0.355,1);-webkit-transform:translate3d(0,0,0);transform:translate3d(0,0,0);}40%,43% {-webkit-animation-timing-function:cubic-bezier(0.755,0.05,0.855,0.06);animation-timing-function:cubic-bezier(0.755,0.05,0.855,0.06);-webkit-transform:translate3d(0,-30px,0);transform:translate3d(0,-30px,0);}70% {-webkit-animation-timing-function:cubic-bezier(0.755,0.05,0.855,0.06);animation-timing-function:cubic-bezier(0.755,0.05,0.855,0.06);-webkit-transform:translate3d(0,-15px,0);transform:translate3d(0,-15px,0);}90% {-webkit-transform:translate3d(0,-4px,0);transform:translate3d(0,-4px,0);}}
+@keyframes fadeInUp {from {opacity:0;-webkit-transform:translate3d(0,100%,0);transform:translate3d(0,100%,0);}to {opacity:1;-webkit-transform:translate3d(0,0,0);transform:translate3d(0,0,0);}}
+.postcontent img {margin:0 5px 5px 0 !important;box-shadow:none !important;}
+.hld__img_container {position:absolute;display:flex;justify-content:center;align-items:center;}
+.hld__if_control {position:absolute;display:flex;left:50%;bottom:15px;width:160px;margin-left:-80px;height:40px;background:rgba(0,0,0,0.6);z-index:9999999;}
+#hld__setting_cover {display:none;justify-content:center;align-items:center;position:fixed;top:0;left:0;right:0;bottom:0;z-index:999;}
+#hld__img_full {position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:99999;/*display:flex;*//*align-items:center;*//*justify-content:center;*/}
+#hld__img_full img {cursor:move;transition:transform .2s ease;}
+#hld__img_full .hld__imgcenter {top:50%;left:50%;transform:translate(-50%,-50%);}
+#hld__img_full .change {width:40px;height:40px;cursor:pointer;}
+#hld__img_full .rotate-right,#hld__img_full .rotate-left {background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACQAAAAgCAYAAAB6kdqOAAADYElEQVRYR8WYS8hWVRSGn3cipg0qCExBKYxKQVJRIh1olF0GXpIIoVIUBZWahZeJOpDEQYMcWCBZQRFCZkpGJGgD0yJSwSyVIO0yMrpObPLK+tvnY3f8zu1Tfxfsydlrrf3uve5HXAPZfgR4HJiY1r3Av8BvwCXgOPChpCNtj1FbxoLPdhy+AHgaeLil/DngHWCHpL/qZDoBsj0P+LQliH5s3yVQO6t0dAW0GdhUUvYP8DXwc1q3AncBYb4pFQfvlrS8314nQKHA9n5gDnAKWCfpi6rbJvM+CSwFppf4jkiaW5btDGhQc9leBbwKjM50vC5pda5z2ACl170P+AS4OwOxRVK4whANK6AsUk8DkzNQiyXtvZmAJqVAuCWB6vnTTXmhZL5yxK6UtOsqQLaD8UdJbw3qwG3kbEdqiHQxNvHvlbT4f4Bsn08lIHg2SNrWRnm68e3APUBk4ouSLjfJ2n4DiOgLuiTpzh4g248Cn5WUrJFUmVUzJ80Vx+efgBeaapjtZ4A92ZnTckCvAOv73Oo5Se9W3db2i8BrFfuTJZ2peynbzvYX5IC+AaZWCM+XdKC8Z/s24PeaA49Kmt0A6JfMj1YMAbIdQAJQFf0JLCybwPaDwIkauSG/aAAUjl2UlXUFoJeB7Q1OeBFYJKkH3Hbkk29r5H6VNG4QQMeAh5qiAjgpqWdW2yOBePI7KmQPSJrfyWS2J0TeaQGmYJmbm64UumU1EyX90MmpG6KkrOsPYLykv/MN2wuBjcCM9D3q0kuS4vUqyfYyYHfGME22D6f+pk72SyD6nv11ucV2NGSRFAN4I9l+D1iSGP9LjLYPAtFEVdEhSY81au/IYPuB8ElgRPGqvdJhO7JlhOfnwAfAE6WoWyHpzY5n1rLb3prMXPD1L67Fru3IsHGLoJgaZkmK0eaayfZMINygoOb2w/azwPuZ0EfA82WHHgRdqVyEinYNmu2PgafymwDLJF0YEEj4avhsTu1bWNsxykRhLcI5FIUjhpJ9XUClJj+6gpy6N/mpkYqpM9qTnGI8fruukbthY5DtGP4C1KI+rxI5JzJ9rHD+UcM2KNpeC6wBoqgOQtd3lA4E6bUKYONbooqxJyL2+v5syA+3PSaVnPuBGACLFb9ivgfOAl9FyWkqsLneKyNmUcarECm7AAAAAElFTkSuQmCC) center no-repeat;background-size:25px;}
+#hld__img_full .rotate-right {transform:rotateY(180deg);}
+#hld__img_full .rotate-left:hover {transform:scale(1.2);}
+#hld__img_full .rotate-right:hover {transform:scale(1.2) rotateY(180deg);}
+#hld__img_full .next-img:hover {transform:scale(1.2) rotate(180deg);}
+#hld__img_full .prev-img,#hld__img_full .next-img {background:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABmUlEQVRYR+3WsUtWURjH8e8z+J/4J7QF4vL+C5ZBiAoh6lCDDQmBoIMOOiiIoBCBU+DiUENRQUWigiAuCjoo5JAmkQ41/OTCEzxEwznnvr4u750vfD/nOfdcjnHLj91ynzagqROQ1AC2zOxH6tY2DSBpAnju4Ttmtp2CaApA0hTwLAT7zexFSwCSZoCxENsDuszs/MYBkuaAxyG0A9wzs/2UePVO8RZIWgBGQmgTuG9mh6nxYoCkJeBRCH3x+HFOvAggaQUYCKGPQK+ZfcuNZwMkvQQehtA7X/n3kngWQNIn4G4IvfGVX5TGkwGSDoDOEFr3+GWdeA7gN9DhsV9Aw8y+1o3nAN4D3SF45BPYqItI/g9IGgcmQ7A6ctXX/7kOIhlQRSQ9BaZD8NQRH0oRWQBHPAFmQ/DMj+LbEkQ2wBGjwHwI/nTE61xEEcARQ8BiCF45ojqiyU8xwBGDwHKo/XHEWqqgFsARfcC/l4+W34geAKth1T1m9iplCrUn8DciqceP6C4wbGYnLQWkxP73TtMm0Aa0J1A6gWvfCH8hDgZXwQAAAABJRU5ErkJggg==) center no-repeat;}
+#hld__img_full .next-img {transform:rotate(180deg);}
+#hld__img_full .prev-img:hover {transform:scale(1.2);}
+#hld__img_full .next-img:hover {transform:scale(1.2) rotate(180deg);}
+#hld__setting {color:#6666CC;cursor:pointer;}
+.hld__list-panel {position:fixed;background:#fff8e7;padding:15px 20px;border-radius:10px;box-shadow:0 0 10px #666;border:1px solid #591804;z-index:9999;}
+#hld__banlist_panel {width:370px;}
+#hld__banlist_panel {width:370px;}
+#hld__keywords_panel {width:182px;}
+.hld__list-panel > div {display:flex;justify-content:space-between;}
+.hld__list-panel .hld__list-c {width:45%;}
+#hld__keywords_panel .hld__list-c {width:100%;}
+.hld__list-panel .hld__list-c textarea {box-sizing:border-box;padding:0;margin:0;height:200px;width:100%;resize:none;}
+.hld__list-panel .hld__list-desc {margin-top:5px;font-size:9px;color:#666;}
+.hld__list-panel .hld__list-c > p:first-child {font-weight:bold;font-size:14px;margin-bottom:10px;}
+#hld__updated {position:fixed;top:20px;right:20px;width:200px;padding:10px;border-radius:5px;box-shadow:0 0 15px #666;border:1px solid #591804;background:#fff8e7;}
+#hld__updated .hld__readme {text-decoration:underline;color:#591804;}
+.hld__img-resize {outline:'';outline-offset:'';cursor:alias;min-width:auto !important;min-height:auto !important;max-width:200px !important;margin:5px;}
+#hld__setting_panel {position:relative;background:#fff8e7;width:526px;padding:15px 20px;border-radius:10px;box-shadow:0 0 10px #666;border:1px solid #591804;}
+#hld__setting_panel > div.hld__field {float:left;width:50%;}
+#hld__setting_panel p {margin-bottom:10px;}
+#hld__setting_panel .hld__sp-title {font-size:15px;font-weight:bold;text-align:center;}
+#hld__setting_panel .hld__sp-section {font-weight:bold;margin-top:20px;}
+.hld__setting-close {position:absolute;top:5px;right:5px;padding:3px 6px;background:#fff0cd;color:#591804;transition:all .2s ease;cursor:pointer;border-radius:4px;text-decoration:none;}
+.hld__setting-close:hover {background:#591804;color:#fff0cd;text-decoration:none;}
+#hld__setting_panel button {transition:all .2s ease;cursor:pointer;}
+button.hld__btn {padding:3px 8px;border:1px solid #591804;background:#fff8e7;color:#591804;}
+button.hld__btn:hover {background:#591804;color:#fff0cd;}
+.hld__btn-groups {display:flex;justify-content:center !important;margin-top:10px;}
+.hld__post-author {color:#F00;font-weight:bold;}
+.hld__table {margin-top:10px;width:200px;}
+.hld__table tr td:last-child {text-align:center;}
+.hld__table input[type=text] {width:48px;text-transform:uppercase;text-align:center;}
+.hld__table td {border:1px solid #c0c0c0;padding:3px 6px;}
+.hld__extra-icon {padding:0 2px;cursor:pointer;background-repeat:no-repeat;background-position:center;}
+.hld__extra-icon svg {width:10px;height:10px;vertical-align:-0.15em;fill:currentColor;overflow:hidden;}
+.hld__extra-icon:hover {text-decoration:none;}
+span.hld__remark {color:#666;font-size:0.8em;}
+span.hld__banned {color:#ba2026;}
+.hld__sp-fold {padding-left:23px;}
+.hld__sp-fold .hld__f-title {font-weight:bold;}
+.hld__buttons {clear:both;display:flex;justify-content:space-between;padding-top:15px;}
+code {padding:2px 4px;font-size:90%;font-weight:bold;color:#c7254e;background-color:#f9f2f4;border-radius:4px;}
+.hld__float-left {float:left;}
+.hld__shortcut-desc {width:120px;margin-left:20px;padding-top:6px}
+.hld__shortcut-desc p {margin-bottom:5px;}
+.hld__script-info {margin-left:4px;font-size:70%;color:#666;}
+.hld__reward-panel {width:500px;}
+.hld__reward-panel .hld__reward-info {display:block;font-size:15px;margin-bottom:20px;line-height:20px;}
+.hld__delete-line {text-decoration:line-through;color:#666;}
+.hld__reward-panel .hld__list-c {width:50%;}
+.hld__reward-panel .hld__list-c:first-child {margin-right:15px;}
+.hld__reward-panel .hld__list-c>img {width:100%;height:auto;}
+.hld__excel-body {background:#fff !important;}
+.hld__excel-header, .hld__excel-footer, .hld__excel-setting {display: none;}
+.hld__excel-body #mainmenu,.hld__excel-body .catenew,.hld__excel-body #toptopics,.hld__excel-body #m_pbtntop,.hld__excel-body #m_fopts,.hld__excel-body #b_nav,.hld__excel-body #fast_post_c,.hld__excel-body #custombg,.hld__excel-body #m_threads th,.hld__excel-body #m_posts th,.hld__excel-body .r_container,.hld__excel-body #footer,.hld__excel-body .clickextend {display:none !important;}
+.hld__excel-body #mmc {margin-top:195px;margin-bottom:35px;}
+.hld__excel-body .postBtnPos > div, .hld__excel-body .postBtnPos .stdbtn a {background:#fff !important;border-color:#bbb;}
+.hld__excel-body .hld__excel-div,.hld__excel-body .hld__excel-setting {display:block;}
+.hld__excel-body .hld__excel-setting {position:fixed;width:60px;height:20px;top:5px;left:1745px;background:#f2f4f7;z-index:999;}
+.hld__excel-body .hld__excel-setting img {width:20px;height:auto;vertical-align:middle;}
+.hld__excel-body .hld__excel-setting a {margin-left:5px;vertical-align:middle;}
+.hld__excel-body .hld__excel-header {position:fixed;top:0;left:0;height:196px;border-bottom:1px solid #bbbbbb;}
+.hld__excel-body .hld__excel-footer {position:fixed;bottom:0;left:0;height:50px;}
+.hld__excel-body #m_nav {position:fixed;top:136px;left:261px;margin:0;padding:0;z-index:99;}
+.hld__excel-body #m_nav .nav_spr {display:block;border:0;border-radius:0;padding:0;box-shadow:none;background:none;}
+.hld__excel-body #m_nav .nav_spr span {color:#000;font-size:16px;vertical-align:unset;font-weight:normal;}
+.hld__excel-body #m_nav .nav_root,.hld__excel-body #m_nav .nav_link {background:none;border:none;box-shadow:none;padding:0;color:#000;border-radius:0;font-weight:normal;}
+.hld__excel-body #m_threads {margin:0;}
+.hld__excel-body #topicrows {border:none;box-shadow:none;border-radius:0;margin:0;background-color:#fff;counter-reset:num;border-spacing:0;}
+.hld__excel-body #topicrows tbody {border-spacing:0;}
+.hld__excel-body .topicrow {border-spacing:0;}
+.hld__excel-body #topicrows td {background:#fff;padding:5px 0;margin:0;border:none;border-right:1px solid #bbbbbb;border-bottom:1px solid #bbbbbb;margin-right:-1px;}
+.hld__excel-body .topicrow .c1 {width:33px;background:#e8e8e8 !important;}
+.hld__excel-body .topicrow .c1 a {display:none;}
+.hld__excel-body .topicrow .c1:before {content:counter(num);counter-increment:num;color:#777777;font-size:16px;}
+.hld__excel-body .topicrow .c2 {padding-left:5px !important;}
+.hld__excel-body .topicrow .c3 {color:#1a3959 !important;}
+.hld__excel-body .block_txt {background:#fff !important;color:#1a3959 !important;border-radius:0;padding:0 !important;min-width:0 !important;font-weight:normal;}
+.hld__excel-body .quote {background:#fff !important;}
+.hld__excel-body #m_posts .block_txt {font-weight:bold;}
+.hld__excel-body .topicrow .postdate,.hld__excel-body .topicrow .replydate {display:inline;margin:10px;}
+.hld__excel-body #m_pbtnbtm {margin:0;border-bottom:1px solid #bbbbbb;}
+.hld__excel-body #pagebbtm,.hld__excel-body #m_pbtnbtm .right_ {margin:0;}
+.hld__excel-body #pagebbtm:before {display:block;line-height:35px;width:33px;float:left;content:"#";border-right:1px solid #bbbbbb;color:#777;font-size:16px;background:#e8e8e8;}
+.hld__excel-body #m_pbtnbtm td {line-height:35px;padding:0 5px;}
+.hld__excel-body #m_pbtnbtm .stdbtn {box-shadow:none;border:none;padding:0;padding-left:5px;background:#fff;border-radius:0;}
+.hld__excel-body #m_pbtnbtm .stdbtn .invert {color:#591804;}
+.hld__excel-body #m_pbtnbtm td a {background:#fff;padding:0;border:0;}
+.hld__excel-body #m_posts .comment_c .comment_c_1 {border-top-color:#bbbbbb;}
+.hld__excel-body #m_posts .comment_c .comment_c_2 {border-color:#bbbbbb;}
+.hld__excel-body #m_posts {border:0;box-shadow:none;padding-bottom:0;margin:0;counter-reset:num;}
+.hld__excel-body #m_posts td {background:#fff;border-right:1px solid #bbbbbb;border-bottom:1px solid #bbbbbb;}
+.hld__excel-body #m_posts .c0 {width:32px;color:#777;font-size:16px;background:#e8e8e8;text-align:center;}
+.hld__excel-body #m_posts .c0:before {content:counter(num);counter-increment:num;}
+.hld__excel-body #m_posts .vertmod {background:#fff !important;color:#ccc;}
+.hld__excel-body #m_posts a[name="uid"]:before {content:"UID:"}
+.hld__excel-body #m_posts .white,.hld__excel-body #m_posts .block_txt_c2,.hld__excel-body #m_posts .block_txt_c0 {background:#fff !important;color:#777777;}
+.hld__excel-body #m_posts .quote {background:#fff;border-color:#bbbbbb;}
+.hld__excel-body #m_posts button {background:#eee;}
+.hld__excel-body #m_posts .postbox {border:none !important;}
+#hld__noti_container {position:fixed;top:10px;left:10px;}
+.hld__noti-msg {display:none;padding:10px 20px;font-size:14px;font-weight:bold;color:#fff;margin-bottom:10px;background:rgba(0,0,0,0.6);border-radius:10px;cursor:pointer;}
 `))
     document.getElementsByTagName("head")[0].appendChild(style)
 
