@@ -296,7 +296,7 @@
             $('#hld__setting_close').click(()=>$('#hld__setting_cover').fadeOut(200))
             $('.hld__setting-box').append($entry)
         }
-        if(window.location.href != before_url) {
+        if(setting.excelMode && window.location.href != before_url) {
             before_url = window.location.href
             if(before_url.includes('thread.php') || before_url.includes('read.php')) {
                 $('.hld__excel-body').length == 0 && $('body').addClass('hld__excel-body')
@@ -860,7 +860,7 @@
 .hld__list-panel .hld__list-c textarea {box-sizing:border-box;padding:0;margin:0;height:200px;width:100%;resize:none;}
 .hld__list-panel .hld__list-desc {margin-top:5px;font-size:9px;color:#666;}
 .hld__list-panel .hld__list-c > p:first-child {font-weight:bold;font-size:14px;margin-bottom:10px;}
-#hld__updated {position:fixed;top:20px;right:20px;width:200px;padding:10px;border-radius:5px;box-shadow:0 0 15px #666;border:1px solid #591804;background:#fff8e7;}
+#hld__updated {position:fixed;top:20px;right:20px;width:200px;padding:10px;border-radius:5px;box-shadow:0 0 15px #666;border:1px solid #591804;background:#fff8e7;z-index: 9999;}
 #hld__updated .hld__readme {text-decoration:underline;color:#591804;}
 .hld__img-resize {outline:'';outline-offset:'';cursor:alias;min-width:auto !important;min-height:auto !important;max-width:200px !important;margin:5px;}
 #hld__setting_panel {position:relative;background:#fff8e7;width:526px;padding:15px 20px;border-radius:10px;box-shadow:0 0 10px #666;border:1px solid #591804;}
