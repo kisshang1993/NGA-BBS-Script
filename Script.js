@@ -5,10 +5,12 @@
 // @author       HLD
 // @description  NGA论坛显示优化，功能增强，防止突然蹦出一对??而导致的突然性的社会死亡
 // @license      GPL-3.0
-// @require https://cdn.staticfile.org/jquery/3.4.0/jquery.min.js
+// @require      https://cdn.staticfile.org/jquery/3.4.0/jquery.min.js
+// @icon         http://cdn.hldww.com/nga-script/ac-shanzilian.png
 // @match        *://bbs.nga.cn/*
 // @match        *://ngabbs.com/*
 // @match        *://nga.178.com/*
+// @inject-into content
 // ==/UserScript==
 
 (function () {
@@ -149,9 +151,9 @@
 
     //Excel 模板
     if (setting.excelMode) {
-        $('body').append('<div class="hld__excel-div hld__excel-header"><img src="https://pic.downk.cc/item/5eb65188c2a9a83be59c86ce.png"></div>')
-        $('body').append('<div class="hld__excel-div hld__excel-footer"><img src="https://pic.downk.cc/item/5eb62491c2a9a83be560bcf1.jpg"></div>')
-        $('body').append('<div class="hld__excel-div hld__excel-setting"><img src="https://pic.downk.cc/item/5ea7eb7ec2a9a83be5c6b56a.png"><a id="hld__excel_setting" href="javascript:void(0)" title="打开NGA优化摸鱼插件设置面板">摸鱼</div>')
+        $('body').append('<div class="hld__excel-div hld__excel-header"><img src="http://cdn.hldww.com/nga-script/excel-header.png"></div>')
+        $('body').append('<div class="hld__excel-div hld__excel-footer"><img src="http://cdn.hldww.com/nga-script/excel-footer.jpg"></div>')
+        $('body').append('<div class="hld__excel-div hld__excel-setting"><img src="http://cdn.hldww.com/nga-script/ac-shanzilian.png"><a id="hld__excel_setting" href="javascript:void(0)" title="打开NGA优化摸鱼插件设置面板">摸鱼</div>')
         $('#hld__excel_setting').click(()=>$('#hld__setting_cover').css('display', 'flex'))
     }
 
@@ -306,7 +308,7 @@
         }
         if ($('.hld__excel-body').length > 0) {
             $(document).attr('title') != '工作簿1' && $(document).attr('title', '工作簿1');
-            $('#hld__excel_icon').length == 0 && $('head').append('<link id= "hld__excel_icon" rel="shortcut icon" type="image/png" href="https://pic.downk.cc/item/5eb678a5c2a9a83be5d2e70a.png" />')
+            $('#hld__excel_icon').length == 0 && $('head').append('<link id= "hld__excel_icon" rel="shortcut icon" type="image/png" href="http://cdn.hldww.com/nga-script/excel-icon.png" />')
         }
     }
     const isThreads = () => $('#m_threads').length > 0
@@ -687,6 +689,7 @@
     <span>
     <button class="hld__btn" id="hld__export__data" title="导出配置字符串，包含设置，黑名单，标记名单等等">导出</button>
     <button class="hld__btn" id="hld__import__data" title="导入配置字符串">导入</button>
+    <button class="hld__btn" id="hld__reset__data" title="重置配置">重置</button>
     <button class="hld__btn hld__reward" id="hld__reward" title="好活当赏"><span style="margin-right:3px">¥</span>赏</button>
     </span>
     <button class="hld__btn" id="hld__save__data">保存设置</button>
@@ -757,18 +760,26 @@
         $panel_dom.hide()
         popMsg('保存成功，刷新页面生效')
     })
+    //重置
+    $('body').on('click', '#hld__reset__data', function(){
+        if(confirm('若发生配置不生效的情况(一般处于版本更迭后)，重置所有配置\n确认吗？')){
+            localStorage.removeItem("hld__NGA_setting")
+            popMsg('重置成功，即将自动刷新')
+            window.location.reload()
+       }
+    })
     //打赏
     $('body').on('click', '#hld__reward', function () {
         $('#hld__setting_cover').append(`<div class="hld__list-panel hld__reward-panel animated fadeInUp">
         <a href="javascript:void(0)" class="hld__setting-close">×</a>
         <div class="hld__reward-info">
         <p><b>本脚本完全开源，并且长期维护<br>您若有好的功能需求或者建议，欢迎反馈</b></p>
-        <p>如果您觉得脚本好用<span class="hld__delete-line">帮助到更好的摸鱼</span>，您也可以选择支持我~<img src="https://pic.downk.cc/item/5eb8f768c2a9a83be5e0d7c4.png"></p>
+        <p>如果您觉得脚本好用<span class="hld__delete-line">帮助到更好的摸鱼</span>，您也可以选择支持我~<img src="http://cdn.hldww.com/nga-script/ac-hecha.png"></p>
         </div>
         <div>
-        <div class="hld__list-c"><img src="https://pic.downk.cc/item/5eb8eb58c2a9a83be5c4a0cb.png">
+        <div class="hld__list-c"><img src="http://cdn.hldww.com/nga-script/reward-alipay.png">
         </div>
-        <div class="hld__list-c"><img src="https://pic.downk.cc/item/5eb8edaec2a9a83be5c94268.png">
+        <div class="hld__list-c"><img src="http://cdn.hldww.com/nga-script/reward-wxpay.png">
         </div>
         </div>
         </div>`)
