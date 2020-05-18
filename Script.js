@@ -153,6 +153,7 @@
     if (setting.excelMode) {
         $('body').append('<div class="hld__excel-div hld__excel-header"><img src="http://cdn.hldww.com/nga-script/excel-header.png"></div>')
         $('body').append('<div class="hld__excel-div hld__excel-footer"><img src="http://cdn.hldww.com/nga-script/excel-footer.jpg"></div>')
+        $('.hld__excel-header, .hld__excel-footer').append('【这应该是一张仿造Excel的图片，如不显示，请刷新重试，如还不显示，请及时反馈！】')
         $('body').append('<div class="hld__excel-div hld__excel-setting"><img src="http://cdn.hldww.com/nga-script/ac-shanzilian.png"><a id="hld__excel_setting" href="javascript:void(0)" title="打开NGA优化摸鱼插件设置面板">摸鱼</div>')
         $('#hld__excel_setting').click(()=>$('#hld__setting_cover').css('display', 'flex'))
     }
@@ -358,7 +359,10 @@
             if (setting.linkTargetBlank) {
                 let $link = $(this).find('.topic')
                 $link.data('href', $link.attr('href')).attr('href', 'javascript:void(0)')
-                $link.click(() => window.open($link.data('href')))
+                $link.click(() => {
+                    window.open($link.data('href'))
+                    return false
+                })
             }
             //添加标志位
             $(this).attr('hld-render', 'ok')
@@ -843,7 +847,7 @@
 @keyframes zoomIn {from {opacity:0;-webkit-transform:scale3d(0.3,0.3,0.3);transform:scale3d(0.3,0.3,0.3);}50% {opacity:1;}}
 @keyframes bounce {from,20%,53%,80%,to {-webkit-animation-timing-function:cubic-bezier(0.215,0.61,0.355,1);animation-timing-function:cubic-bezier(0.215,0.61,0.355,1);-webkit-transform:translate3d(0,0,0);transform:translate3d(0,0,0);}40%,43% {-webkit-animation-timing-function:cubic-bezier(0.755,0.05,0.855,0.06);animation-timing-function:cubic-bezier(0.755,0.05,0.855,0.06);-webkit-transform:translate3d(0,-30px,0);transform:translate3d(0,-30px,0);}70% {-webkit-animation-timing-function:cubic-bezier(0.755,0.05,0.855,0.06);animation-timing-function:cubic-bezier(0.755,0.05,0.855,0.06);-webkit-transform:translate3d(0,-15px,0);transform:translate3d(0,-15px,0);}90% {-webkit-transform:translate3d(0,-4px,0);transform:translate3d(0,-4px,0);}}
 @keyframes fadeInUp {from {opacity:0;-webkit-transform:translate3d(0,100%,0);transform:translate3d(0,100%,0);}to {opacity:1;-webkit-transform:translate3d(0,0,0);transform:translate3d(0,0,0);}}
-.postcontent img {margin:0 5px 5px 0 !important;box-shadow:none !important;}
+.postcontent img {margin:0 5px 5px 0 !important;box-shadow:none !important;outline:none !important;}
 .hld__img_container {position:absolute;display:flex;justify-content:center;align-items:center;}
 .hld__if_control {position:absolute;display:flex;left:50%;bottom:15px;width:160px;margin-left:-80px;height:40px;background:rgba(0,0,0,0.6);z-index:9999999;}
 #hld__setting_cover {display:none;justify-content:center;align-items:center;position:fixed;top:0;left:0;right:0;bottom:0;z-index:999;}
@@ -918,8 +922,10 @@ code {padding:2px 4px;font-size:90%;font-weight:bold;color:#c7254e;background-co
 .hld__excel-body .hld__excel-setting {position:fixed;width:60px;height:20px;top:5px;left:1745px;background:#f2f4f7;z-index:999;}
 .hld__excel-body .hld__excel-setting img {width:20px;height:auto;vertical-align:middle;}
 .hld__excel-body .hld__excel-setting a {margin-left:5px;vertical-align:middle;}
-.hld__excel-body .hld__excel-header {position:fixed;top:0;left:0;height:196px;border-bottom:1px solid #bbbbbb;}
+.hld__excel-body .hld__excel-header {position:fixed;top:0;left:0;height:196px;}
 .hld__excel-body .hld__excel-footer {position:fixed;bottom:0;left:0;height:50px;}
+.hld__excel-body .hld__excel-header, .hld__excel-body .hld__excel-footer {width: 100%;text-align: center;font-size: 16px;font-weight: bold;background:#e8e8e8;color:#337ab7;line-height: 45px;}
+.hld__excel-body .hld__excel-header>img, .hld__excel-body .hld__excel-footer>img{position:absolute;top:0;left:0}
 .hld__excel-body #m_nav {position:fixed;top:136px;left:261px;margin:0;padding:0;z-index:99;}
 .hld__excel-body #m_nav .nav_spr {display:block;border:0;border-radius:0;padding:0;box-shadow:none;background:none;}
 .hld__excel-body #m_nav .nav_spr span {color:#000;font-size:16px;vertical-align:unset;font-weight:normal;}
