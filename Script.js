@@ -335,23 +335,24 @@
         }
         //自动翻页
         if(setting.autoPage) {
-            if($('#hld__next_page').length != 0) return
-            $('#pagebbtm>.stdbtn td').each(function(){
+            if($('#hld__next_page').length > 0) return
+            $('#pagebbtm>.stdbtn[hld-auto-page!=ok] td').each(function(){
                 if($(this).children('a').text() == '>') {
                     $(this).children('a').attr('id', 'hld__next_page')
                     $window.on('scroll.autoPage', function(){
                         const offset = +advanced_setting.autoPageOffset;
-                        if ($(document).scrollTop() + $(window).height() >= $(document).height() * (1 - offset / 100)) {
+                        if ($(document).scrollTop() != 0 && ($(document).scrollTop() + $(window).height() >= $(document).height() * (1 - offset / 100))) {
                             if($('#hld__next_page').length > 0) {
-                                console.log('Auto Page')
+                                console.warn('Auto Page')
                                 document.getElementById('hld__next_page').click()
+                                $('#hld__next_page').removeAttr('id')
                                 $window.off('scroll.autoPage')
                             }
                         }
                     })
                 }
-
             })
+            $('#pagebbtm>.stdbtn').attr('hld-auto-page', 'ok')
         }
     }
     const isThreads = () => $('#m_threads').length > 0
