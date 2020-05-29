@@ -1034,10 +1034,10 @@ code {padding:2px 4px;font-size:90%;font-weight:bold;color:#c7254e;background-co
 .hld__excel-body .topicrow {border-spacing:0;}
 .hld__excel-body #topicrows td {background:#fff;padding:5px 0;margin:0;border:none;border-right:1px solid #bbbbbb;border-bottom:1px solid #bbbbbb;margin-right:-1px;}
 .hld__excel-body .topicrow .c1 {width:33px;background:#e8e8e8 !important;}
-.hld__excel-body .topicrow .c1 a {display:none;color: #777777 !important;font-size: 16px !important;font-family: auto;}
+.hld__excel-body .topicrow .c1 a {display:none;color: #777777 !important;font-size: 16px !important;font-family: auto;width: 30px;overflow: hidden;text-overflow: ellipsis;white-space: nowrap;}
 .hld__excel-body.hld__excel-original-no .topicrow .c1:before {display:none;}
-.hld__excel-body.hld__excel-original-no .c1 a {display:inline-block;}
-.hld__excel-body.hld__excel-original-no .c1 img {width:20px;}
+.hld__excel-body.hld__excel-original-no .topicrow .c1 a {display:inline-block;}
+.hld__excel-body.hld__excel-original-no .topicrow .c1 img {width:20px;}
 .hld__excel-body .topicrow .c1:before {content:counter(num);counter-increment:num;color:#777777;font-size:16px;}
 .hld__excel-body .topicrow .c2 {padding-left:5px !important;}
 .hld__excel-body .topicrow .c3 {color:#1a3959 !important;}
