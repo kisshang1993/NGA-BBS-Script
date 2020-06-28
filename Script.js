@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      2.8
+// @version      2.9
 // @author       HLD
 // @description  NGA论坛显示优化，功能增强，防止突然蹦出一对??而导致的突然性的社会死亡
 // @license      GPL-3.0
 // @require      https://cdn.staticfile.org/jquery/3.4.0/jquery.min.js
-// @icon         http://cdn.hldww.com/nga-script/ac-shanzilian.png
+// @icon         https://s1.ax1x.com/2020/06/28/N25WBF.png
 // @match        *://bbs.nga.cn/*
 // @match        *://ngabbs.com/*
 // @match        *://nga.178.com/*
@@ -36,6 +36,7 @@
     let advanced_setting = {
         dynamicEnable: true,
         banStrictMode: false,
+        kwdWithoutTitle: false,
         autoPageOffset: 5,
         excelNoMode: true,
         excelTitle: '工作簿1',
@@ -70,7 +71,7 @@
     if (window.localStorage.getItem('hld__NGA_version')) {
         const current_version = +window.localStorage.getItem('hld__NGA_version')
         if (GM_info.script.version > current_version) {
-            const focus = '<br><p>* 新增功能 自动翻页</p><br>'
+            const focus = ''
             $('body').append(`<div id="hld__updated" class="animated-1s bounce"><p><a href="javascript:void(0)" class="hld__setting-close">×</a><b>NGA优化摸鱼插件已更新至v${GM_info.script.version}</b></p>${focus}<p><a class="hld__readme" href="https://greasyfork.org/zh-CN/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C" target="_blank">查看更新内容</a></p></div>`)
             $('body').on('click', '#hld__updated a', function () {
                 $(this).parents('#hld__updated').remove()
@@ -107,11 +108,14 @@
         }
         advanced_setting = local_advanced_setting
     }
-    //同步关键字
-    if (setting.keywordsBlock) {
-        const local_keywords_list = window.localStorage.getItem('hld__NGA_keywords_list')
-        local_keywords_list && (keywords_list = local_keywords_list.split(','))
-    }
+    //同步列表
+    const local_keywords_list = window.localStorage.getItem('hld__NGA_keywords_list')
+    local_keywords_list && (keywords_list = local_keywords_list.split(','))
+    const local_ban_list = window.localStorage.getItem('hld__NGA_ban_list')
+    local_ban_list && (ban_list = local_ban_list.split(','))
+    const local_mark_list = window.localStorage.getItem('hld__NGA_mark_list')
+    local_mark_list && (mark_list = local_mark_list.split(','))
+
     //注册按键
     $('body').keyup(function (event) {
         if (/textarea|select|input/i.test(event.target.nodeName)
@@ -171,27 +175,27 @@
         }
     })
     setting.autoPage && $('body').addClass('hld__reply-fixed')
-    $('body').append('<div class="hld__excel-div hld__excel-header"><img src="http://cdn.hldww.com/nga-script/excel-header.png"></div>')
-    $('body').append('<div class="hld__excel-div hld__excel-footer"><img src="http://cdn.hldww.com/nga-script/excel-footer.jpg"></div>')
+    $('body').append('<div class="hld__excel-div hld__excel-header"><img src="https://s1.ax1x.com/2020/06/28/N25bjK.png"></div>')
+    $('body').append('<div class="hld__excel-div hld__excel-footer"><img src="https://s1.ax1x.com/2020/06/28/N2I93t.jpg"></div>')
     $('.hld__excel-header, .hld__excel-footer').append('【这里应该是一张仿造Excel的图片，如不显示，请刷新重试，如还不显示，请及时反馈！】')
-    $('body').append('<div class="hld__excel-div hld__excel-setting"><img src="http://cdn.hldww.com/nga-script/ac-shanzilian.png"><a id="hld__excel_setting" href="javascript:void(0)" title="打开NGA优化摸鱼插件设置面板">摸鱼</div>')
+    $('body').append('<div class="hld__excel-div hld__excel-setting"><img src="https://s1.ax1x.com/2020/06/28/N25WBF.png"><a id="hld__excel_setting" href="javascript:void(0)" title="打开NGA优化摸鱼插件设置面板">摸鱼</div>')
     $('#hld__excel_setting').click(()=>$('#hld__setting_cover').css('display', 'flex'))
 
     //快捷键-列表维护
     $('body').on('click', '#hld__shortcut_manage', function () {
         if($('#hld__shortcut_panel').length > 0) return
         let $shortcutPanel = $(`<div id="hld__shortcut_panel" class="hld__list-panel animated fadeInUp">
-<a href="javascript:void(0)" class="hld__setting-close">×</a>
-<div><div><p>编辑快捷键</p><div class="hld__float-left"><table class="hld__table"><thead><tr><td>功能</td><td width="60">快捷键</td></tr></thead>
-<tbody></tbody></table></div><div class="hld__float-left hld__shortcut-desc"><p><b>支持的快捷键范围</b></p><p>键盘 <code>A</code>~<code>Z</code></p><p>左箭头 <code>LEFT</code></p><p>右箭头 <code>RIGHT</code></p><p>上箭头 <code>UP</code></p><p>下箭头 <code>DOWN</code></p><p><i>* 留空则取消快捷键</i></p><br><p>如按键异常请尝试重置按键</p>
-</div>
-<div></div></div>
-</div>
-<div class="hld__btn-groups">
-<button class="hld__btn" data-type="reset_shortcut">重置按键</button>
-<button class="hld__btn" data-type="save_shortcut">保存快捷键</button>
-</div>
-</div>`)
+        <a href="javascript:void(0)" class="hld__setting-close">×</a>
+        <div><div><p>编辑快捷键</p><div class="hld__float-left"><table class="hld__table"><thead><tr><td>功能</td><td width="60">快捷键</td></tr></thead>
+        <tbody></tbody></table></div><div class="hld__float-left hld__shortcut-desc"><p><b>支持的快捷键范围</b></p><p>键盘 <code>A</code>~<code>Z</code></p><p>左箭头 <code>LEFT</code></p><p>右箭头 <code>RIGHT</code></p><p>上箭头 <code>UP</code></p><p>下箭头 <code>DOWN</code></p><p><i>* 留空则取消快捷键</i></p><br><p>如按键异常请尝试重置按键</p>
+        </div>
+        <div></div></div>
+        </div>
+        <div class="hld__btn-groups">
+        <button class="hld__btn" data-type="reset_shortcut">重置按键</button>
+        <button class="hld__btn" data-type="save_shortcut">保存快捷键</button>
+        </div>
+        </div>`)
         for (let [index, sn] of shortcut_name.entries()) {
             const keycode = setting.shortcutKeys[index]
             $shortcutPanel.find('.hld__table tbody').append(`<tr><td>${sn}</td><td><input type="text" value="${getCodeName(keycode)}"></td></tr>`)
@@ -201,10 +205,6 @@
 
     //拉黑备注-列表维护
     if (setting.markAndBan) {
-        const local_ban_list = window.localStorage.getItem('hld__NGA_ban_list')
-        local_ban_list && (ban_list = local_ban_list.split(','))
-        const local_mark_list = window.localStorage.getItem('hld__NGA_mark_list')
-        local_mark_list && (mark_list = local_mark_list.split(','))
         //绑定事件
         $('body').on('click', '.hld__extra-icon', function () {
             const type = $(this).data('type')
@@ -234,33 +234,33 @@
                 }
             }
         })
-        //关键字管理
-        $('body').on('click', '#hld__keywords_manage', function () {
-            if($('#hld__keywords_panel').length > 0) return
-            $('#hld__setting_cover').append(`<div id="hld__keywords_panel" class="hld__list-panel animated fadeInUp">
-<a href="javascript:void(0)" class="hld__setting-close">×</a>
-<div>
-<div class="hld__list-c"><p>屏蔽关键字</p><textarea row="20" id="hld__keywords_list_textarea"></textarea><p class="hld__list-desc">一行一条</p></div>
-</div>
-<div class="hld__btn-groups"><button class="hld__btn" data-type="save_keywords">保存列表</button></div>
-</div>`)
-            $('#hld__keywords_list_textarea').val(keywords_list.join('\n'))
-        })
-        //名单管理
-        $('body').on('click', '#hld__list_manage', function () {
-            if($('#hld__banlist_panel').length > 0) return
-            $('#hld__setting_cover').append(`<div id="hld__banlist_panel"  class="hld__list-panel animated fadeInUp">
-<a href="javascript:void(0)" class="hld__setting-close">×</a>
-<div>
-<div class="hld__list-c"><p>黑名单</p><textarea row="20" id="hld__ban_list_textarea"></textarea><p class="hld__list-desc">一行一条</p></div>
-<div class="hld__list-c"><p>备注名单</p><textarea row="20" id="hld__mark_list_textarea"></textarea><p class="hld__list-desc">一行一条，格式为<用户名>:<备注> 如“abc123:菜鸡”</p></div>
-</div>
-<div class="hld__btn-groups"><button class="hld__btn" data-type="save_banlist">保存列表</button></div>
-</div>`)
-            $('#hld__ban_list_textarea').val(ban_list.join('\n'))
-            $('#hld__mark_list_textarea').val(mark_list.join('\n'))
-        })
     }
+    //关键字管理
+    $('body').on('click', '#hld__keywords_manage', function () {
+        if($('#hld__keywords_panel').length > 0) return
+        $('#hld__setting_cover').append(`<div id="hld__keywords_panel" class="hld__list-panel animated fadeInUp">
+        <a href="javascript:void(0)" class="hld__setting-close">×</a>
+        <div>
+        <div class="hld__list-c"><p>屏蔽关键字</p><textarea row="20" id="hld__keywords_list_textarea"></textarea><p class="hld__list-desc">一行一条</p></div>
+        </div>
+        <div class="hld__btn-groups"><button class="hld__btn" data-type="save_keywords">保存列表</button></div>
+        </div>`)
+        $('#hld__keywords_list_textarea').val(keywords_list.join('\n'))
+    })
+    //名单管理
+    $('body').on('click', '#hld__list_manage', function () {
+        if($('#hld__banlist_panel').length > 0) return
+        $('#hld__setting_cover').append(`<div id="hld__banlist_panel"  class="hld__list-panel animated fadeInUp">
+        <a href="javascript:void(0)" class="hld__setting-close">×</a>
+        <div>
+        <div class="hld__list-c"><p>黑名单</p><textarea row="20" id="hld__ban_list_textarea"></textarea><p class="hld__list-desc">一行一条</p></div>
+        <div class="hld__list-c"><p>备注名单</p><textarea row="20" id="hld__mark_list_textarea"></textarea><p class="hld__list-desc">一行一条，格式为<用户名>:<备注> 如“abc123:菜鸡”</p></div>
+        </div>
+        <div class="hld__btn-groups"><button class="hld__btn" data-type="save_banlist">保存列表</button></div>
+        </div>`)
+        $('#hld__ban_list_textarea').val(ban_list.join('\n'))
+        $('#hld__mark_list_textarea').val(mark_list.join('\n'))
+    })
     //集中面板按钮响应
     $('body').on('click', '.hld__btn', function () {
         const type = $(this).data('type')
@@ -268,7 +268,6 @@
             keywords_list = $('#hld__keywords_list_textarea').val().split('\n')
             keywords_list = removeBlank(keywords_list)
             keywords_list = uniq(keywords_list)
-            console.log(keywords_list)
             window.localStorage.setItem('hld__NGA_keywords_list', keywords_list.join(','))
         }
         if (type == 'save_banlist') {
@@ -331,7 +330,7 @@
         }
         if ($('.hld__excel-body').length > 0) {
             $(document).attr('title') != advanced_setting.excelTitle && $(document).attr('title', advanced_setting.excelTitle);
-            $('#hld__excel_icon').length == 0 && $('head').append('<link id= "hld__excel_icon" rel="shortcut icon" type="image/png" href="http://cdn.hldww.com/nga-script/excel-icon.png" />')
+            $('#hld__excel_icon').length == 0 && $('head').append('<link id= "hld__excel_icon" rel="shortcut icon" type="image/png" href="https://s1.ax1x.com/2020/06/28/N25Jpt.png" />')
         }
         //自动翻页
         if(setting.autoPage) {
@@ -390,7 +389,7 @@
                     }
                 }
             }
-            if (setting.keywordsBlock && keywords_list.length > 0) {
+            if (!advanced_setting.kwdWithoutTitle && setting.keywordsBlock && keywords_list.length > 0) {
                 for (let keyword of keywords_list) {
                     if (title.includes(keyword)) {
                         console.warn(`【NGA优化摸鱼体验脚本-关键字屏蔽】标题：${title}  连接：${$(this).find('.c2>a').attr('href')}`)
@@ -740,6 +739,7 @@
     <!-- <tr><td><span class="hld__adv-help" title=" "> </td><td><input type="checkbox" id="hld__adv_"></td></tr> -->
     <tr><td><span class="hld__adv-help" title="此配置表示部分可以快捷键切换的功能默认行为策略\n选中时：关闭功能(如隐藏头像)也可以通过快捷键切换显示/隐藏\n取消时：关闭功能(如隐藏头像)将彻底关闭功能，快捷键会失效">动态功能启用</span></td><td><input type="checkbox" id="hld__adv_dynamicEnable"></td></tr>
     <tr><td><span class="hld__adv-help" title="此配置表示拉黑某人后对帖子的屏蔽策略\n选中时：回复被拉黑用户的回复也会被删除\n取消时：仅删除被拉黑者的回复"> 严格拉黑模式</td><td><input type="checkbox" id="hld__adv_banStrictMode"></td></tr>
+    <tr><td><span class="hld__adv-help" title="此配置表示关键字的屏蔽策略\n选中时：关键字屏蔽将排除标题\n取消时：标题及正文回复都会被屏蔽"> 关键字屏蔽排除标题</td><td><input type="checkbox" id="hld__adv_kwdWithoutTitle"></td></tr>
     <tr><td><span class="hld__adv-help" title="滚动条滚动到距离底部多少距离时执行自动翻页\n单位是页面高度的百分比(%)\n例如10即为滚动条滚动到距离底部有页面高度10%距离的时候，进行翻页">自动翻页检测距离</span></td><td><input type="number" id="hld__adv_autoPageOffset"></td></tr>
     <tr><td><span class="hld__adv-help" title="Excel最左列的显示序号，此策略为尽可能的更像Excel\n选中时：Excel最左栏为从1开始往下，逐行+1\n取消时：Excel最左栏为原始的回帖数\n*此功能仅在贴列表有效">Excel左列序号</span></td><td><input type="checkbox" id="hld__adv_excelNoMode"></td></tr>
     <tr><td><span class="hld__adv-help" title="Excel模式下标签栏的名称">Excel标题</span></td><td><input type="text" id="hld__adv_excelTitle"></td></tr>
@@ -750,8 +750,7 @@
     </div>
     <div class="hld__buttons">
     <span>
-    <button class="hld__btn" id="hld__export__data" title="导出配置字符串，包含设置，黑名单，标记名单等等">导出</button>
-    <button class="hld__btn" id="hld__import__data" title="导入配置字符串">导入</button>
+    <button class="hld__btn" id="hld__backup_panel" title="导入/导出配置字符串，包含设置，黑名单，标记名单等等">导入/导出</button>
     <button class="hld__btn" id="hld__reset__data" title="重置配置">重置</button>
     <button class="hld__btn hld__reward" id="hld__reward" title="好活当赏"><span style="margin-right:3px">¥</span>赏</button>
     </span>
@@ -795,47 +794,80 @@
         $('.hld__advanced-setting-panel').toggle()
         $(this).text($('.hld__advanced-setting-panel').is(':hidden') ? '+' : '-')
     })
-    $('body').on('mouseenter', '.hld__adv-help', function(){
-        console.log($(this).attr('title'))
-    })
     //导出设置
-    $('body').on('click', '#hld__export__data', function () {
-        let obj = {
-            name: 'NGA-BBS',
-            setting: setting,
-            advanced_setting: advanced_setting,
-            ban_list: ban_list,
-            mark_list: mark_list,
-            keywords_list: keywords_list
-        }
-        window.prompt('导出成功，请复制以下代码以备份', Base64.encode(JSON.stringify(obj)))
-    })
-    //导入
-    $('body').on('click', '#hld__import__data', function () {
-        let base_str = window.prompt('导入字符串\n注意，导入会覆盖你当前所有的设置以及名单列表！', '')
-        base_str = $.trim(base_str)
-        if (base_str) {
-            let str = Base64.decode(base_str)
-            if (str) {
-                let obj
-                try {
-                    obj = JSON.parse(str)
-                    setting = obj.setting
-                    ban_list = obj.ban_list
-                    mark_list = obj.mark_list
-                    window.localStorage.setItem('hld__NGA_setting', JSON.stringify(setting))
-                    window.localStorage.setItem('hld__NGA_advanced_setting', JSON.stringify(advanced_setting))
-                    window.localStorage.setItem('hld__NGA_ban_list', ban_list.join(','))
-                    window.localStorage.setItem('hld__NGA_mark_list', mark_list.join(','))
-                    window.localStorage.setItem('hld__NGA_keywords_list', keywords_list.join(','))
-                    $panel_dom.hide()
-                    alert('导入成功，刷新生效')
+    $('body').on('click', '#hld__backup_panel', function () {
+        if($('#hld__export_panel').length > 0) return
+        $('#hld__setting_cover').append(`<div id="hld__export_panel" class="hld__list-panel animated fadeInUp">
+<a href="javascript:void(0)" class="hld__setting-close">×</a>
+<div class="hld__ep-container">
+<div>
+<p><b>选择导出的设置</b></p>
+<p><label><input type="checkbox" id="hld__cb_export_setting"> 配置</label></p>
+<p><label><input type="checkbox" id="hld__cb_export_banlist"> 黑名单列表</label></p>
+<p><label><input type="checkbox" id="hld__cb_export_marklist"> 备注列表</label></p>
+<p><label><input type="checkbox" id="hld__cb_export_keywordlist"> 屏蔽列表</label></p>
+<br>
+<p><button id="hld__export__data">导出</button> <button id="hld__import__data">导入</button></p>
+</div>
+<div>
+<p><b style="text-decoration: underline;cursor:help;" title="【导出】\n选择要导出的内容，点击导出，复制以下字符串用于备份，分享等\n【导入】\n将字符串复制到以下输入框中，点击导入，将会自动导入字符串中包含的内容">字符串</b></p>
+<textarea id="hld__export_str" rows="9"></textarea>
+</div>
+</div>
+<div><p id="hld__export_msg"></p></div>
+</div>`)
+        //导出
+        $('#hld__export__data').click(function(){
+            let obj = {}
+            if ($('#hld__cb_export_setting').prop('checked')) {
+                obj['setting'] = setting
+                obj['advanced_setting'] = advanced_setting
+            }
+            $('#hld__cb_export_banlist').prop('checked') && (obj['ban_list'] = ban_list)
+            $('#hld__cb_export_marklist').prop('checked') && (obj['mark_list'] = mark_list)
+            $('#hld__cb_export_keywordlist').prop('checked') && (obj['keywords_list'] = keywords_list)
 
-                } catch (err) {
-                    alert('配置有误，导入失败')
+            if (Object.keys(obj).length == 0) {
+                $('#hld__export_msg').html('<span style="color:#CC0000">没有选择任何项目可供导出！</span>')
+                return
+            }
+            obj['name'] = 'HLD-NGA-BBS'
+            obj['ver'] = +GM_info.script.version
+            $('#hld__export_str').val(Base64.encode(JSON.stringify(obj)))
+            $('#hld__export_msg').html('<span style="color:#009900">导出成功，请复制右侧字符串以备份</span>')
+        })
+        //导入
+        $('#hld__import__data').click(function(){
+            if ($('#hld__export_str').val()) {
+                try {
+                    let obj = JSON.parse(Base64.decode($('#hld__export_str').val()))
+                    let confirm = window.confirm('此操作会覆盖你的配配置，确认吗？')
+                    if (!confirm) return
+                    if (Object.keys(obj).includes('setting')) {
+                        obj.setting && (setting = obj.setting)
+                        obj.advanced_setting && (advanced_setting = obj.advanced_setting)
+                        window.localStorage.setItem('hld__NGA_setting', JSON.stringify(setting))
+                        window.localStorage.setItem('hld__NGA_advanced_setting', JSON.stringify(advanced_setting))
+                    }
+                    if (Object.keys(obj).includes('ban_list')) {
+                        ban_list = obj.ban_list
+                        window.localStorage.setItem('hld__NGA_ban_list', ban_list.join(','))
+                    }
+                    if (Object.keys(obj).includes('mark_list')) {
+                        mark_list = obj.mark_list
+                        window.localStorage.setItem('hld__NGA_mark_list', mark_list.join(','))
+                    }
+                    if (Object.keys(obj).includes('keywords_list')) {
+                        keywords_list = obj.keywords_list
+                        window.localStorage.setItem('hld__NGA_keywords_list', keywords_list.join(','))
+                    }
+                    $('#hld__export_msg').html('<span style="color:#009900">导入成功，刷新浏览器以生效</span>')
+
+                } catch (err){
+                    $('#hld__export_msg').html('<span style="color:#CC0000">字符串有误，解析失败！</span>')
                 }
             }
-        }
+        })
     })
     //保存
     $('body').on('click', '#hld__save__data', function () {
@@ -876,12 +908,12 @@
         <a href="javascript:void(0)" class="hld__setting-close">×</a>
         <div class="hld__reward-info">
         <p><b>本脚本完全开源，并且长期维护<br>您若有好的功能需求或者建议，欢迎反馈</b></p>
-        <p>如果您觉得脚本好用<span class="hld__delete-line">帮助到更好的摸鱼</span>，您也可以选择支持我~<img src="http://cdn.hldww.com/nga-script/ac-hecha.png"></p>
+        <p>如果您觉得脚本好用<span class="hld__delete-line">帮助到更好的摸鱼</span>，您也可以选择支持我~<img src="https://s1.ax1x.com/2020/06/28/N25w7Q.png"></p>
         </div>
         <div>
-        <div class="hld__list-c"><img src="http://cdn.hldww.com/nga-script/reward-alipay.png">
+        <div class="hld__list-c"><img src="https://s1.ax1x.com/2020/06/28/N25Bkj.png">
         </div>
-        <div class="hld__list-c"><img src="http://cdn.hldww.com/nga-script/reward-wxpay.png">
+        <div class="hld__list-c"><img src="https://s1.ax1x.com/2020/06/28/N25Dts.png">
         </div>
         </div>
         </div>`)
@@ -923,11 +955,7 @@
             return window.btoa(unescape(encodeURIComponent(str)))
         },
         decode: (str) => {
-            try {
-                return decodeURIComponent(escape(window.atob(str)))
-            } catch (err) {
-                alert('字符串有误，导入失败')
-            }
+            return decodeURIComponent(escape(window.atob(str)))
         }
     }
 
@@ -1076,6 +1104,10 @@ code {padding:2px 4px;font-size:90%;font-weight:bold;color:#c7254e;background-co
 .hld__advanced-setting-panel>table td {padding-right:10px}
 .hld__advanced-setting-panel input[type=text],.hld__advanced-setting-panel input[type=number] {width:80px}
 .hld__advanced-setting-panel .hld__adv-help {cursor:help;text-decoration: underline;}
+.hld__ep-container{display:flex;width:300px;margin-bottom: 7px;}
+.hld__ep-container p {margin-bottom:10px;}
+.hld__ep-container >div{width:50%;}
+.hld__ep-container textarea {width: 100%;padding:0;margin:0;resize:none;}
 `))
     document.getElementsByTagName("head")[0].appendChild(style)
 
