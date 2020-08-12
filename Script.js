@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      3.1
+// @version      3.2
 // @author       HLD
 // @description  NGA论坛显示优化，功能增强，防止突然蹦出一对??而导致的突然性的社会死亡
 // @license      GPL-3.0
@@ -78,14 +78,14 @@
         togglePaletteMoreText: '更多选项',
         togglePaletteLessText: '隐藏',
         palette: [
-            ["#000000","#444444","#5b5b5b","#999999","#bcbcbc","#eeeeee","#f3f6f4","#ffffff"],
-            ["#f44336","#744700","#ce7e00","#8fce00","#2986cc","#16537e","#6a329f","#c90076"],
-            ["#f4cccc","#fce5cd","#fff2cc","#d9ead3","#d0e0e3","#cfe2f3","#d9d2e9","#ead1dc"],
-            ["#ea9999","#f9cb9c","#ffe599","#b6d7a8","#a2c4c9","#9fc5e8","#b4a7d6","#d5a6bd"],
-            ["#e06666","#f6b26b","#ffd966","#93c47d","#76a5af","#6fa8dc","#8e7cc3","#c27ba0"],
-            ["#cc0000","#e69138","#f1c232","#6aa84f","#45818e","#3d85c6","#674ea7","#a64d79"],
-            ["#990000","#b45f06","#bf9000","#38761d","#134f5c","#0b5394","#351c75","#741b47"],
-            ["#660000","#783f04","#7f6000","#274e13","#0c343d","#073763","#20124d","#4c1130"]
+            ['#000000','#444444','#5b5b5b','#999999','#bcbcbc','#eeeeee','#f3f6f4','#ffffff'],
+            ['#f44336','#744700','#ce7e00','#8fce00','#2986cc','#16537e','#6a329f','#c90076'],
+            ['#f4cccc','#fce5cd','#fff2cc','#d9ead3','#d0e0e3','#cfe2f3','#d9d2e9','#ead1dc'],
+            ['#ea9999','#f9cb9c','#ffe599','#b6d7a8','#a2c4c9','#9fc5e8','#b4a7d6','#d5a6bd'],
+            ['#e06666','#f6b26b','#ffd966','#93c47d','#76a5af','#6fa8dc','#8e7cc3','#c27ba0'],
+            ['#cc0000','#e69138','#f1c232','#6aa84f','#45818e','#3d85c6','#674ea7','#a64d79'],
+            ['#990000','#b45f06','#bf9000','#38761d','#134f5c','#0b5394','#351c75','#741b47'],
+            ['#660000','#783f04','#7f6000','#274e13','#0c343d','#073763','#20124d','#4c1130']
         ]
     }
 
@@ -786,7 +786,7 @@
                     //新版标签风格
                     const user_marks = getUserMarks(name)
                     if(user_marks !== null) {
-                        const $el = $(this).parent().next('.stat').find('.clickextend')
+                        const $el = $(this).parents('.c1').find('.clickextend')
                         let marks_dom = ''
                         user_marks.marks.forEach(item => marks_dom += `<span style="color: ${item.text_color};background-color: ${item.bg_color};" title="${item.mark}">${item.mark}</span>`);
                         $el.before(`<div class="hld__marks-container">标签: ${marks_dom}</div>`)
@@ -897,29 +897,35 @@
     })
     //调色板绑定
     $('#hld__setting_cover').find('#hld__adv_authorMarkColor').spectrum(color_picker_config)
-    //导出设置
+    /**
+     * 导入导出设置面板
+     */
     $('body').on('click', '#hld__backup_panel', function () {
+        const unsupported = -1
+        const current_ver = +GM_info.script.version
         if($('#hld__export_panel').length > 0) return
         $('#hld__setting_cover').append(`<div id="hld__export_panel" class="hld__list-panel animated fadeInUp">
-<a href="javascript:void(0)" class="hld__setting-close">×</a>
-<div class="hld__ep-container">
-<div>
-<p><b>选择导出的设置</b></p>
-<p><label><input type="checkbox" id="hld__cb_export_setting"> 配置</label></p>
-<p><label><input type="checkbox" id="hld__cb_export_banlist"> 黑名单列表</label></p>
-<p><label><input type="checkbox" id="hld__cb_export_marklist"> 标签列表</label></p>
-<p><label><input type="checkbox" id="hld__cb_export_keywordlist"> 屏蔽列表</label></p>
-<br>
-<p><button id="hld__export__data">导出</button> <button id="hld__import__data">导入</button></p>
-</div>
-<div>
-<p><b style="text-decoration: underline;cursor:help;" title="【导出】\n选择要导出的内容，点击导出，复制以下字符串用于备份，分享等\n【导入】\n将字符串复制到以下输入框中，点击导入，将会自动导入字符串中包含的内容">字符串</b></p>
-<textarea id="hld__export_str" rows="9"></textarea>
-</div>
-</div>
-<div><p id="hld__export_msg"></p></div>
-</div>`)
-        //导出
+            <a href="javascript:void(0)" class="hld__setting-close">×</a>
+            <div class="hld__ep-container">
+            <div>
+            <p><b>选择导出的设置</b></p>
+            <p><label><input type="checkbox" id="hld__cb_export_setting"> 配置</label></p>
+            <p><label><input type="checkbox" id="hld__cb_export_banlist"> 黑名单列表</label></p>
+            <p><label><input type="checkbox" id="hld__cb_export_marklist"> 标签列表</label></p>
+            <p><label><input type="checkbox" id="hld__cb_export_keywordlist"> 屏蔽列表</label></p>
+            <br>
+            <p><button id="hld__export__data">导出</button> <button id="hld__import__data">导入</button></p>
+            </div>
+            <div>
+            <p><b style="text-decoration: underline;cursor:help;" title="【导出】\n选择要导出的内容，点击导出，复制以下字符串用于备份，分享等\n【导入】\n将字符串复制到以下输入框中，点击导入，将会自动导入字符串中包含的内容">字符串</b></p>
+            <textarea id="hld__export_str" rows="9"></textarea>
+            </div>
+            </div>
+            <div><p id="hld__export_msg"></p></div>
+            </div>`)
+        /**
+         * 导出配置
+         */
         $('#hld__export__data').click(function(){
             let obj = {}
             if ($('#hld__cb_export_setting').prop('checked')) {
@@ -939,12 +945,22 @@
             $('#hld__export_str').val(Base64.encode(JSON.stringify(obj)))
             $('#hld__export_msg').html('<span style="color:#009900">导出成功，请复制右侧字符串以备份</span>')
         })
-        //导入
+        /**
+         * 导入配置
+         */
         $('#hld__import__data').click(function(){
             if ($('#hld__export_str').val()) {
                 try {
                     let obj = JSON.parse(Base64.decode($('#hld__export_str').val()))
-                    let confirm = window.confirm('此操作会覆盖你的配配置，确认吗？')
+                    if (obj.ver > current_ver) {
+                        popMsg(`此配置是由更高版本(v${obj.ver.toFixed(1)})的脚本导出，请升级您的脚本 <a title="更新地址" href="https://greasyfork.org/zh-CN/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C" target="_blank">[脚本地址]</a>`, 'warn')
+                        return
+                    }
+                    if (obj.ver < unsupported) {
+                        popMsg(`此配置是由低版本(v${obj.ver.toFixed(1)})的脚本导出，当前版本(v${current_ver})已不支持！`, 'err')
+                        return
+                    }
+                    let confirm = window.confirm('此操作会覆盖你的配置，确认吗？')
                     if (!confirm) return
                     if (Object.keys(obj).includes('setting')) {
                         obj.setting && (setting = obj.setting)
@@ -972,7 +988,9 @@
             }
         })
     })
-    //保存
+    /**
+     * 保存配置
+     */
     $('body').on('click', '#hld__save__data', function () {
         for (let k in setting) {
             $('input#hld__cb_' + k).length > 0 && (setting[k] = $('input#hld__cb_' + k)[0].checked)
@@ -996,7 +1014,9 @@
         $panel_dom.hide()
         popMsg('保存成功，刷新页面生效')
     })
-    //重置
+    /**
+     * 重置配置
+     */
     $('body').on('click', '#hld__reset__data', function(){
         if(confirm('若发生配置不生效的情况，或者插件失效，重置所有配置\n确认吗？')){
             localStorage.removeItem("hld__NGA_setting")
@@ -1005,7 +1025,9 @@
             window.location.reload()
        }
     })
-    //打赏
+    /**
+     * 打赏
+     */
     $('body').on('click', '#hld__reward', function () {
         $('#hld__setting_cover').append(`<div class="hld__list-panel hld__reward-panel animated fadeInUp">
         <a href="javascript:void(0)" class="hld__setting-close">×</a>
@@ -1129,11 +1151,17 @@
         }
         $('body').append($ban_dialog)
     }
+    /**
+     * 重新渲染黑名单列表
+     */
     function reloadBanlist() {
         $('#hld__banlist').empty()
         ban_list.forEach(item => $('#hld__banlist').append(`<tr><td title="${item}">${item}</td><td><span class="hld__us-action hld__us-del hld__bl-del" title="删除" data-user="${item}"></span></td></tr>`))
         $('#hld__ban_list_textarea').val(ban_list.join('\n'))
     }
+    /**
+     * 重新渲染标签列表
+     */
     function reloadMarklist() {
         $('#hld__marklist').empty()
         mark_list.forEach(item => {
@@ -1207,7 +1235,6 @@
                     }
                 }
             })
-            console.log(user_marks)
             setUserMarks(user_marks)
             popMsg('保存成功，重载页面生效')
             $('.hld__dialog').remove()
@@ -1225,7 +1252,7 @@
     function getUserMarks(user) {
         const check = mark_list.findIndex(v => v.startsWith(user))
         const exist_marks = check > -1 ? mark_list[check] : ''
-        if(check > -1 && exist_marks) {
+        if(user && check > -1 && exist_marks) {
             let user_marks = {user: user, marks: []}
             const r_l = exist_marks.split(':')[1].split('&')
             r_l.forEach(item => {
@@ -1431,8 +1458,10 @@ code {padding:2px 4px;font-size:90%;font-weight:bold;color:#c7254e;background-co
 .hld__tab-content{display:none}
 .hld__tab-content.hld__table-active{display:flex}
 .hld__msg{display:none;position:fixed;top:10px;left:48%;color:#fff;text-align:center;z-index:99996;padding:10px 30px 10px 45px;font-size:16px;border-radius:10px;background-image:url("data:image/svg+xml,%3Csvg t='1595842925125' class='icon' viewBox='0 0 1024 1024' version='1.1' xmlns='http://www.w3.org/2000/svg' p-id='2280' width='200' height='200'%3E%3Cpath d='M89.216226 575.029277c-6.501587-7.223986-10.47478-15.892769-12.641975-26.367549-1.805996-10.47478-0.722399-20.22716 3.973192-29.257143l4.695591-10.47478c5.05679-8.307584 11.558377-13.725573 19.865961-15.892769 7.946384-2.167196 15.892769-0.361199 23.477954 5.417989L323.995767 639.322751c8.307584 5.779189 17.698765 8.668783 27.812346 8.307584 10.11358-0.361199 18.782363-3.611993 26.006349-10.11358L898.302646 208.411993c7.585185-5.779189 16.253968-8.307584 26.006349-7.585185 9.752381 0.722399 18.059965 4.334392 24.922751 10.47478l-12.641975-12.641975c6.501587 7.223986 9.752381 15.17037 9.752381 24.561552 0 9.391182-3.250794 17.337566-9.752381 24.561552L376.008466 816.310406c-7.223986 7.223986-15.17037 10.47478-24.200353 10.47478-9.029982 0-16.976367-3.250794-24.200353-9.752381L89.216226 575.029277z' p-id='2281' fill='%23ffffff'%3E%3C/path%3E%3C/svg%3E");background-size:25px;background-repeat:no-repeat;background-position:15px}
+.hld__msg a{color:#fff;text-decoration: underline;}
 .hld__msg-ok{background:#4bcc4b}
 .hld__msg-err{background:#c33}
+.hld__msg-warn{background:#FF9900}
 .hld__dialog{position:absolute;padding-right:35px}
 .hld__dialog>div{line-height:30px}
 .hld__dialog:before{position:absolute;content:' ';width:10px;height:10px;background-color:#fff6df;left:10px;transform:rotate(45deg)}
