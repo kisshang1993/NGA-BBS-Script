@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      3.2
+// @version      3.3
 // @author       HLD
 // @description  NGA论坛显示优化，功能增强，防止突然蹦出一对??而导致的突然性的社会死亡
 // @license      GPL-3.0
@@ -134,10 +134,47 @@
     const local_keywords_list = window.localStorage.getItem('hld__NGA_keywords_list')
     local_keywords_list && (keywords_list = local_keywords_list.split(','))
     const local_ban_list = window.localStorage.getItem('hld__NGA_ban_list')
-    local_ban_list && (ban_list = local_ban_list.split(','))
+    if(local_ban_list) {
+        try {
+            ban_list = JSON.parse(local_ban_list)
+        } catch (error) {
+            //3.3版本升级数据格式转换
+            const t = local_ban_list.split(',')
+            if (t) {
+                t.forEach(item => ban_list.push({name: item, uid: ''}))
+                window.localStorage.setItem('hld__NGA_ban_list', JSON.stringify(ban_list))
+                window.localStorage.setItem('hld__NGA_ban_list', local_ban_list)
+            }
+        }
+    }
     const local_mark_list = window.localStorage.getItem('hld__NGA_mark_list')
-    local_mark_list && (mark_list = local_mark_list.split(','))
-
+    if(local_mark_list) {
+        try {
+            mark_list = JSON.parse(local_mark_list)
+        } catch (error) {
+            const mark_list_str_obj = local_mark_list.split(',')
+            mark_list_str_obj.forEach(item => {
+                const name = item.split(':')[0]
+                const mark_str = item.split(':')[1]
+                let mark_obj = {name, uid: '', marks: []}
+                const r_l = mark_str.split('&')
+                r_l.forEach(item => {
+                    let marks = {}
+                    const f = item.split('(')
+                    marks.mark = f[0]
+                    if(f.length > 1) {
+                        const g = f[1].substring(0, f[1].length - 1)
+                        marks.text_color = g.split('^')[0]
+                        marks.bg_color = g.split('^')[1]
+                    }
+                    mark_obj.marks.push(marks)
+                });
+                mark_list.push(mark_obj)
+            })
+            window.localStorage.setItem('hld__NGA_mark_list', JSON.stringify(mark_list))
+            window.localStorage.setItem('hld__NGA_mark_list_bak', local_mark_list)
+        }
+    }
     //注册按键
     $('body').keyup(function (event) {
         if (/textarea|select|input/i.test(event.target.nodeName)
@@ -231,19 +268,22 @@
         //绑定事件
         $('body').on('click', '.hld__extra-icon', function () {
             const type = $(this).data('type')
-            const user = $(this).data('user')
+            const name = $(this).data('name')
+            const uid = $(this).data('uid') + ''
             $('.hld__dialog').length > 0 && $('.hld__dialog').remove()
             if (type == 'ban') {
                 banlistPopup({
                     type: 'confirm',
-                    user,
+                    name,
+                    uid,
                     top: $(this).offset().top+20,
                     left: $(this).offset().left-10
                 })
             }
             if (type == 'mark') {
                 userMarkPopup({
-                    user,
+                    name,
+                    uid,
                     top: $(this).offset().top+20,
                     left: $(this).offset().left-10
                 })
@@ -272,21 +312,21 @@
         <div class="hld__list-c"><p>黑名单</p>
         <div class="hld__scroll-area">
         <table class="hld__table hld__table-banlist">
-        <thead><tr><th width="175">用户名</th><th width="25">操作</th></tr></thead><tbody id="hld__banlist"></tbody></table>
+        <thead><tr><th width="175">用户名</th><th>UID</th><th width="25">操作</th></tr></thead><tbody id="hld__banlist"></tbody></table>
         </div>
         <div class="hld__table-banlist-buttons"><button id="hld__banlist_add_btn" class="hld__btn">+添加用户</button></div>
         </div>
         <div class="hld__list-c"><p>标签名单</p>
         <div class="hld__scroll-area">
         <table class="hld__table hld__table-banlist">
-        <thead><tr><th width="100">用户名</th><th width="50">标签数</th><th width="50">操作</th></tr></thead><tbody id="hld__marklist"></tbody></table>
+        <thead><tr><th width="100">用户名</th><th>UID</th><th width="50">标签数</th><th width="50">操作</th></tr></thead><tbody id="hld__marklist"></tbody></table>
         </div>
         <div class="hld__table-banlist-buttons"><button id="hld__marklist_add_btn" class="hld__btn">+添加用户</button></div>
         </div>
         </div>
         <div class="hld__tab-content hld__source-list">
-        <div class="hld__list-c"><p>黑名单</p><textarea row="20" id="hld__ban_list_textarea"></textarea><p class="hld__list-desc">一行一条</p></div>
-        <div class="hld__list-c"><p>标签名单</p><textarea row="20" id="hld__mark_list_textarea"></textarea><p class="hld__list-desc">一行一条，支持多个标签<br>格式为<用户名>:<标签>(<文字16进制色号>^<背景16进制色号>)&<标签(...)>&... <br>举例：abc123:菜鸡(#FFFFFF^#FF0000)&弟弟(#FFFFFF^#F0F0A1)</p></div>
+        <div class="hld__list-c"><p>黑名单</p><textarea row="20" id="hld__ban_list_textarea"></textarea><p class="hld__list-desc" title='[{\n    "uid": "UID",\n    "name": "用户名"\n  }, ...]'>查看数据结构</p></div>
+        <div class="hld__list-c"><p>标签名单</p><textarea row="20" id="hld__mark_list_textarea"></textarea><p class="hld__list-desc" title='[{\n    "uid": "UID",\n    "name": "用户名",\n    "marks": [{\n        "mark": "标记",\n        "text_color": "文字色",\n        "bg_color": "背景色"\n    }, ...]\n  }, ...]'>查看数据结构</p></div>
         <div class="hld__btn-groups" style="width: 100%;"><button class="hld__btn" data-type="save_banlist">保存列表</button></div>
         </div>
         </div>`)
@@ -296,19 +336,19 @@
             $(this).addClass('hld__table-active')
             $('.hld__tab-content').eq($(this).index()).addClass('hld__table-active')
         })
-        //删除黑名单
+        //移除黑名单用户
         $('body').on('click', '.hld__bl-del', function(){
-            let user = $(this).data('user')
-            const check = ban_list.findIndex(v => v == user)
-            check > -1 && ban_list.splice(check, 1)
-            window.localStorage.setItem('hld__NGA_ban_list', ban_list.join(','))
+            const index = $(this).data('index')
+            ban_list.splice(index, 1)
+            window.localStorage.setItem('hld__NGA_ban_list', JSON.stringify(ban_list))
             reloadBanlist()
         })
-        //添加黑名单
+        //添加黑名单用户
         $('body').on('click', '#hld__banlist_add_btn', function(){
             banlistPopup({
                 type: 'add',
-                user: $(this).data('user'),
+                name: $(this).data('name'),
+                uid: $(this).data('uid'),
                 top: $(this).offset().top + 30,
                 left: $(this).offset().left - 5,
                 callback: () => {reloadBanlist()}
@@ -316,9 +356,11 @@
         })
         //修改标记
         $('body').on('click', '.hld__ml-edit', function(){
-            let user = $(this).data('user')
+            const name = $(this).data('name')
+            const uid = $(this).data('uid') + ''
             userMarkPopup({
-                user,
+                name,
+                uid,
                 top: $(this).offset().top + 30,
                 left: $(this).offset().left - 5,
                 callback: () => {reloadMarklist()}
@@ -326,15 +368,17 @@
         })
         //删除标记
         $('body').on('click', '.hld__ml-del', function(){
-            let user = $(this).data('user')
-            setUserMarks({user: user, marks: []})
+            const index = $(this).data('index')
+            mark_list.splice(index, 1)
+            window.localStorage.setItem('hld__NGA_mark_list', JSON.stringify(mark_list))
             reloadMarklist()
         })
         //添加标记
         $('body').on('click', '#hld__marklist_add_btn', function(){
             userMarkPopup({
                 type: 'add',
-                user: $(this).data('user'),
+                name: $(this).data('name'),
+                uid: $(this).data('uid'),
                 top: $(this).offset().top + 30,
                 left: $(this).offset().left - 5,
                 callback: () => {reloadMarklist()}
@@ -349,20 +393,19 @@
         const type = $(this).data('type')
         if(!type) return
         if (type == 'save_keywords') {
-            keywords_list = $('#hld__keywords_list_textarea').val().split('\n')
+            let keywords_list = $('#hld__keywords_list_textarea').val().split('\n')
             keywords_list = removeBlank(keywords_list)
             keywords_list = uniq(keywords_list)
             window.localStorage.setItem('hld__NGA_keywords_list', keywords_list.join(','))
         }
         if (type == 'save_banlist') {
-            ban_list = $('#hld__ban_list_textarea').val().split('\n')
-            ban_list = removeBlank(ban_list)
-            ban_list = uniq(ban_list)
-            mark_list = $('#hld__mark_list_textarea').val().split('\n')
-            mark_list = removeBlank(mark_list)
-            mark_list = uniq(mark_list)
-            window.localStorage.setItem('hld__NGA_ban_list', ban_list.join(','))
-            window.localStorage.setItem('hld__NGA_mark_list', mark_list.join(','))
+            const ban_list = $('#hld__ban_list_textarea').val()
+            const mark_list = $('#hld__mark_list_textarea').val()
+            window.localStorage.setItem('hld__NGA_ban_list', ban_list)
+            window.localStorage.setItem('hld__NGA_mark_list', mark_list)
+            //重载名单
+            reloadBanlist()
+            reloadMarklist()
         }
         if (type == 'reset_shortcut') {
             setting.shortcutKeys = default_shortcut
@@ -458,20 +501,20 @@
         }
         $('.topicrow[hld-render!=ok]').each(function () {
             const title = $(this).find('.c2>a').text()
-            const author = $(this).find('.author').text()
+            const uid = ($(this).find('.author').attr('href') && $(this).find('.author').attr('href').indexOf('uid=') > -1) ? $(this).find('.author').attr('href').split('uid=')[1] + '' : ''
+            const name = $(this).find('.author').text()
             if (setting.markAndBan) {
-                if (ban_list.length > 0 && ban_list.includes(author)) {
+                const ban_user = getBanUser({name, uid})
+                if (ban_list.length > 0 && ban_user) {
                     console.warn(`【NGA优化摸鱼体验脚本-黑名单屏蔽】标题：${title}  连接：${$(this).find('.c2>a').attr('href')}`)
                     $(this).parents('tbody').remove()
                 }
                 if (mark_list.length > 0) {
-                    for (let m of mark_list) {
-                        const t = m.split(':')
-                        if (t[0] == author) {
-                            let r = t[1].split('&'), f = []
-                            r.forEach(e => f.push(e.split('(')[0]))
-                            $(this).find('.author').append(`<span class="hld__remark"> (${f.join(', ')}) </span>`)
-                        }
+                    const user_mark = getUserMarks({name, uid})
+                    if (user_mark) {
+                        let f = []
+                        user_mark.marks.forEach(e => f.push(e.mark))
+                        $(this).find('.author').append(`<span class="hld__remark"> (${f.join(', ')}) </span>`)
                     }
                 }
             }
@@ -613,14 +656,15 @@
             setting.hideSign && $(this).find('.sign, .sigline').css('display', 'none')
             //添加拉黑标记菜单及功能
             if (setting.markAndBan) {
+                const current_uid = $(this).find('[name=uid]').text() + ''
                 $(this).find('.small_colored_text_btn.block_txt_c2.stxt').each(function () {
-                    let current_user = ''
+                    let current_name = ''
                     if ($(this).parents('td').prev('td').html() == '') {
-                        current_user = $(this).parents('table').prev('.posterinfo').children('.author').text()
+                        current_name = $(this).parents('table').prev('.posterinfo').children('.author').text()
                     } else {
-                        current_user = $(this).parents('td').prev('td').find('.author').text()
+                        current_name = $(this).parents('td').prev('td').find('.author').text()
                     }
-                    $(this).append(`<a class="hld__extra-icon" data-type="mark" title="标签此用户" data-user="${current_user}"><svg t="1578453291663" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="15334" width="32" height="32"><path d="M978.488889 494.933333l-335.644445 477.866667-415.288888 45.511111c-45.511111 5.688889-91.022222-28.444444-102.4-73.955555L22.755556 540.444444 358.4 56.888889C398.222222 0 477.866667-11.377778 529.066667 28.444444l420.977777 295.822223c56.888889 39.822222 68.266667 113.777778 28.444445 170.666666zM187.733333 927.288889c5.688889 11.377778 17.066667 22.755556 28.444445 22.755555l386.844444-39.822222 318.577778-455.111111c22.755556-22.755556 17.066667-56.888889-11.377778-73.955555L489.244444 85.333333c-22.755556-17.066667-56.888889-11.377778-79.644444 11.377778l-318.577778 455.111111 96.711111 375.466667z" fill="#3970fe" p-id="15335" data-spm-anchor-id="a313x.7781069.0.i43" class="selected"></path><path d="M574.577778 745.244444c-56.888889 85.333333-176.355556 108.088889-261.688889 45.511112-85.333333-56.888889-108.088889-176.355556-45.511111-261.688889s176.355556-108.088889 261.688889-45.511111c85.333333 56.888889 102.4 176.355556 45.511111 261.688888z m-56.888889-39.822222c39.822222-56.888889 22.755556-130.844444-28.444445-170.666666s-130.844444-22.755556-170.666666 28.444444c-39.822222 56.888889-22.755556 130.844444 28.444444 170.666667s130.844444 22.755556 170.666667-28.444445z" fill="#3970fe" p-id="15336" data-spm-anchor-id="a313x.7781069.0.i44" class="selected"></path></svg></a><a class="hld__extra-icon" title="拉黑此用户(屏蔽所有言论)" data-type="ban"  data-user="${current_user}"><svg t="1578452808565" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="9668" data-spm-anchor-id="a313x.7781069.0.i27" width="32" height="32"><path d="M512 1024A512 512 0 1 1 512 0a512 512 0 0 1 0 1024z m0-146.285714A365.714286 365.714286 0 1 0 512 146.285714a365.714286 365.714286 0 0 0 0 731.428572z" fill="#a20106" p-id="9669" data-spm-anchor-id="a313x.7781069.0.i28" class="selected"></path><path d="M828.708571 329.142857l-633.417142 365.714286 633.417142-365.714286z m63.341715-36.571428a73.142857 73.142857 0 0 1-26.770286 99.913142l-633.417143 365.714286a73.142857 73.142857 0 0 1-73.142857-126.683428l633.417143-365.714286A73.142857 73.142857 0 0 1 892.050286 292.571429z" fill="#a20106" p-id="9670" data-spm-anchor-id="a313x.7781069.0.i31" class="selected"></path></svg></a>`)
+                    $(this).append(`<a class="hld__extra-icon" data-type="mark" title="标签此用户" data-name="${current_name}" data-uid="${current_uid}"><svg t="1578453291663" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="15334" width="32" height="32"><path d="M978.488889 494.933333l-335.644445 477.866667-415.288888 45.511111c-45.511111 5.688889-91.022222-28.444444-102.4-73.955555L22.755556 540.444444 358.4 56.888889C398.222222 0 477.866667-11.377778 529.066667 28.444444l420.977777 295.822223c56.888889 39.822222 68.266667 113.777778 28.444445 170.666666zM187.733333 927.288889c5.688889 11.377778 17.066667 22.755556 28.444445 22.755555l386.844444-39.822222 318.577778-455.111111c22.755556-22.755556 17.066667-56.888889-11.377778-73.955555L489.244444 85.333333c-22.755556-17.066667-56.888889-11.377778-79.644444 11.377778l-318.577778 455.111111 96.711111 375.466667z" fill="#3970fe" p-id="15335" data-spm-anchor-id="a313x.7781069.0.i43" class="selected"></path><path d="M574.577778 745.244444c-56.888889 85.333333-176.355556 108.088889-261.688889 45.511112-85.333333-56.888889-108.088889-176.355556-45.511111-261.688889s176.355556-108.088889 261.688889-45.511111c85.333333 56.888889 102.4 176.355556 45.511111 261.688888z m-56.888889-39.822222c39.822222-56.888889 22.755556-130.844444-28.444445-170.666666s-130.844444-22.755556-170.666666 28.444444c-39.822222 56.888889-22.755556 130.844444 28.444444 170.666667s130.844444 22.755556 170.666667-28.444445z" fill="#3970fe" p-id="15336" data-spm-anchor-id="a313x.7781069.0.i44" class="selected"></path></svg></a><a class="hld__extra-icon" title="拉黑此用户(屏蔽所有言论)" data-type="ban"  data-name="${current_name}" data-uid="${current_uid}"><svg t="1578452808565" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="9668" data-spm-anchor-id="a313x.7781069.0.i27" width="32" height="32"><path d="M512 1024A512 512 0 1 1 512 0a512 512 0 0 1 0 1024z m0-146.285714A365.714286 365.714286 0 1 0 512 146.285714a365.714286 365.714286 0 0 0 0 731.428572z" fill="#a20106" p-id="9669" data-spm-anchor-id="a313x.7781069.0.i28" class="selected"></path><path d="M828.708571 329.142857l-633.417142 365.714286 633.417142-365.714286z m63.341715-36.571428a73.142857 73.142857 0 0 1-26.770286 99.913142l-633.417143 365.714286a73.142857 73.142857 0 0 1-73.142857-126.683428l633.417143-365.714286A73.142857 73.142857 0 0 1 892.050286 292.571429z" fill="#a20106" p-id="9670" data-spm-anchor-id="a313x.7781069.0.i31" class="selected"></path></svg></a>`)
                 })
             }
             //标记拉黑标签
@@ -754,11 +798,14 @@
 
     //拉黑与标签
     const markDom = $el => {
-        $el.find('.b').each(function () {
+        $el.find('a.b').each(function () {
+            const uid = ($(this).attr('href') && $(this).attr('href').indexOf('uid=') > -1) ? $(this).attr('href').split('uid=')[1] + '' : ''
             $(this).find('span.hld__post-author, span.hld__remark').remove()
             let name = $(this).attr('hld-mark-before-name') || $(this).text().replace('[', '').replace(']', '')
             if (setting.markAndBan) {
-                if (ban_list.includes(name)) {
+                const ban_user = getBanUser({name, uid})
+                if (ban_user) {
+                    //拉黑用户实现
                     if (advanced_setting.banStrictMode) {
                         if ($(this).parents('div.comment_c').length > 0) $(this).parents('div.comment_c').remove()
                         else $(this).parents('.forumbox.postbox').remove()
@@ -770,22 +817,20 @@
                             $(this).parent().html('<span class="hld__banned">此用户在你的黑名单中，已屏蔽其言论</span>')
                         }
                     }
-                    console.warn(`【NGA优化摸鱼体验脚本-黑名单屏蔽】用户：${name}`)
+                    console.warn(`【NGA优化摸鱼体验脚本-黑名单屏蔽】用户：${name}, UID:${uid}`)
                 }
                 if(advanced_setting.classicRemark) {
                     //经典备注风格
-                    for (let m of mark_list) {
-                        const t = m.split(':')
-                        if (t[0] == name) {
-                            let r = t[1].split('&'), f = []
-                            r.forEach(e => f.push(e.split('(')[0]))
-                            $(this).attr('hld-mark-before-name', name).append(`<span class="hld__remark"> (${f.join(', ')}) </span>`)
-                        }
+                    const user_marks = getUserMarks({name, uid})
+                    if (user_marks) {
+                        let f = []
+                        user_marks.marks.forEach(e => f.push(e.mark))
+                        $(this).attr('hld-mark-before-name', name).append(`<span class="hld__remark"> (${f.join(', ')}) </span>`)
                     }
                 }else {
                     //新版标签风格
-                    const user_marks = getUserMarks(name)
-                    if(user_marks !== null) {
+                    const user_marks = getUserMarks({name, uid})
+                    if(user_marks) {
                         const $el = $(this).parents('.c1').find('.clickextend')
                         let marks_dom = ''
                         user_marks.marks.forEach(item => marks_dom += `<span style="color: ${item.text_color};background-color: ${item.bg_color};" title="${item.mark}">${item.mark}</span>`);
@@ -901,7 +946,7 @@
      * 导入导出设置面板
      */
     $('body').on('click', '#hld__backup_panel', function () {
-        const unsupported = -1
+        const unsupported = 3.3
         const current_ver = +GM_info.script.version
         if($('#hld__export_panel').length > 0) return
         $('#hld__setting_cover').append(`<div id="hld__export_panel" class="hld__list-panel animated fadeInUp">
@@ -1117,7 +1162,8 @@
     /**
      * 黑名单弹窗
      * @param {Object} setting 设置项
-     * @param {String} setting.user 用户名
+     * @param {String} setting.name 用户昵称
+     * @param {String} setting.uid UID
      * @param {String} setting.type 模式
      * @param {Number} setting.top  pos.top位置
      * @param {Number} setting.left pos.left 位置
@@ -1128,22 +1174,28 @@
         const retain_word = [':', '(', ')', '&', '#', '^', ',']
         let $ban_dialog = $(`<div class="hld__dialog hld__dialog-sub-top hld__list-panel animated zoomIn"  style="top: ${setting.top}px;left: ${setting.left}px;"><a href="javascript:void(0)" class="hld__setting-close">×</a><div id="container_dom"></div><div class="hld__dialog-buttons"></div></div>`)
         if (setting.type == 'confirm') {
-            $ban_dialog.find('#container_dom').append(`<div><span>您确定要拉黑用户</span><span class="hld__dialog-user">${setting.user}</span><span>吗？</span></div>`)
+            $ban_dialog.find('#container_dom').append(`<div><span>您确定要拉黑用户</span><span class="hld__dialog-user">${setting.name}</span><span>吗？</span></div>`)
             let $ok_btn = $('<button class="hld__btn">拉黑</button>')
             $ok_btn.click(function(){
-                !ban_list.includes(setting.user) && ban_list.push(setting.user)
-                window.localStorage.setItem('hld__NGA_ban_list', ban_list.join(','))
+                const ban_obj = {name: setting.name, uid: setting.uid}
+                !getBanUser(ban_obj) && ban_list.push(ban_obj)
+                window.localStorage.setItem('hld__NGA_ban_list', JSON.stringify(ban_list))
                 $('.hld__dialog').remove()
                 popMsg('拉黑成功，重载页面生效')
             })
             $ban_dialog.find('.hld__dialog-buttons').append($ok_btn)
         }else if (setting.type == 'add') {
-            $ban_dialog.find('#container_dom').append(`<div>添加用户：</div><div><input id="hld__dialog_add_user" type="text" value="" placeholder="用户名"></div>`)
+            $ban_dialog.find('#container_dom').append(`<div>添加用户：</div><div><input id="hld__dialog_add_uid" type="text" value="" placeholder="UID"></div><div><input id="hld__dialog_add_name" type="text" value="" placeholder="用户名"></div>`)
             let $ok_btn = $('<button class="hld__btn">添加</button>')
             $ok_btn.click(function(){
-                let add_user = $ban_dialog.find('#hld__dialog_add_user').val().trim()
-                !ban_list.includes(add_user) && ban_list.push(add_user)
-                window.localStorage.setItem('hld__NGA_ban_list', ban_list.join(','))
+                const name = $ban_dialog.find('#hld__dialog_add_name').val().trim()
+                const uid = $ban_dialog.find('#hld__dialog_add_uid').val().trim() + ''
+                if (!name && !uid) {
+                    popMsg('UID与用户名必填一个，其中UID权重较大', 'err')
+                    return
+                }
+                !getBanUser({name, uid}) && ban_list.push({name, uid})
+                window.localStorage.setItem('hld__NGA_ban_list', JSON.stringify(ban_list))
                 $('.hld__dialog').remove()
                 setting.callback()
             })
@@ -1152,28 +1204,45 @@
         $('body').append($ban_dialog)
     }
     /**
+     * 获取黑名单用户
+     */
+    function getBanUser(ban_obj) {
+        for (let u of ban_list) {
+            if ((u.uid && ban_obj.uid && u.uid == ban_obj.uid) || 
+                (u.name && ban_obj.name && u.name == ban_obj.name)) {
+                if ((!u.uid && ban_obj.uid) || (!u.name && ban_obj.name)) {
+                    u.uid = ban_obj.uid + '' || ''
+                    u.name = ban_obj.name || ''
+                    window.localStorage.setItem('hld__NGA_ban_list', JSON.stringify(ban_list))
+                }
+                return u
+            }
+        }
+        return null
+    }
+    /**
      * 重新渲染黑名单列表
      */
     function reloadBanlist() {
         $('#hld__banlist').empty()
-        ban_list.forEach(item => $('#hld__banlist').append(`<tr><td title="${item}">${item}</td><td><span class="hld__us-action hld__us-del hld__bl-del" title="删除" data-user="${item}"></span></td></tr>`))
-        $('#hld__ban_list_textarea').val(ban_list.join('\n'))
+        ban_list.forEach((item, index) => $('#hld__banlist').append(`<tr><td title="${item.name}">${item.name}</td><td title="${item.uid}">${item.uid}</td><td><span class="hld__us-action hld__us-del hld__bl-del" title="删除" data-index="${index}" data-name="${item.name}" data-uid="${item.uid}"></span></td></tr>`))
+        $('#hld__ban_list_textarea').val(JSON.stringify(ban_list))
     }
     /**
      * 重新渲染标签列表
      */
     function reloadMarklist() {
         $('#hld__marklist').empty()
-        mark_list.forEach(item => {
-            const user_mark = getUserMarks(item.split(':')[0])
-            $('#hld__marklist').append(`<tr><td title="${user_mark.user}">${user_mark.user}</td><td title="${user_mark.marks.length}">${user_mark.marks.length}</td><td><span class="hld__us-action hld__us-edit hld__ml-edit" title="编辑" data-user="${user_mark.user}"></span><span class="hld__us-action hld__us-del hld__ml-del" title="删除" data-user="${user_mark.user}"></span></td></tr>`)
+        mark_list.forEach((user_mark, index) => {
+            $('#hld__marklist').append(`<tr><td title="${user_mark.name}">${user_mark.name}</td><td title="${user_mark.uid}">${user_mark.uid}</td><td title="${user_mark.marks.length}">${user_mark.marks.length}</td><td><span class="hld__us-action hld__us-edit hld__ml-edit" title="编辑" data-index="${index}" data-name="${user_mark.name}" data-uid="${user_mark.uid}"></span><span class="hld__us-action hld__us-del hld__ml-del" title="删除" data-index="${index}" data-name="${user_mark.name}" data-uid="${user_mark.uid}"></span></td></tr>`)
         })
-        $('#hld__mark_list_textarea').val(mark_list.join('\n'))
+        $('#hld__mark_list_textarea').val(JSON.stringify(mark_list))
     }
     /**
      * 标记弹窗
      * @param {Object} setting 设置项
-     * @param {String} setting.user 用户名
+     * @param {String} setting.name 用户名
+     * @param {String} setting.uid UID
      * @param {String} setting.type 模式
      * @param {Number} setting.top  pos.top位置
      * @param {Number} setting.left pos.left 位置
@@ -1184,7 +1253,7 @@
         const retain_word = [':', '(', ')', '&', '#', '^', ',']
         let $mark_dialog = $(`<div class="hld__dialog hld__dialog-sub-top hld__list-panel animated zoomIn" style="top: ${setting.top}px;left: ${setting.left}px;">
         <a href="javascript:void(0)" class="hld__setting-close">×</a>
-        ${setting.type == 'add' ? `<div style="display:block;">添加用户：<input id="hld__dialog_add_user" type="text" value="" placeholder="用户名"></div>` : ''}
+        ${setting.type == 'add' ? `<div style="display:block;">添加用户：<input id="hld__dialog_add_uid" type="text" value="" placeholder="UID"><input id="hld__dialog_add_name" type="text" value="" placeholder="用户名"></div>` : ''}
         <table class="hld__dialog-mark-table">
         <thead>
         <tr>
@@ -1209,7 +1278,7 @@
         }
 
         //恢复标签
-        const exist_mark = getUserMarks(setting.user)
+        const exist_mark = getUserMarks({name: setting.name, uid: setting.uid})
         exist_mark !== null && exist_mark.marks.forEach(item => insertRemarkRow(item.mark, item.text_color, item.bg_color, false))
 
         let $add_btn = $('<button class="hld__btn">+添加标签</button>')
@@ -1218,9 +1287,16 @@
         let $ok_btn = $('<button class="hld__btn">保存</button>')
 
         $ok_btn.click(function(){
-            let user_marks = {user: setting.type == 'add' ? $mark_dialog.find('#hld__dialog_add_user').val().trim() : setting.user, marks: []}
-            if(!user_marks.user) {
-                popMsg('用户名不能为空！', 'err')
+            let user_marks = {marks: []}
+            if (setting.type == 'add') {
+                user_marks.name = $mark_dialog.find('#hld__dialog_add_name').val().trim()
+                user_marks.uid = $mark_dialog.find('#hld__dialog_add_uid').val().trim() + ''
+            } else {
+                user_marks.name = setting.name
+                user_marks.uid = setting.uid + ''
+            }
+            if (!user_marks.name && !user_marks.uid) {
+                popMsg('UID与用户名必填一个，其中UID权重较大', 'err')
                 return
             }
             $('#hld__mark_body > tr').each(function(){
@@ -1228,13 +1304,13 @@
                 const text_color = $(this).find('.hld__mark-text-color').val()
                 const bg_color = $(this).find('.hld__mark-bg-color').val()
                 if(mark) {
-                    if(retain_word.every(w => !mark.includes(w))) {
-                        user_marks.marks.push({mark, text_color, bg_color})
-                    }else {
-                        popMsg(`<b>${retain_word.join('  ')}</b>为标签功能保留字符！`, 'err')
-                    }
+                    user_marks.marks.push({mark, text_color, bg_color})
                 }
             })
+            if (setting.type == 'add' && user_marks.marks.length == 0) {
+                popMsg('至少添加一个标签内容', 'err')
+                return
+            }
             setUserMarks(user_marks)
             popMsg('保存成功，重载页面生效')
             $('.hld__dialog').remove()
@@ -1245,29 +1321,23 @@
         $('.hld__dialog-color-picker').spectrum(color_picker_config)
     }
     /**
-     * 解析标签
+     * 获取用户标签对象
+     * @param {String} uid UID
      * @param {String} user 用户名
-     * @return {Object|null} 解析后的对象
+     * @return {Object|null} 标签对象
      */
     function getUserMarks(user) {
-        const check = mark_list.findIndex(v => v.startsWith(user))
-        const exist_marks = check > -1 ? mark_list[check] : ''
-        if(user && check > -1 && exist_marks) {
-            let user_marks = {user: user, marks: []}
-            const r_l = exist_marks.split(':')[1].split('&')
-            r_l.forEach(item => {
-                let marks = {}
-                const f = item.split('(')
-                marks.mark = f[0]
-                if(f.length > 1) {
-                    const g = f[1].substring(0, f[1].length - 1)
-                    marks.text_color = g.split('^')[0]
-                    marks.bg_color = g.split('^')[1]
-                }
-                user_marks.marks.push(marks)
-            });
-            return user_marks
-        }else {
+        const check = mark_list.findIndex(v => (v.uid && user.uid && v.uid == user.uid) || 
+        (v.name && user.name && v.name == user.name))
+        if(check > -1) {
+            let user_mark = mark_list[check]
+            if ((!user_mark.uid && user.uid) || (!user_mark.name && user.name)) {
+                user_mark.uid = user.uid + '' || ''
+                user_mark.name = user.name || ''
+                window.localStorage.setItem('hld__NGA_mark_list', JSON.stringify(mark_list))
+            }
+            return mark_list[check]
+        } else {
             return null
         }
     }
@@ -1276,18 +1346,19 @@
      * @param {Object} user_marks 标签对象
      */
     function setUserMarks(user_marks) {
-        let user_marks_string = `${user_marks.user}:`
-        let user_marks_list = []
-        user_marks.marks.forEach(item => user_marks_list.push(`${item.mark}(${item.text_color}^${item.bg_color})`))
-        user_marks_string += user_marks_list.join('&')
         //检查是否已有标签
-        const check = mark_list.findIndex(v => v.startsWith(user_marks.user))
+        const check = mark_list.findIndex(v => (v.uid && user_marks.uid && v.uid == user_marks.uid) || 
+        (v.name && user_marks.name && v.name == user_marks.name))
         if(check > -1) {
-            user_marks_list.length > 0 ? mark_list.splice(check, 1, user_marks_string) : mark_list.splice(check, 1)
+            if (user_marks.marks.length == 0) {
+                mark_list.splice(check, 1)
+            } else {
+                mark_list[check] = user_marks
+            }
         }else {
-            user_marks_list.length > 0 && mark_list.push(user_marks_string)
+            mark_list.push(user_marks)
         }
-        window.localStorage.setItem('hld__NGA_mark_list', mark_list.join(','))
+        window.localStorage.setItem('hld__NGA_mark_list', JSON.stringify(mark_list))
     }
     /**
      * 颜色RGB转HEX
@@ -1343,7 +1414,7 @@
 .hld__list-panel .hld__list-c {width:45%;}
 #hld__keywords_panel .hld__list-c {width:100%;}
 .hld__list-panel .hld__list-c textarea {box-sizing:border-box;padding:0;margin:0;height:200px;width:100%;resize:none;}
-.hld__list-panel .hld__list-desc {margin-top:5px;font-size:9px;color:#666;}
+.hld__list-panel .hld__list-desc {margin-top:5px;font-size:9px;color:#666;cursor:help;text-decoration: underline;}
 .hld__list-panel .hld__list-c > p:first-child {font-weight:bold;font-size:14px;margin-bottom:10px;}
 #hld__updated {position:fixed;top:20px;right:20px;width:200px;padding:10px;border-radius:5px;box-shadow:0 0 15px #666;border:1px solid #591804;background:#fff8e7;z-index: 9999;}
 #hld__updated .hld__readme {text-decoration:underline;color:#591804;}
@@ -1572,7 +1643,7 @@ input.spectrum.with-add-on{border-top-left-radius:0;border-bottom-left-radius:0;
 .hld__table-banlist-buttons{margin-top:10px}
 .hld__table thead{background:#591804;border:1px solid #591804;color:#fff}
 .hld__scroll-area{position:relative;height:200px;overflow:auto;border:1px solid #ead5bc}
-.hld__scroll-area::-webkit-scrollbar{width:5px;height:5px}
+.hld__scroll-area::-webkit-scrollbar{width:6px;height:6px}
 .hld__scroll-area::-webkit-scrollbar-thumb{border-radius:10px;box-shadow:inset 0 0 5px rgba(0,0,0,.2);background:#591804}
 .hld__scroll-area::-webkit-scrollbar-track{box-shadow:inset 0 0 5px rgba(0,0,0,.2);border-radius:10px;background:#ededed}
 .hld__table td,.hld__table th{padding:3px 5px;border-bottom:1px solid #ead5bc;border-right:1px solid #ead5bc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
