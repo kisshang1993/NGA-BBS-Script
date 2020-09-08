@@ -1078,7 +1078,7 @@
         <a href="javascript:void(0)" class="hld__setting-close">×</a>
         <div class="hld__reward-info">
         <p><b>本脚本完全开源，并且长期维护<br>您若有好的功能需求或者建议，欢迎反馈</b></p>
-        <p>如果您觉得脚本好用<span class="hld__delete-line">帮助到更好的摸鱼</span>，您也可以选择支持我~<img src="https://s1.ax1x.com/2020/06/28/N25w7Q.png"></p>
+        <p>如果您觉得脚本好用<span class="hld__delete-line">帮助到更好的摸鱼</span>，也可以请作者喝杯咖啡~<img src="https://s1.ax1x.com/2020/06/28/N25w7Q.png"></p>
         </div>
         <div class="hld__flex">
         <div class="hld__list-c"><img src="https://s1.ax1x.com/2020/06/28/N25Bkj.png">
