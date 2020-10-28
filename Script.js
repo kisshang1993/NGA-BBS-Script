@@ -1651,7 +1651,8 @@ input.spectrum.with-add-on{border-top-left-radius:0;border-bottom-left-radius:0;
 .hld__us-action:hover{opacity:.8}
 .hld__us-edit{background-size:20px;background-image:url("data:image/svg+xml,%3Csvg t='1595910222437' class='icon' viewBox='0 0 1024 1024' version='1.1' xmlns='http://www.w3.org/2000/svg' p-id='3699'%3E%3Cpath d='M533.333333 106.666667v85.333333H213.333333v618.666667h618.666667V490.666667h85.333333v405.333333H128V106.666667h405.333333z m355.114667 97.237333L501.504 590.826667l-64.426667-64.426667L824.021333 139.498667l64.426667 64.426666z' p-id='3700'%3E%3C/path%3E%3C/svg%3E")}
 .hld__us-del{background-image:url("data:image/svg+xml,%3Csvg t='1595910451854' class='icon' viewBox='0 0 1024 1024' version='1.1' xmlns='http://www.w3.org/2000/svg' p-id='4969'%3E%3Cpath d='M769.214785 190.785215V0h-511.488511v190.785215H2.365634v65.918082H1022.977023V190.785215h-253.762238zM320.959041 61.954046h384.383616v128.895105H320.959041V61.954046zM386.621379 382.593407h61.954046v446.593406h-61.954046V382.593407zM577.406593 382.593407H639.360639v446.593406h-61.954046V382.593407z' p-id='4970'%3E%3C/path%3E%3Cpath d='M832.191808 959.040959h-639.360639V318.657343h-63.936064v705.342657h767.616384V318.657343h-64.319681V959.040959z' p-id='4971'%3E%3C/path%3E%3C/svg%3E")}
-.hld__toolbox-reply{opacity: 0;padding:0 0.4em;}
+.hld__toolbox-reply{opacity:0;padding:0 0.4em;display:inline-flex;height:15px;align-items:center;}
+.hld__toolbox-reply>hld__extra-icon{padding:2px}
 .forumbox.postbox:hover .hld__toolbox-reply{opacity:1;}
 `))
     document.getElementsByTagName('head')[0].appendChild(style)
