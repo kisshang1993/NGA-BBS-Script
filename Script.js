@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      3.3
+// @version      3.4
 // @author       HLD
 // @description  NGA论坛显示优化，功能增强，防止突然蹦出一对??而导致的突然性的社会死亡
-// @license      GPL-3.0
+// @license      MIT
 // @require      https://cdn.staticfile.org/jquery/3.4.0/jquery.min.js
 // @require      https://cdn.staticfile.org/spectrum/1.8.0/spectrum.js
 // @icon         https://s1.ax1x.com/2020/06/28/N25WBF.png
@@ -16,7 +16,7 @@
 (function () {
     'use strict';
 
-    const default_shortcut = [81, 87, 69, 37, 39, 82]
+    const defaultShortcut = [81, 87, 69, 37, 39, 82, 84, 66]
     let setting = {
         hideAvatar: true,
         hideSmile: true,
@@ -31,28 +31,30 @@
         autoPage: true,
         keywordsBlock: true,
         markAndBan: true,
-        shortcutKeys: default_shortcut
+        shortcutKeys: defaultShortcut
     }
-    let advanced_setting = {
+    let advancedSetting = {
         dynamicEnable: true,
         banStrictMode: false,
         kwdWithoutTitle: false,
+        hideCustomBg: false,
         autoPageOffset: 5,
         excelNoMode: true,
         excelTitle: '工作簿1',
         authorMarkColor: '#FF0000',
         imgResizeWidth: 200,
-        classicRemark: false
+        classicRemark: false,
+        autoHideBanIcon: false
     }
-    let post_author = []
-    let ban_list = []
-    let mark_list = []
-    let keywords_list = []
-    let before_url = window.location.href
+    let postAuthor = []
+    let banList = []
+    let markList = []
+    let keywordsList = []
+    let beforeUrl = window.location.href
     let $window = $(window)
 
-    const shortcut_name = ['隐藏头像', '隐藏表情', '隐藏图片', '楼内上一张图', '楼内下一张图', '切换Excel模式']
-    const shortcut_code = {
+    const shortcutName = ['隐藏头像', '隐藏表情', '隐藏图片', '楼内上一张图', '楼内下一张图', '切换Excel模式', '返回顶部', '跳转尾页']
+    const shortcutCode = {
         'A': 65, 'B': 66, 'C': 67, 'D': 68, 'E': 69, 'F': 70, 'G': 71,
         'H': 72, 'I': 73, 'J': 74, 'K': 75, 'L': 76, 'M': 77, 'N': 78,
         'O': 79, 'P': 80, 'Q': 81, 'R': 82, 'S': 83, 'T': 84,
@@ -62,13 +64,13 @@
     }
     const getCodeName = (code) => {
         let keyname = ''
-        for (let [n, c] of Object.entries(shortcut_code)) {
+        for (let [n, c] of Object.entries(shortcutCode)) {
             c == code && (keyname = n)
         }
         return keyname
     }
 
-    const color_picker_config = {
+    const colorPickerConfig = {
         type: 'color',
         preferredFormat: 'hex',
         showPaletteOnly: 'true',
@@ -104,60 +106,60 @@
     //同步配置
     //基础设置
     if (window.localStorage.getItem('hld__NGA_setting')) {
-        let local_setting = JSON.parse(window.localStorage.getItem('hld__NGA_setting'))
+        let localSetting = JSON.parse(window.localStorage.getItem('hld__NGA_setting'))
         for (let k in setting) {
-            !local_setting.hasOwnProperty(k) && (local_setting[k] = setting[k])
+            !localSetting.hasOwnProperty(k) && (localSetting[k] = setting[k])
             if (k == 'shortcutKeys') {
-                if (local_setting[k].length < setting[k].length) {
-                    const offset_count = setting[k].length - local_setting[k].length
-                    local_setting[k] = local_setting[k].concat(setting[k].slice(-offset_count))
+                if (localSetting[k].length < setting[k].length) {
+                    const offset_count = setting[k].length - localSetting[k].length
+                    localSetting[k] = localSetting[k].concat(setting[k].slice(-offset_count))
                 }
             }
         }
-        for (let k in local_setting) {
-            !setting.hasOwnProperty(k) && delete local_setting[k]
+        for (let k in localSetting) {
+            !setting.hasOwnProperty(k) && delete localSetting[k]
         }
-        setting = local_setting
+        setting = localSetting
     }
     //高级设置
     if (window.localStorage.getItem('hld__NGA_advanced_setting')) {
-        let local_advanced_setting = JSON.parse(window.localStorage.getItem('hld__NGA_advanced_setting'))
-        for (let k in advanced_setting) {
-            !local_advanced_setting.hasOwnProperty(k) && (local_advanced_setting[k] = advanced_setting[k])
+        let localAdvancedSetting = JSON.parse(window.localStorage.getItem('hld__NGA_advanced_setting'))
+        for (let k in advancedSetting) {
+            !localAdvancedSetting.hasOwnProperty(k) && (localAdvancedSetting[k] = advancedSetting[k])
         }
-        for (let k in local_advanced_setting) {
-            !advanced_setting.hasOwnProperty(k) && delete local_advanced_setting[k]
+        for (let k in localAdvancedSetting) {
+            !advancedSetting.hasOwnProperty(k) && delete localAdvancedSetting[k]
         }
-        advanced_setting = local_advanced_setting
+        advancedSetting = localAdvancedSetting
     }
     //同步列表
-    const local_keywords_list = window.localStorage.getItem('hld__NGA_keywords_list')
-    local_keywords_list && (keywords_list = local_keywords_list.split(','))
-    const local_ban_list = window.localStorage.getItem('hld__NGA_ban_list')
-    if(local_ban_list) {
+    const localKeywordsList = window.localStorage.getItem('hld__NGA_keywords_list')
+    localKeywordsList && (keywordsList = localKeywordsList.split(','))
+    const localBanList = window.localStorage.getItem('hld__NGA_ban_list')
+    if(localBanList) {
         try {
-            ban_list = JSON.parse(local_ban_list)
+            banList = JSON.parse(localBanList)
         } catch (error) {
             //3.3版本升级数据格式转换
-            const t = local_ban_list.split(',')
+            const t = localBanList.split(',')
             if (t) {
-                t.forEach(item => ban_list.push({name: item, uid: ''}))
-                window.localStorage.setItem('hld__NGA_ban_list', JSON.stringify(ban_list))
-                window.localStorage.setItem('hld__NGA_ban_list', local_ban_list)
+                t.forEach(item => banList.push({name: item, uid: ''}))
+                window.localStorage.setItem('hld__NGA_ban_list', JSON.stringify(banList))
+                window.localStorage.setItem('hld__NGA_ban_list', localBanList)
             }
         }
     }
-    const local_mark_list = window.localStorage.getItem('hld__NGA_mark_list')
-    if(local_mark_list) {
+    const localMarkList = window.localStorage.getItem('hld__NGA_mark_list')
+    if(localMarkList) {
         try {
-            mark_list = JSON.parse(local_mark_list)
+            markList = JSON.parse(localMarkList)
         } catch (error) {
-            const mark_list_str_obj = local_mark_list.split(',')
+            const mark_list_str_obj = localMarkList.split(',')
             mark_list_str_obj.forEach(item => {
                 const name = item.split(':')[0]
-                const mark_str = item.split(':')[1]
-                let mark_obj = {name, uid: '', marks: []}
-                const r_l = mark_str.split('&')
+                const markStr = item.split(':')[1]
+                let markObj = {name, uid: '', marks: []}
+                const r_l = markStr.split('&')
                 r_l.forEach(item => {
                     let marks = {}
                     const f = item.split('(')
@@ -167,12 +169,12 @@
                         marks.text_color = g.split('^')[0]
                         marks.bg_color = g.split('^')[1]
                     }
-                    mark_obj.marks.push(marks)
+                    markObj.marks.push(marks)
                 });
-                mark_list.push(mark_obj)
+                markList.push(markObj)
             })
-            window.localStorage.setItem('hld__NGA_mark_list', JSON.stringify(mark_list))
-            window.localStorage.setItem('hld__NGA_mark_list_bak', local_mark_list)
+            window.localStorage.setItem('hld__NGA_mark_list', JSON.stringify(markList))
+            window.localStorage.setItem('hld__NGA_mark_list_bak', localMarkList)
         }
     }
     //注册按键
@@ -182,12 +184,12 @@
             return;
         }
         //切换显示头像
-        if ((setting.hideAvatar || advanced_setting.dynamicEnable) && event.keyCode == setting.shortcutKeys[0]) {
+        if ((setting.hideAvatar || advancedSetting.dynamicEnable) && event.keyCode == setting.shortcutKeys[0]) {
             $('.avatar').toggle()
             popNotification(`${$('.avatar:hidden').length == 0 ? '显示' : '隐藏'}头像`)
         }
         //切换显示表情
-        if ((setting.hideSmile || advanced_setting.dynamicEnable) && event.keyCode == setting.shortcutKeys[1]) {
+        if ((setting.hideSmile || advancedSetting.dynamicEnable) && event.keyCode == setting.shortcutKeys[1]) {
             $('img').each(function () {
                 const classs = $(this).attr('class');
                 if (classs && classs.includes('smile')) $(this).toggle()
@@ -196,7 +198,7 @@
             popNotification(`${$('.smile_alt_text:hidden').length > 0 ? '显示' : '隐藏'}表情`)
         }
         //切换显示图片
-        if ((setting.hideImage || advanced_setting.dynamicEnable) && event.keyCode == setting.shortcutKeys[2]) {
+        if ((setting.hideImage || advancedSetting.dynamicEnable) && event.keyCode == setting.shortcutKeys[2]) {
             if ($('.hld__img-resize:hidden').length < $('.switch-img').length) {
                 $('.hld__img-resize').hide()
                 $('.switch-img').text('图').show()
@@ -228,17 +230,54 @@
             }
         }
         //Excel模式
-        if ((setting.excelMode || advanced_setting.dynamicEnable) && event.keyCode == setting.shortcutKeys[5]) {
+        if ((setting.excelMode || advancedSetting.dynamicEnable) && event.keyCode == setting.shortcutKeys[5]) {
             switchExcelMode()
             popNotification($('.hld__excel-body').length > 0 ? 'Excel模式' : '普通模式')
         }
+        //返回顶部
+        if (event.keyCode == setting.shortcutKeys[6]) {
+            $('#hld__jump_top').click()
+            popNotification('返回顶部')
+        }
+        //最后一页
+        if (event.keyCode == setting.shortcutKeys[7]) {
+            $('#hld__jump_bottom').click()
+            popNotification('最后一页')
+        }
     })
+    //自动翻页
     setting.autoPage && $('body').addClass('hld__reply-fixed')
+    //Excel
     $('body').append('<div class="hld__excel-div hld__excel-header"><img src="https://s1.ax1x.com/2020/06/28/N25bjK.png"></div>')
     $('body').append('<div class="hld__excel-div hld__excel-footer"><img src="https://s1.ax1x.com/2020/06/28/N2I93t.jpg"></div>')
     $('.hld__excel-header, .hld__excel-footer').append('【这里应该是一张仿造Excel的图片，如不显示，请刷新重试，如还不显示，请及时反馈！】')
     $('body').append('<div class="hld__excel-div hld__excel-setting"><img src="https://s1.ax1x.com/2020/06/28/N25WBF.png"><a id="hld__excel_setting" href="javascript:void(0)" title="打开NGA优化摸鱼插件设置面板">摸鱼</div>')
     $('#hld__excel_setting').click(()=>$('#hld__setting_cover').css('display', 'flex'))
+    //扩展坞
+    const $dockerDom = $(`<div class="hld__docker"><div class="hld__docker-sidebar"><svg t="1603961015993" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="3634" width="64" height="64"><path d="M518.344359 824.050365c-7.879285 0-15.758569-2.967523-21.693614-9.004897l-281.403018-281.403018c-5.730389-5.730389-9.004897-13.609673-9.004897-21.693614s3.274508-15.963226 9.004897-21.693614l281.403018-281.403018c11.972419-11.972419 31.41481-11.972419 43.387229 0 11.972419 11.972419 11.972419 31.41481 0 43.387229L280.32857 511.948836l259.709403 259.709403c11.972419 11.972419 11.972419 31.41481 0 43.387229C534.0006 821.082842 526.223643 824.050365 518.344359 824.050365z" p-id="3635" fill="#888888"></path><path d="M787.160987 772.88618c-7.879285 0-15.758569-2.967523-21.693614-9.004897l-230.238833-230.238833c-11.972419-11.972419-11.972419-31.41481 0-43.387229l230.238833-230.238833c11.972419-11.972419 31.41481-11.972419 43.387229 0 11.972419 11.972419 11.972419 31.41481 0 43.387229L600.309383 511.948836l208.545218 208.545218c11.972419 11.972419 11.972419 31.41481 0 43.387229C802.817228 769.918657 794.937943 772.88618 787.160987 772.88618z" p-id="3636" fill="#888888"></path></svg></div>
+    <div class="hld__docker-btns">
+    <div data-type="TOP" id="hld__jump_top"><svg t="1603962702679" title="返回顶部" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="9013" width="64" height="64"><path d="M528.73 161.5c-9.39-9.38-24.6-9.38-33.99 0L319.65 336.59a24.028 24.028 0 0 0-7.05 23.59A24.04 24.04 0 0 0 330 377.6c8.56 2.17 17.62-0.52 23.6-7.02l158.14-158.14 158.1 158.14a23.901 23.901 0 0 0 17 7.09c6.39 0 12.5-2.55 17-7.09 9.38-9.39 9.38-24.61 0-34L528.73 161.5zM63.89 607.09h102.79V869.5h48.04V607.09h102.79v-48.04H63.89v48.04z m518.69-48.05h-127.3c-15.37 0-30.75 5.85-42.49 17.59a59.846 59.846 0 0 0-17.59 42.49v190.3c0 15.37 5.89 30.75 17.59 42.49 11.74 11.74 27.12 17.59 42.49 17.59h127.3c15.37 0 30.75-5.85 42.49-17.59 11.7-11.74 17.59-27.12 17.59-42.49V619.17a59.903 59.903 0 0 0-17.53-42.55 59.912 59.912 0 0 0-42.55-17.54v-0.04z m12 250.38c0 2.31-0.6 5.59-3.5 8.54a11.785 11.785 0 0 1-8.5 3.5h-127.3c-3.2 0.02-6.26-1.26-8.5-3.54a11.785 11.785 0 0 1-3.5-8.5V619.17c0-2.31 0.6-5.59 3.5-8.54 2.24-2.27 5.31-3.53 8.5-3.5h127.3c2.27 0 5.55 0.64 8.5 3.55 2.27 2.24 3.53 5.31 3.5 8.5v190.29-0.05z m347.4-232.78a59.846 59.846 0 0 0-42.49-17.59H734.74V869.5h48.04V733.32h116.71a59.94 59.94 0 0 0 42.54-17.55 59.923 59.923 0 0 0 17.55-42.54v-54.07c0-15.37-5.85-30.74-17.59-42.49v-0.03z m-30.44 96.64c0 2.26-0.64 5.55-3.55 8.5a11.785 11.785 0 0 1-8.5 3.5H782.78v-78.15h116.71c2.27 0 5.59 0.6 8.54 3.5 2.27 2.24 3.53 5.31 3.5 8.5v54.15z m0 0" p-id="9014" fill="#591804"></path></svg></div>
+    <div data-type="BOTTOM" id="hld__jump_bottom"><svg t="1603962680160" title="跳转至最后一页" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="7501" width="64" height="64"><path d="M792.855 465.806c-6.24-6.208-14.369-9.312-22.56-9.312s-16.447 3.169-22.688 9.44l-207.91 207.74v-565.28c0-17.697-14.336-32-32-32s-32.002 14.303-32.002 32v563.712l-206.24-206.164c-6.271-6.209-14.432-9.344-22.624-9.344-8.224 0-16.417 3.135-22.656 9.407-12.511 12.513-12.48 32.768 0.032 45.248L483.536 770.38c3.265 3.263 7.104 5.6 11.136 7.135 4 1.793 8.352 2.88 13.024 2.88 1.12 0 2.08-0.544 3.2-0.64 8.288 0.064 16.608-3.009 22.976-9.408l259.11-259.292c12.48-12.511 12.448-32.8-0.127-45.248z m99.706 409.725c0 17.665-14.303 32.001-31.999 32.001h-704c-17.665 0-32-14.334-32-31.999s14.335-32 32-32h704c17.696 0 32 14.334 32 31.998z" p-id="7502" fill="#591804"></path></svg></div></div></div>`)
+    $('body').append($dockerDom)
+    $('body').on('click', '.hld__docker-btns>div', function () {
+        const type = $(this).data('type')
+        if (type == 'TOP') {
+            const $nav_link = $('#m_nav a.nav_link')
+            if ($nav_link.length > 0) {
+                $nav_link[$nav_link.length-1].click()
+            }
+        }
+        if (type == 'BOTTOM') {
+            let currentUrl = window.location.href
+            let queryset = getQuerySet()
+            queryset.page = 9999
+            let search = ''
+            for (let key in queryset) {
+                search += `${search == '' ? '?' : '&'}${key}=${queryset[key]}`
+            }
+            window.location.href = `${window.location.origin}${window.location.pathname}${search}`
+        }
+    })
 
     //快捷键-列表维护
     $('body').on('click', '#hld__shortcut_manage', function () {
@@ -256,7 +295,7 @@
         <button class="hld__btn" data-type="save_shortcut">保存快捷键</button>
         </div>
         </div>`)
-        for (let [index, sn] of shortcut_name.entries()) {
+        for (let [index, sn] of shortcutName.entries()) {
             const keycode = setting.shortcutKeys[index]
             $shortcutPanel.find('.hld__table tbody').append(`<tr><td>${sn}</td><td><input type="text" value="${getCodeName(keycode)}"></td></tr>`)
         }
@@ -300,7 +339,7 @@
         </div>
         <div class="hld__btn-groups"><button class="hld__btn" data-type="save_keywords">保存列表</button></div>
         </div>`)
-        $('#hld__keywords_list_textarea').val(keywords_list.join('\n'))
+        $('#hld__keywords_list_textarea').val(keywordsList.join('\n'))
     })
     //名单管理
     $('body').on('click', '#hld__list_manage', function () {
@@ -339,8 +378,8 @@
         //移除黑名单用户
         $('body').on('click', '.hld__bl-del', function(){
             const index = $(this).data('index')
-            ban_list.splice(index, 1)
-            window.localStorage.setItem('hld__NGA_ban_list', JSON.stringify(ban_list))
+            banList.splice(index, 1)
+            window.localStorage.setItem('hld__NGA_ban_list', JSON.stringify(banList))
             reloadBanlist()
         })
         //添加黑名单用户
@@ -369,8 +408,8 @@
         //删除标记
         $('body').on('click', '.hld__ml-del', function(){
             const index = $(this).data('index')
-            mark_list.splice(index, 1)
-            window.localStorage.setItem('hld__NGA_mark_list', JSON.stringify(mark_list))
+            markList.splice(index, 1)
+            window.localStorage.setItem('hld__NGA_mark_list', JSON.stringify(markList))
             reloadMarklist()
         })
         //添加标记
@@ -393,34 +432,34 @@
         const type = $(this).data('type')
         if(!type) return
         if (type == 'save_keywords') {
-            let keywords_list = $('#hld__keywords_list_textarea').val().split('\n')
-            keywords_list = removeBlank(keywords_list)
-            keywords_list = uniq(keywords_list)
-            window.localStorage.setItem('hld__NGA_keywords_list', keywords_list.join(','))
+            let keywordsList = $('#hld__keywords_list_textarea').val().split('\n')
+            keywordsList = removeBlank(keywordsList)
+            keywordsList = uniq(keywordsList)
+            window.localStorage.setItem('hld__NGA_keywords_list', keywordsList.join(','))
         }
         if (type == 'save_banlist') {
-            const ban_list = $('#hld__ban_list_textarea').val()
-            const mark_list = $('#hld__mark_list_textarea').val()
-            window.localStorage.setItem('hld__NGA_ban_list', ban_list)
-            window.localStorage.setItem('hld__NGA_mark_list', mark_list)
+            const banList = $('#hld__ban_list_textarea').val()
+            const markList = $('#hld__mark_list_textarea').val()
+            window.localStorage.setItem('hld__NGA_ban_list', banList)
+            window.localStorage.setItem('hld__NGA_mark_list', markList)
             //重载名单
             reloadBanlist()
             reloadMarklist()
         }
         if (type == 'reset_shortcut') {
-            setting.shortcutKeys = default_shortcut
+            setting.shortcutKeys = defaultShortcut
             window.localStorage.setItem('hld__NGA_setting', JSON.stringify(setting))
             popMsg('重置成功，刷新页面生效')
         }
         if (type == 'save_shortcut') {
-            let shortcut_keys = []
+            let shortcutKeys = []
             $('.hld__table tbody>tr').each(function () {
                 const v = $(this).find('input').val().trim().toUpperCase()
-                if (Object.keys(shortcut_code).includes(v)) shortcut_keys.push(shortcut_code[v])
+                if (Object.keys(shortcutCode).includes(v)) shortcutKeys.push(shortcutCode[v])
                 else popMsg(`${v}是个无效的快捷键`)
             })
-            if (shortcut_keys.length != setting.shortcutKeys.length) return
-            setting.shortcutKeys = shortcut_keys
+            if (shortcutKeys.length != setting.shortcutKeys.length) return
+            setting.shortcutKeys = shortcutKeys
             window.localStorage.setItem('hld__NGA_setting', JSON.stringify(setting))
             popMsg('保存成功，刷新页面生效')
         }
@@ -447,16 +486,16 @@
             $('#hld__setting_close').click(()=>$('#hld__setting_cover').fadeOut(200))
             $('.hld__setting-box').append($entry)
         }
-        if(setting.excelMode && window.location.href != before_url) {
-            before_url = window.location.href
-            if(before_url.includes('thread.php') || before_url.includes('read.php')) {
+        if(setting.excelMode && window.location.href != beforeUrl) {
+            beforeUrl = window.location.href
+            if(beforeUrl.includes('thread.php') || beforeUrl.includes('read.php')) {
                 $('.hld__excel-body').length == 0 && $('body').addClass('hld__excel-body')
             }else {
                 $('.hld__excel-body').length > 0 && $('body').removeClass('hld__excel-body')
             }
         }
         if ($('.hld__excel-body').length > 0) {
-            $(document).attr('title') != advanced_setting.excelTitle && $(document).attr('title', advanced_setting.excelTitle);
+            $(document).attr('title') != advancedSetting.excelTitle && $(document).attr('title', advancedSetting.excelTitle);
             $('#hld__excel_icon').length == 0 && $('head').append('<link id= "hld__excel_icon" rel="shortcut icon" type="image/png" href="https://s1.ax1x.com/2020/06/28/N25Jpt.png" />')
         }
         //自动翻页
@@ -466,7 +505,7 @@
                 if($(this).children('a').text() == '>') {
                     $(this).children('a').attr('id', 'hld__next_page')
                     $window.on('scroll.autoPage', function(){
-                        const offset = +advanced_setting.autoPageOffset;
+                        const offset = +advancedSetting.autoPageOffset;
                         if ($(document).scrollTop() != 0 && ($(document).scrollTop() + $(window).height() >= $(document).height() * (1 - offset / 100))) {
                             if($('#hld__next_page').length > 0) {
                                 console.warn('Auto Page')
@@ -485,41 +524,48 @@
     const isPosts = () => $('#m_posts').length > 0
     const switchExcelMode = () => {
         $('body').toggleClass('hld__excel-body')
-        !advanced_setting.excelNoMode && $('body').addClass('hld__excel-original-no')
+        !advancedSetting.excelNoMode && $('body').addClass('hld__excel-original-no')
     }
     if(setting.excelMode) {
-        if(before_url.includes('thread.php') || before_url.includes('read.php')) switchExcelMode()
+        if(beforeUrl.includes('thread.php') || beforeUrl.includes('read.php')) switchExcelMode()
     }
     //论坛列表
     const renderThreads = () => {
         //隐藏版头
         if (setting.hideHeader && $('#hld__switch_header').length == 0) {
             $('#toppedtopic, #sub_forums').hide()
-            let $toggle_header_btn = $('<button style="position: absolute;right: 16px;" id="hld__switch_header">切换显示版头</button>')
-            $toggle_header_btn.click(() => $('#toppedtopic, #sub_forums').toggle())
-            $('#toptopics > div > h3').append($toggle_header_btn)
+            let $toggleHeaderBtn = $('<button style="position: absolute;right: 16px;" id="hld__switch_header">切换显示版头</button>')
+            $toggleHeaderBtn.click(() => $('#toppedtopic, #sub_forums').toggle())
+            $('#toptopics > div > h3').append($toggleHeaderBtn)
+            if(advancedSetting.hideCustomBg) {
+                $('#custombg').hide()
+                $('#mainmenu').css('margin', '0px')
+            }
         }
         $('.topicrow[hld-render!=ok]').each(function () {
             const title = $(this).find('.c2>a').text()
             const uid = ($(this).find('.author').attr('href') && $(this).find('.author').attr('href').indexOf('uid=') > -1) ? $(this).find('.author').attr('href').split('uid=')[1] + '' : ''
             const name = $(this).find('.author').text()
             if (setting.markAndBan) {
-                const ban_user = getBanUser({name, uid})
-                if (ban_list.length > 0 && ban_user) {
+                const banUser = getBanUser({name, uid})
+                //黑名单屏蔽
+                if (banList.length > 0 && banUser) {
                     console.warn(`【NGA优化摸鱼体验脚本-黑名单屏蔽】标题：${title}  连接：${$(this).find('.c2>a').attr('href')}`)
                     $(this).parents('tbody').remove()
                 }
-                if (mark_list.length > 0) {
-                    const user_mark = getUserMarks({name, uid})
-                    if (user_mark) {
+                //标记
+                if (markList.length > 0) {
+                    const userMark = getUserMarks({name, uid})
+                    if (userMark) {
                         let f = []
-                        user_mark.marks.forEach(e => f.push(e.mark))
+                        userMark.marks.forEach(e => f.push(e.mark))
                         $(this).find('.author').append(`<span class="hld__remark"> (${f.join(', ')}) </span>`)
                     }
                 }
             }
-            if (!advanced_setting.kwdWithoutTitle && setting.keywordsBlock && keywords_list.length > 0) {
-                for (let keyword of keywords_list) {
+            //关键字屏蔽
+            if (!advancedSetting.kwdWithoutTitle && setting.keywordsBlock && keywordsList.length > 0) {
+                for (let keyword of keywordsList) {
                     if (title.includes(keyword)) {
                         console.warn(`【NGA优化摸鱼体验脚本-关键字屏蔽】标题：${title}  连接：${$(this).find('.c2>a').attr('href')}`)
                         $(this).remove()
@@ -548,16 +594,16 @@
         if (setting.authorMark) {
             const author = $('#postauthor0').text().replace('[楼主]', '')
             if (author && $('#hld__post-author').val() != author) {
-                const local_post_author = window.localStorage.getItem('hld__NGA_post_author')
-                local_post_author && (post_author = local_post_author.split(','))
+                const localPostAuthor = window.localStorage.getItem('hld__NGA_post_author')
+                localPostAuthor && (postAuthor = localPostAuthor.split(','))
                 const tid = getQueryString('tid')
                 if (tid) {
-                    const author_str = `${tid}:${author}`
-                    if (!post_author.includes(author_str))
-                        post_author.unshift(author_str) > 10 && post_author.pop()
-                    window.localStorage.setItem('hld__NGA_post_author', post_author.join(','))
+                    const authorStr = `${tid}:${author}`
+                    if (!postAuthor.includes(authorStr))
+                        postAuthor.unshift(authorStr) > 10 && postAuthor.pop()
+                    window.localStorage.setItem('hld__NGA_post_author', postAuthor.join(','))
                 }
-                for (let pa of post_author) {
+                for (let pa of postAuthor) {
                     const t = pa.split(':')
                     if (t[0] == tid) {
                         if ($('#hld__post-author').length == 0) $('body').append(`<input type="hidden" value="${t[1]}" id="hld__post-author">`)
@@ -573,43 +619,43 @@
             //excel 序号
             $(this).find('.postrow>td:first-child').before('<td class="c0"></td>')
             //关键字屏蔽
-            if (setting.keywordsBlock && keywords_list.length > 0) {
+            if (setting.keywordsBlock && keywordsList.length > 0) {
                 const $postcontent = $(this).find('.postcontent')
-                const $postcontent_clone = $postcontent.clone()
+                const $postcontentClone = $postcontent.clone()
                 const consoleLog = (text) => console.warn(`【NGA优化摸鱼体验脚本-关键字屏蔽】内容：${text}`)
-                let postcontent_quote = ''
-                let postcontent_text = ''
+                let postcontentQuote = ''
+                let postcontentText = ''
 
                 if ($postcontent.find('.quote').length > 0) {
-                    $postcontent_clone.find('.quote').remove()
-                    let postcontent_text = $postcontent.find('.quote').text()
-                    const end_index = postcontent_text.indexOf(')')
-                    postcontent_quote = postcontent_text.substring(end_index + 1)
+                    $postcontentClone.find('.quote').remove()
+                    let postcontentText = $postcontent.find('.quote').text()
+                    const endIndex = postcontentText.indexOf(')')
+                    postcontentQuote = postcontentText.substring(endIndex + 1)
                 }
 
-                postcontent_text = $postcontent_clone.text()
+                postcontentText = $postcontentClone.text()
 
-                for (let keyword of keywords_list) {
-                    if (postcontent_text && postcontent_text.includes(keyword)) {
-                        consoleLog(postcontent_text)
+                for (let keyword of keywordsList) {
+                    if (postcontentText && postcontentText.includes(keyword)) {
+                        consoleLog(postcontentText)
                         $(this).remove()
                         break
                     }
-                    if (postcontent_quote && postcontent_quote.includes(keyword)) {
-                        consoleLog(postcontent_quote)
+                    if (postcontentQuote && postcontentQuote.includes(keyword)) {
+                        consoleLog(postcontentQuote)
                         $postcontent.find('.quote').remove()
                     }
                 }
-                const $comment_c_list = $(this).find('.comment_c')
-                if ($comment_c_list.length > 0) {
-                    let postcontent_reply = ''
-                    $comment_c_list.each(function () {
-                        let postcontent_reply_text = $(this).find('.ubbcode').text()
-                        const end_index = postcontent_reply_text.indexOf(')')
-                        postcontent_reply = postcontent_reply_text.substring(end_index + 1)
-                        for (let keyword of keywords_list) {
-                            if (postcontent_reply && postcontent_reply.includes(keyword)) {
-                                consoleLog(postcontent_reply)
+                const $commentCList = $(this).find('.comment_c')
+                if ($commentCList.length > 0) {
+                    let postcontentReply = ''
+                    $commentCList.each(function () {
+                        let postcontentReplyText = $(this).find('.ubbcode').text()
+                        const end_index = postcontentReplyText.indexOf(')')
+                        postcontentReply = postcontentReplyText.substring(end_index + 1)
+                        for (let keyword of keywordsList) {
+                            if (postcontentReply && postcontentReply.includes(keyword)) {
+                                consoleLog(postcontentReply)
                                 $(this).remove()
                             }
                         }
@@ -656,15 +702,16 @@
             setting.hideSign && $(this).find('.sign, .sigline').css('display', 'none')
             //添加拉黑标记菜单及功能
             if (setting.markAndBan) {
-                const current_uid = $(this).find('[name=uid]').text() + ''
+                const currentUid = $(this).find('[name=uid]').text() + ''
                 $(this).find('.small_colored_text_btn.block_txt_c2.stxt').each(function () {
-                    let current_name = ''
+                    let currentName = ''
                     if ($(this).parents('td').prev('td').html() == '') {
-                        current_name = $(this).parents('table').prev('.posterinfo').children('.author').text()
+                        currentName = $(this).parents('table').prev('.posterinfo').children('.author').text()
                     } else {
-                        current_name = $(this).parents('td').prev('td').find('.author').text()
+                        currentName = $(this).parents('td').prev('td').find('.author').text()
                     }
-                    $(this).append(`<a class="hld__extra-icon" data-type="mark" title="标签此用户" data-name="${current_name}" data-uid="${current_uid}"><svg t="1578453291663" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="15334" width="32" height="32"><path d="M978.488889 494.933333l-335.644445 477.866667-415.288888 45.511111c-45.511111 5.688889-91.022222-28.444444-102.4-73.955555L22.755556 540.444444 358.4 56.888889C398.222222 0 477.866667-11.377778 529.066667 28.444444l420.977777 295.822223c56.888889 39.822222 68.266667 113.777778 28.444445 170.666666zM187.733333 927.288889c5.688889 11.377778 17.066667 22.755556 28.444445 22.755555l386.844444-39.822222 318.577778-455.111111c22.755556-22.755556 17.066667-56.888889-11.377778-73.955555L489.244444 85.333333c-22.755556-17.066667-56.888889-11.377778-79.644444 11.377778l-318.577778 455.111111 96.711111 375.466667z" fill="#3970fe" p-id="15335" data-spm-anchor-id="a313x.7781069.0.i43" class="selected"></path><path d="M574.577778 745.244444c-56.888889 85.333333-176.355556 108.088889-261.688889 45.511112-85.333333-56.888889-108.088889-176.355556-45.511111-261.688889s176.355556-108.088889 261.688889-45.511111c85.333333 56.888889 102.4 176.355556 45.511111 261.688888z m-56.888889-39.822222c39.822222-56.888889 22.755556-130.844444-28.444445-170.666666s-130.844444-22.755556-170.666666 28.444444c-39.822222 56.888889-22.755556 130.844444 28.444444 170.666667s130.844444 22.755556 170.666667-28.444445z" fill="#3970fe" p-id="15336" data-spm-anchor-id="a313x.7781069.0.i44" class="selected"></path></svg></a><a class="hld__extra-icon" title="拉黑此用户(屏蔽所有言论)" data-type="ban"  data-name="${current_name}" data-uid="${current_uid}"><svg t="1578452808565" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="9668" data-spm-anchor-id="a313x.7781069.0.i27" width="32" height="32"><path d="M512 1024A512 512 0 1 1 512 0a512 512 0 0 1 0 1024z m0-146.285714A365.714286 365.714286 0 1 0 512 146.285714a365.714286 365.714286 0 0 0 0 731.428572z" fill="#a20106" p-id="9669" data-spm-anchor-id="a313x.7781069.0.i28" class="selected"></path><path d="M828.708571 329.142857l-633.417142 365.714286 633.417142-365.714286z m63.341715-36.571428a73.142857 73.142857 0 0 1-26.770286 99.913142l-633.417143 365.714286a73.142857 73.142857 0 0 1-73.142857-126.683428l633.417143-365.714286A73.142857 73.142857 0 0 1 892.050286 292.571429z" fill="#a20106" p-id="9670" data-spm-anchor-id="a313x.7781069.0.i31" class="selected"></path></svg></a>`)
+                    const mbDom = `<a class="hld__extra-icon" data-type="mark" title="标签此用户" data-name="${currentName}" data-uid="${currentUid}"><svg t="1578453291663" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="15334" width="32" height="32"><path d="M978.488889 494.933333l-335.644445 477.866667-415.288888 45.511111c-45.511111 5.688889-91.022222-28.444444-102.4-73.955555L22.755556 540.444444 358.4 56.888889C398.222222 0 477.866667-11.377778 529.066667 28.444444l420.977777 295.822223c56.888889 39.822222 68.266667 113.777778 28.444445 170.666666zM187.733333 927.288889c5.688889 11.377778 17.066667 22.755556 28.444445 22.755555l386.844444-39.822222 318.577778-455.111111c22.755556-22.755556 17.066667-56.888889-11.377778-73.955555L489.244444 85.333333c-22.755556-17.066667-56.888889-11.377778-79.644444 11.377778l-318.577778 455.111111 96.711111 375.466667z" fill="#3970fe" p-id="15335" data-spm-anchor-id="a313x.7781069.0.i43" class="selected"></path><path d="M574.577778 745.244444c-56.888889 85.333333-176.355556 108.088889-261.688889 45.511112-85.333333-56.888889-108.088889-176.355556-45.511111-261.688889s176.355556-108.088889 261.688889-45.511111c85.333333 56.888889 102.4 176.355556 45.511111 261.688888z m-56.888889-39.822222c39.822222-56.888889 22.755556-130.844444-28.444445-170.666666s-130.844444-22.755556-170.666666 28.444444c-39.822222 56.888889-22.755556 130.844444 28.444444 170.666667s130.844444 22.755556 170.666667-28.444445z" fill="#3970fe" p-id="15336" data-spm-anchor-id="a313x.7781069.0.i44" class="selected"></path></svg></a><a class="hld__extra-icon" title="拉黑此用户(屏蔽所有言论)" data-type="ban"  data-name="${currentName}" data-uid="${currentUid}"><svg t="1578452808565" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="9668" data-spm-anchor-id="a313x.7781069.0.i27" width="32" height="32"><path d="M512 1024A512 512 0 1 1 512 0a512 512 0 0 1 0 1024z m0-146.285714A365.714286 365.714286 0 1 0 512 146.285714a365.714286 365.714286 0 0 0 0 731.428572z" fill="#a20106" p-id="9669" data-spm-anchor-id="a313x.7781069.0.i28" class="selected"></path><path d="M828.708571 329.142857l-633.417142 365.714286 633.417142-365.714286z m63.341715-36.571428a73.142857 73.142857 0 0 1-26.770286 99.913142l-633.417143 365.714286a73.142857 73.142857 0 0 1-73.142857-126.683428l633.417143-365.714286A73.142857 73.142857 0 0 1 892.050286 292.571429z" fill="#a20106" p-id="9670" data-spm-anchor-id="a313x.7781069.0.i31" class="selected"></path></svg></a>`
+                    advancedSetting.autoHideBanIcon ? $(this).after(`<span class="hld__extra-icon-box">${mbDom}</span>`) : $(this).append(mbDom)
                 })
             }
             //标记拉黑标签
@@ -677,10 +724,10 @@
     //大图
     const resizeImg = (el) => {
         if ($('#hld__img_full').length > 0) return
-        let url_list = []
-        let current_index = el.parent().find('[hld__imglist=ready]').index(el)
+        let urlList = []
+        let currentIndex = el.parent().find('[hld__imglist=ready]').index(el)
         el.parent().find('[hld__imglist=ready]').each(function () {
-            url_list.push($(this).data('srcorg') || $(this).data('srclazy') || $(this).attr('src'))
+            urlList.push($(this).data('srcorg') || $(this).data('srclazy') || $(this).attr('src'))
         })
         let $imgBox = $('<div id="hld__img_full" title="点击背景关闭"><div id="loader"></div></div>')
         let $imgContainer = $('<div class="hld__img_container hld__zoom-target"></div>')
@@ -695,7 +742,7 @@
                 'width': $(window).height() * 0.85 + 'px',
                 'height': $(window).height() * 0.85 + 'px'
             })
-            $img.css({ 'width': '', 'height': '' }).attr('src', url_list[index]).hide()
+            $img.css({ 'width': '', 'height': '' }).attr('src', urlList[index]).hide()
             timer = setInterval(() => {
                 const w = $img.width()
                 const h = $img.height()
@@ -708,7 +755,7 @@
             }, 1)
         }
         //当前图片
-        renderImg(current_index)
+        renderImg(currentIndex)
         $img.mousedown(function (e) {
             let endx = 0;
             let endy = 0;
@@ -736,11 +783,11 @@
 <div class="change next-img" title="本楼内下一张(快捷键${getCodeName(setting.shortcutKeys[4])})"><div></div></div>
 </div>`)
         $imgBox.on('click', '.change', function () {
-            if ($(this).hasClass('prev-img') && current_index - 1 >= 0)
-                renderImg(--current_index)
+            if ($(this).hasClass('prev-img') && currentIndex - 1 >= 0)
+                renderImg(--currentIndex)
 
-            if ($(this).hasClass('next-img') && current_index + 1 < url_list.length)
-                renderImg(++current_index)
+            if ($(this).hasClass('next-img') && currentIndex + 1 < urlList.length)
+                renderImg(++currentIndex)
 
             if ($(this).hasClass('rotate-right') || $(this).hasClass('rotate-left')) {
                 let deg = ($img.data('rotate-deg') || 0) - ($(this).hasClass('rotate-right') ? 90 : -90)
@@ -760,32 +807,32 @@
                 (e.originalEvent.detail && (e.originalEvent.detail > 0 ? -1 : 1));
 
             if ($imgContainer.width() > 50 || delta > 0) {
-                const offset_y = $imgContainer.height() * 0.2
-                const offset_x = $imgContainer.width() * 0.2
-                let offset_top = offset_y / 2
-                let offset_left = offset_x / 2
+                const offsetY = $imgContainer.height() * 0.2
+                const offsetX = $imgContainer.width() * 0.2
+                let offsetTop = offsetY / 2
+                let offsetLeft = offsetX / 2
 
                 if ($(e.target).hasClass('hld__zoom-target')) {
-                    const target_offset_x = Math.round(e.clientX - $imgContainer.position().left)
-                    const target_offset_y = Math.round(e.clientY - $imgContainer.position().top)
-                    offset_left = (target_offset_x / ($imgContainer.height() / 2)) * offset_left
-                    offset_top = (target_offset_y / ($imgContainer.height() / 2)) * offset_top
+                    const targetOffsetX = Math.round(e.clientX - $imgContainer.position().left)
+                    const targetOffsetY = Math.round(e.clientY - $imgContainer.position().top)
+                    offsetLeft = (targetOffsetX / ($imgContainer.height() / 2)) * offsetLeft
+                    offsetTop = (targetOffsetY / ($imgContainer.height() / 2)) * offsetTop
                 }
 
                 if (delta > 0) {
                     $imgContainer.css({
-                        'width': ($imgContainer.height() + offset_y) + 'px',
-                        'height': ($imgContainer.height() + offset_y) + 'px',
-                        'top': ($imgContainer.position().top - offset_top) + 'px',
-                        'left': ($imgContainer.position().left - offset_left) + 'px'
+                        'width': ($imgContainer.height() + offsetY) + 'px',
+                        'height': ($imgContainer.height() + offsetY) + 'px',
+                        'top': ($imgContainer.position().top - offsetTop) + 'px',
+                        'left': ($imgContainer.position().left - offsetLeft) + 'px'
                     })
                 }
                 if (delta < 0) {
                     $imgContainer.css({
-                        'width': ($imgContainer.height() - offset_y) + 'px',
-                        'height': ($imgContainer.height() - offset_y) + 'px',
-                        'top': ($imgContainer.position().top + offset_top) + 'px',
-                        'left': ($imgContainer.position().left + offset_left) + 'px'
+                        'width': ($imgContainer.height() - offsetY) + 'px',
+                        'height': ($imgContainer.height() - offsetY) + 'px',
+                        'top': ($imgContainer.position().top + offsetTop) + 'px',
+                        'left': ($imgContainer.position().left + offsetLeft) + 'px'
                     })
                 }
             }
@@ -803,10 +850,10 @@
             $(this).find('span.hld__post-author, span.hld__remark').remove()
             let name = $(this).attr('hld-mark-before-name') || $(this).text().replace('[', '').replace(']', '')
             if (setting.markAndBan) {
-                const ban_user = getBanUser({name, uid})
-                if (ban_user) {
+                const banUser = getBanUser({name, uid})
+                if (banUser) {
                     //拉黑用户实现
-                    if (advanced_setting.banStrictMode) {
+                    if (advancedSetting.banStrictMode) {
                         if ($(this).parents('div.comment_c').length > 0) $(this).parents('div.comment_c').remove()
                         else $(this).parents('.forumbox.postbox').remove()
                     } else {
@@ -819,22 +866,22 @@
                     }
                     console.warn(`【NGA优化摸鱼体验脚本-黑名单屏蔽】用户：${name}, UID:${uid}`)
                 }
-                if(advanced_setting.classicRemark) {
+                if(advancedSetting.classicRemark) {
                     //经典备注风格
-                    const user_marks = getUserMarks({name, uid})
-                    if (user_marks) {
+                    const userMarks = getUserMarks({name, uid})
+                    if (userMarks) {
                         let f = []
-                        user_marks.marks.forEach(e => f.push(e.mark))
+                        userMarks.marks.forEach(e => f.push(e.mark))
                         $(this).attr('hld-mark-before-name', name).append(`<span class="hld__remark"> (${f.join(', ')}) </span>`)
                     }
                 }else {
                     //新版标签风格
-                    const user_marks = getUserMarks({name, uid})
-                    if(user_marks) {
+                    const userMarks = getUserMarks({name, uid})
+                    if(userMarks) {
                         const $el = $(this).parents('.c1').find('.clickextend')
-                        let marks_dom = ''
-                        user_marks.marks.forEach(item => marks_dom += `<span style="color: ${item.text_color};background-color: ${item.bg_color};" title="${item.mark}">${item.mark}</span>`);
-                        $el.before(`<div class="hld__marks-container">标签: ${marks_dom}</div>`)
+                        let marksDom = ''
+                        userMarks.marks.forEach(item => marksDom += `<span style="color: ${item.text_color};background-color: ${item.bg_color};" title="${item.mark}">${item.mark}</span>`);
+                        $el.before(`<div class="hld__marks-container">标签: ${marksDom}</div>`)
                     }
                 }
                 if (setting.authorMark) {
@@ -846,7 +893,7 @@
     }
 
     //设置面板
-    let $panel_dom = $(`<div id="hld__setting_cover" class="animated zoomIn"><div id="hld__setting_panel">
+    let $panelDom = $(`<div id="hld__setting_cover" class="animated zoomIn"><div id="hld__setting_panel">
    <a href="javascript:void(0)" id="hld__setting_close" class="hld__setting-close">×</a>
     <p class="hld__sp-title"><a title="更新地址" href="https://greasyfork.org/zh-CN/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C" target="_blank">NGA优化摸鱼插件<span class="hld__script-info">v${GM_info.script.version}</span></a></p>
     <div class="hld__field">
@@ -884,13 +931,17 @@
     <!-- <tr><td><span class="hld__adv-help" title=" "> </td><td><input type="checkbox" id="hld__adv_"></td></tr> -->
     <tr><td><span class="hld__adv-help" title="此配置表示部分可以快捷键切换的功能默认行为策略\n选中时：关闭功能(如隐藏头像)也可以通过快捷键切换显示/隐藏\n取消时：关闭功能(如隐藏头像)将彻底关闭功能，快捷键会失效">动态功能启用</span></td><td><input type="checkbox" id="hld__adv_dynamicEnable"></td></tr>
     <tr><td><span class="hld__adv-help" title="此配置表示拉黑某人后对帖子的屏蔽策略\n选中时：回复被拉黑用户的回复也会被删除\n取消时：仅删除被拉黑者的回复"> 严格拉黑模式</td><td><input type="checkbox" id="hld__adv_banStrictMode"></td></tr>
+    <tr><td><span class="hld__adv-help" title="选中时：默认隐藏标注与拉黑按钮, 当鼠标停留区域时, 才会显示\n取消时：一直显示"> 按需显示标注拉黑按钮</td><td><input type="checkbox" id="hld__adv_autoHideBanIcon"></td></tr>
     <tr><td><span class="hld__adv-help" title="此配置表示关键字的屏蔽策略\n选中时：关键字屏蔽将排除标题\n取消时：标题及正文回复都会被屏蔽"> 关键字屏蔽排除标题</td><td><input type="checkbox" id="hld__adv_kwdWithoutTitle"></td></tr>
-    <tr><td><span class="hld__adv-help" title="滚动条滚动到距离底部多少距离时执行自动翻页\n单位是页面高度的百分比(%)\n例如10即为滚动条滚动到距离底部有页面高度10%距离的时候，进行翻页">自动翻页检测距离</span></td><td><input type="number" id="hld__adv_autoPageOffset"></td></tr>
     <tr><td><span class="hld__adv-help" title="Excel最左列的显示序号，此策略为尽可能的更像Excel\n选中时：Excel最左栏为从1开始往下，逐行+1\n取消时：Excel最左栏为原始的回帖数\n*此功能仅在贴列表有效">Excel左列序号</span></td><td><input type="checkbox" id="hld__adv_excelNoMode"></td></tr>
-    <tr><td><span class="hld__adv-help" title="Excel模式下标签栏的名称">Excel标题</span></td><td><input type="text" id="hld__adv_excelTitle"></td></tr>
+    <tr><td><span class="hld__adv-help" title="Excel模式下标签栏的名称">Excel标题</span></td><td><input type="text" id="hld__adv_excelTitle"></td></tr>    </table>
+    <table>
+    <!-- <tr><td><span class="hld__adv-help" title=" "> </td><td><input type="checkbox" id="hld__adv_"></td></tr> -->
+    <tr><td><span class="hld__adv-help" title="滚动条滚动到距离底部多少距离时执行自动翻页\n单位是页面高度的百分比(%)\n例如10即为滚动条滚动到距离底部有页面高度10%距离的时候，进行翻页">自动翻页检测距离</span></td><td><input type="number" id="hld__adv_autoPageOffset"></td></tr>
     <tr><td><span class="hld__adv-help" title="标记楼主中的[楼主]的颜色，单位为16进制颜色代码">标记楼主颜色</span></td><td><input type="text" id="hld__adv_authorMarkColor"></td></tr>
     <tr><td><span class="hld__adv-help" title="图片缩放功能中对图片缩放的大小，单位为像素(px)\n*图片高度自适应">图片缩放宽度</span></td><td><input type="number" id="hld__adv_imgResizeWidth"></td></tr>
     <tr><td><span class="hld__adv-help" title="此配置表示标记功能的风格显示\n选中时：v2.9及以前的备注风格(仿微博)，此风格不能更改颜色\n取消时：新版标记风格"> 经典备注风格</td><td><input type="checkbox" id="hld__adv_classicRemark"></td></tr>
+    <tr><td><span class="hld__adv-help" title="选中时：隐藏版头顶部背景图片\n取消时：无操作"> 隐藏版头同时隐藏背景图片</td><td><input type="checkbox" id="hld__adv_hideCustomBg"></td></tr>
     </table>
     </div>
     </div>
@@ -904,50 +955,55 @@
     </div>
     </div>
     </div>`)
-    $('body').append($panel_dom)
+    $('body').append($panelDom)
     //本地恢复设置
     //基础设置
     for (let k in setting) {
         if ($('#hld__cb_' + k).length > 0) {
             $('#hld__cb_' + k)[0].checked = setting[k]
-            const enable_dom_id = $('#hld__cb_' + k).attr('enable')
-            if (enable_dom_id) {
-                setting[k] ? $('#' + enable_dom_id).show() : $('#' + enable_dom_id).hide()
-                $('#' + enable_dom_id).find('input').each(function () {
+            const enableDomID = $('#hld__cb_' + k).attr('enable')
+            if (enableDomID) {
+                setting[k] ? $('#' + enableDomID).show() : $('#' + enableDomID).hide()
+                $('#' + enableDomID).find('input').each(function () {
                     $(this).val() == setting[$(this).attr('name').substr(8)] && ($(this)[0].checked = true)
                 })
                 $('#hld__cb_' + k).on('click', function () {
-                    $(this)[0].checked ? $('#' + enable_dom_id).slideDown() : $('#' + enable_dom_id).slideUp()
+                    $(this)[0].checked ? $('#' + enableDomID).slideDown() : $('#' + enableDomID).slideUp()
                 })
             }
         }
     }
     //高级设置
-    for (let k in advanced_setting) {
+    for (let k in advancedSetting) {
         //hld__adv_autoPageOffset
         if ($('#hld__adv_' + k).length > 0) {
-            const value_type = typeof advanced_setting[k]
-            if (value_type == 'boolean') {
-                $('#hld__adv_' + k)[0].checked = advanced_setting[k]
+            const valueType = typeof advancedSetting[k]
+            if (valueType == 'boolean') {
+                $('#hld__adv_' + k)[0].checked = advancedSetting[k]
             }
-            if (value_type == 'number' || value_type == 'string') {
-                $('#hld__adv_' + k).val(advanced_setting[k])
+            if (valueType == 'number' || valueType == 'string') {
+                $('#hld__adv_' + k).val(advancedSetting[k])
             }
         }
     }
     //高级设置-事件绑定
     $('body').on('click', '#hld__advanced_button', function () {
-        $('.hld__advanced-setting-panel').toggle()
-        $(this).text($('.hld__advanced-setting-panel').is(':hidden') ? '+' : '-')
+        if ($('.hld__advanced-setting-panel').is(':hidden')) {
+            $('.hld__advanced-setting-panel').css('display', 'flex')
+            $(this).text('-')
+        } else {
+            $('.hld__advanced-setting-panel').css('display', 'none')
+            $(this).text('+')
+        }
     })
     //调色板绑定
-    $('#hld__setting_cover').find('#hld__adv_authorMarkColor').spectrum(color_picker_config)
+    $('#hld__setting_cover').find('#hld__adv_authorMarkColor').spectrum(colorPickerConfig)
     /**
      * 导入导出设置面板
      */
     $('body').on('click', '#hld__backup_panel', function () {
         const unsupported = 3.3
-        const current_ver = +GM_info.script.version
+        const currentVer = +GM_info.script.version
         if($('#hld__export_panel').length > 0) return
         $('#hld__setting_cover').append(`<div id="hld__export_panel" class="hld__list-panel animated fadeInUp">
             <a href="javascript:void(0)" class="hld__setting-close">×</a>
@@ -975,11 +1031,11 @@
             let obj = {}
             if ($('#hld__cb_export_setting').prop('checked')) {
                 obj['setting'] = setting
-                obj['advanced_setting'] = advanced_setting
+                obj['advanced_setting'] = advancedSetting
             }
-            $('#hld__cb_export_banlist').prop('checked') && (obj['ban_list'] = ban_list)
-            $('#hld__cb_export_marklist').prop('checked') && (obj['mark_list'] = mark_list)
-            $('#hld__cb_export_keywordlist').prop('checked') && (obj['keywords_list'] = keywords_list)
+            $('#hld__cb_export_banlist').prop('checked') && (obj['ban_list'] = banList)
+            $('#hld__cb_export_marklist').prop('checked') && (obj['mark_list'] = markList)
+            $('#hld__cb_export_keywordlist').prop('checked') && (obj['keywords_list'] = keywordsList)
 
             if (Object.keys(obj).length == 0) {
                 $('#hld__export_msg').html('<span style="color:#CC0000">没有选择任何项目可供导出！</span>')
@@ -997,33 +1053,33 @@
             if ($('#hld__export_str').val()) {
                 try {
                     let obj = JSON.parse(Base64.decode($('#hld__export_str').val()))
-                    if (obj.ver > current_ver) {
+                    if (obj.ver > currentVer) {
                         popMsg(`此配置是由更高版本(v${obj.ver.toFixed(1)})的脚本导出，请升级您的脚本 <a title="更新地址" href="https://greasyfork.org/zh-CN/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C" target="_blank">[脚本地址]</a>`, 'warn')
                         return
                     }
                     if (obj.ver < unsupported) {
-                        popMsg(`此配置是由低版本(v${obj.ver.toFixed(1)})的脚本导出，当前版本(v${current_ver})已不支持！`, 'err')
+                        popMsg(`此配置是由低版本(v${obj.ver.toFixed(1)})的脚本导出，当前版本(v${currentVer})已不支持！`, 'err')
                         return
                     }
                     let confirm = window.confirm('此操作会覆盖你的配置，确认吗？')
                     if (!confirm) return
                     if (Object.keys(obj).includes('setting')) {
                         obj.setting && (setting = obj.setting)
-                        obj.advanced_setting && (advanced_setting = obj.advanced_setting)
+                        obj.advanced_setting && (advancedSetting = obj.advanced_setting)
                         window.localStorage.setItem('hld__NGA_setting', JSON.stringify(setting))
-                        window.localStorage.setItem('hld__NGA_advanced_setting', JSON.stringify(advanced_setting))
+                        window.localStorage.setItem('hld__NGA_advanced_setting', JSON.stringify(advancedSetting))
                     }
                     if (Object.keys(obj).includes('ban_list')) {
-                        ban_list = obj.ban_list
-                        window.localStorage.setItem('hld__NGA_ban_list', ban_list.join(','))
+                        banList = obj.ban_list
+                        window.localStorage.setItem('hld__NGA_ban_list', banList.join(','))
                     }
                     if (Object.keys(obj).includes('mark_list')) {
-                        mark_list = obj.mark_list
-                        window.localStorage.setItem('hld__NGA_mark_list', mark_list.join(','))
+                        markList = obj.mark_list
+                        window.localStorage.setItem('hld__NGA_mark_list', markList.join(','))
                     }
                     if (Object.keys(obj).includes('keywords_list')) {
-                        keywords_list = obj.keywords_list
-                        window.localStorage.setItem('hld__NGA_keywords_list', keywords_list.join(','))
+                        keywordsList = obj.keywords_list
+                        window.localStorage.setItem('hld__NGA_keywords_list', keywordsList.join(','))
                     }
                     $('#hld__export_msg').html('<span style="color:#009900">导入成功，刷新浏览器以生效</span>')
 
@@ -1041,22 +1097,22 @@
             $('input#hld__cb_' + k).length > 0 && (setting[k] = $('input#hld__cb_' + k)[0].checked)
         }
         window.localStorage.setItem('hld__NGA_setting', JSON.stringify(setting))
-        for (let k in advanced_setting) {
+        for (let k in advancedSetting) {
             if ($('#hld__adv_' + k).length > 0) {
-                const value_type = typeof advanced_setting[k]
-                if (value_type == 'boolean') {
-                    advanced_setting[k] =  $('#hld__adv_' + k)[0].checked
+                const valueType = typeof advancedSetting[k]
+                if (valueType == 'boolean') {
+                    advancedSetting[k] =  $('#hld__adv_' + k)[0].checked
                 }
-                if (value_type == 'number') {
-                    advanced_setting[k] = +$('#hld__adv_' + k).val()
+                if (valueType == 'number') {
+                    advancedSetting[k] = +$('#hld__adv_' + k).val()
                 }
-                if (value_type == 'string') {
-                    advanced_setting[k] = $('#hld__adv_' + k).val()
+                if (valueType == 'string') {
+                    advancedSetting[k] = $('#hld__adv_' + k).val()
                 }
             }
         }
-        window.localStorage.setItem('hld__NGA_advanced_setting', JSON.stringify(advanced_setting))
-        $panel_dom.hide()
+        window.localStorage.setItem('hld__NGA_advanced_setting', JSON.stringify(advancedSetting))
+        $panelDom.hide()
         popMsg('保存成功，刷新页面生效')
     })
     /**
@@ -1092,9 +1148,9 @@
      * 消息弹框
      * @param {String} msg 消息内容
      * @param {String} type 消息类型
-     * @param {Boolean} refresh_enable 启用自动刷新
+     * @param {Boolean} refreshEnable 启用自动刷新
      */
-    function popMsg(msg, type='ok', refresh_enable=true) {
+    function popMsg(msg, type='ok', refreshEnable=true) {
         $('.hld__msg').length > 0 && $('.hld__msg').remove()
         let $msg = $(`<div class="hld__msg hld__msg-${type}">${msg}</div>`)
         $('body').append($msg)
@@ -1108,11 +1164,27 @@
      */
     function popNotification (msg) {
         $('#hld__noti_container').length == 0 && $('body').append('<div id="hld__noti_container"></div>')
-        let $msg_box = $(`<div class="hld__noti-msg">${msg}</div>`)
-        $('#hld__noti_container').append($msg_box)
-        $msg_box.slideDown(100)
-        setTimeout(() => { $msg_box.fadeOut(500) }, 1000)
-        setTimeout(() => { $msg_box.remove() }, 1500)
+        let $msgBox = $(`<div class="hld__noti-msg">${msg}</div>`)
+        $('#hld__noti_container').append($msgBox)
+        $msgBox.slideDown(100)
+        setTimeout(() => { $msgBox.fadeOut(500) }, 1000)
+        setTimeout(() => { $msgBox.remove() }, 1500)
+    }
+    /**
+     * 获取URL参数对象
+     * @return {Object} 参数对象
+     */
+    function getQuerySet() {
+        let queryList = {}
+        let url = decodeURI(window.location.search.replace(/&amp;/g, "&"))
+        url.startsWith('?') && (url = url.substring(1))
+        url.split('&').forEach(item => {
+            let t = item.split('=')
+            if (t[0] && t[1]) {
+                queryList[t[0]] = t[1]
+            }
+        })
+        return queryList
     }
     /**
      * 获取URL参数
@@ -1120,11 +1192,11 @@
      * @return {String|null} 参数的值
      */
     function getQueryString(name) {
-        var url = decodeURI(window.location.search.replace(/&amp;/g, "&"));
-        var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)");
-        var r = url.substr(1).match(reg);
-        if (r != null) return unescape(r[2]);
-        return null;
+        let url = decodeURI(window.location.search.replace(/&amp;/g, "&"))
+        let reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)")
+        let r = url.substr(1).match(reg)
+        if (r != null) return unescape(r[2])
+        return null
     }
     /**
      * 列表去重
@@ -1171,49 +1243,49 @@
      */
     function banlistPopup (setting) {
         $('.hld__dialog').length > 0 && $('.hld__dialog').remove()
-        const retain_word = [':', '(', ')', '&', '#', '^', ',']
-        let $ban_dialog = $(`<div class="hld__dialog hld__dialog-sub-top hld__list-panel animated zoomIn"  style="top: ${setting.top}px;left: ${setting.left}px;"><a href="javascript:void(0)" class="hld__setting-close">×</a><div id="container_dom"></div><div class="hld__dialog-buttons"></div></div>`)
+        const retainWord = [':', '(', ')', '&', '#', '^', ',']
+        let $banDialog = $(`<div class="hld__dialog hld__dialog-sub-top hld__list-panel animated zoomIn"  style="top: ${setting.top}px;left: ${setting.left}px;"><a href="javascript:void(0)" class="hld__setting-close">×</a><div id="container_dom"></div><div class="hld__dialog-buttons"></div></div>`)
         if (setting.type == 'confirm') {
-            $ban_dialog.find('#container_dom').append(`<div><span>您确定要拉黑用户</span><span class="hld__dialog-user">${setting.name}</span><span>吗？</span></div>`)
-            let $ok_btn = $('<button class="hld__btn">拉黑</button>')
-            $ok_btn.click(function(){
-                const ban_obj = {name: setting.name, uid: setting.uid}
-                !getBanUser(ban_obj) && ban_list.push(ban_obj)
-                window.localStorage.setItem('hld__NGA_ban_list', JSON.stringify(ban_list))
+            $banDialog.find('#container_dom').append(`<div><span>您确定要拉黑用户</span><span class="hld__dialog-user">${setting.name}</span><span>吗？</span></div>`)
+            let $okBtn = $('<button class="hld__btn">拉黑</button>')
+            $okBtn.click(function(){
+                const banObj = {name: setting.name, uid: setting.uid}
+                !getBanUser(banObj) && banList.push(banObj)
+                window.localStorage.setItem('hld__NGA_ban_list', JSON.stringify(banList))
                 $('.hld__dialog').remove()
                 popMsg('拉黑成功，重载页面生效')
             })
-            $ban_dialog.find('.hld__dialog-buttons').append($ok_btn)
+            $banDialog.find('.hld__dialog-buttons').append($okBtn)
         }else if (setting.type == 'add') {
-            $ban_dialog.find('#container_dom').append(`<div>添加用户：</div><div><input id="hld__dialog_add_uid" type="text" value="" placeholder="UID"></div><div><input id="hld__dialog_add_name" type="text" value="" placeholder="用户名"></div>`)
-            let $ok_btn = $('<button class="hld__btn">添加</button>')
-            $ok_btn.click(function(){
-                const name = $ban_dialog.find('#hld__dialog_add_name').val().trim()
-                const uid = $ban_dialog.find('#hld__dialog_add_uid').val().trim() + ''
+            $banDialog.find('#container_dom').append(`<div>添加用户：</div><div><input id="hld__dialog_add_uid" type="text" value="" placeholder="UID"></div><div><input id="hld__dialog_add_name" type="text" value="" placeholder="用户名"></div>`)
+            let $okBtn = $('<button class="hld__btn">添加</button>')
+            $okBtn.click(function(){
+                const name = $banDialog.find('#hld__dialog_add_name').val().trim()
+                const uid = $banDialog.find('#hld__dialog_add_uid').val().trim() + ''
                 if (!name && !uid) {
                     popMsg('UID与用户名必填一个，其中UID权重较大', 'err')
                     return
                 }
-                !getBanUser({name, uid}) && ban_list.push({name, uid})
-                window.localStorage.setItem('hld__NGA_ban_list', JSON.stringify(ban_list))
+                !getBanUser({name, uid}) && banList.push({name, uid})
+                window.localStorage.setItem('hld__NGA_ban_list', JSON.stringify(banList))
                 $('.hld__dialog').remove()
                 setting.callback()
             })
-            $ban_dialog.find('.hld__dialog-buttons').append($ok_btn)
+            $banDialog.find('.hld__dialog-buttons').append($okBtn)
         }
-        $('body').append($ban_dialog)
+        $('body').append($banDialog)
     }
     /**
      * 获取黑名单用户
      */
     function getBanUser(ban_obj) {
-        for (let u of ban_list) {
+        for (let u of banList) {
             if ((u.uid && ban_obj.uid && u.uid == ban_obj.uid) || 
                 (u.name && ban_obj.name && u.name == ban_obj.name)) {
                 if ((!u.uid && ban_obj.uid) || (!u.name && ban_obj.name)) {
                     u.uid = ban_obj.uid + '' || ''
                     u.name = ban_obj.name || ''
-                    window.localStorage.setItem('hld__NGA_ban_list', JSON.stringify(ban_list))
+                    window.localStorage.setItem('hld__NGA_ban_list', JSON.stringify(banList))
                 }
                 return u
             }
@@ -1225,18 +1297,18 @@
      */
     function reloadBanlist() {
         $('#hld__banlist').empty()
-        ban_list.forEach((item, index) => $('#hld__banlist').append(`<tr><td title="${item.name}">${item.name}</td><td title="${item.uid}">${item.uid}</td><td><span class="hld__us-action hld__us-del hld__bl-del" title="删除" data-index="${index}" data-name="${item.name}" data-uid="${item.uid}"></span></td></tr>`))
-        $('#hld__ban_list_textarea').val(JSON.stringify(ban_list))
+        banList.forEach((item, index) => $('#hld__banlist').append(`<tr><td title="${item.name}">${item.name}</td><td title="${item.uid}">${item.uid}</td><td><span class="hld__us-action hld__us-del hld__bl-del" title="删除" data-index="${index}" data-name="${item.name}" data-uid="${item.uid}"></span></td></tr>`))
+        $('#hld__ban_list_textarea').val(JSON.stringify(banList))
     }
     /**
      * 重新渲染标签列表
      */
     function reloadMarklist() {
         $('#hld__marklist').empty()
-        mark_list.forEach((user_mark, index) => {
+        markList.forEach((user_mark, index) => {
             $('#hld__marklist').append(`<tr><td title="${user_mark.name}">${user_mark.name}</td><td title="${user_mark.uid}">${user_mark.uid}</td><td title="${user_mark.marks.length}">${user_mark.marks.length}</td><td><span class="hld__us-action hld__us-edit hld__ml-edit" title="编辑" data-index="${index}" data-name="${user_mark.name}" data-uid="${user_mark.uid}"></span><span class="hld__us-action hld__us-del hld__ml-del" title="删除" data-index="${index}" data-name="${user_mark.name}" data-uid="${user_mark.uid}"></span></td></tr>`)
         })
-        $('#hld__mark_list_textarea').val(JSON.stringify(mark_list))
+        $('#hld__mark_list_textarea').val(JSON.stringify(markList))
     }
     /**
      * 标记弹窗
@@ -1251,7 +1323,7 @@
     function userMarkPopup(setting) {
         $('.hld__dialog').length > 0 && $('.hld__dialog').remove()
         const retain_word = [':', '(', ')', '&', '#', '^', ',']
-        let $mark_dialog = $(`<div class="hld__dialog hld__dialog-sub-top hld__list-panel animated zoomIn" style="top: ${setting.top}px;left: ${setting.left}px;">
+        let $markDialog = $(`<div class="hld__dialog hld__dialog-sub-top hld__list-panel animated zoomIn" style="top: ${setting.top}px;left: ${setting.left}px;">
         <a href="javascript:void(0)" class="hld__setting-close">×</a>
         ${setting.type == 'add' ? `<div style="display:block;">添加用户：<input id="hld__dialog_add_uid" type="text" value="" placeholder="UID"><input id="hld__dialog_add_name" type="text" value="" placeholder="用户名"></div>` : ''}
         <table class="hld__dialog-mark-table">
@@ -1272,53 +1344,53 @@
             <td><button title="删除此标签" class="hld__mark-del">x</button></td>
             </tr>`)
             $tr.find('.hld__mark-del').click(function(){$(this).parents('tr').remove()})
-            $tr.find('.hld__dialog-color-picker').spectrum(color_picker_config)
-            $mark_dialog.find('#hld__mark_body').append($tr)
+            $tr.find('.hld__dialog-color-picker').spectrum(colorPickerConfig)
+            $markDialog.find('#hld__mark_body').append($tr)
             n && $tr.find('.hld__mark-mark').focus()
         }
 
         //恢复标签
-        const exist_mark = getUserMarks({name: setting.name, uid: setting.uid})
-        exist_mark !== null && exist_mark.marks.forEach(item => insertRemarkRow(item.mark, item.text_color, item.bg_color, false))
+        const existMark = getUserMarks({name: setting.name, uid: setting.uid})
+        existMark !== null && existMark.marks.forEach(item => insertRemarkRow(item.mark, item.text_color, item.bg_color, false))
 
-        let $add_btn = $('<button class="hld__btn">+添加标签</button>')
-        $add_btn.click(() => insertRemarkRow())
-        $mark_dialog.find('.hld__dialog-buttons').append($add_btn)
-        let $ok_btn = $('<button class="hld__btn">保存</button>')
+        let $addBtn = $('<button class="hld__btn">+添加标签</button>')
+        $addBtn.click(() => insertRemarkRow())
+        $markDialog.find('.hld__dialog-buttons').append($addBtn)
+        let $okBtn = $('<button class="hld__btn">保存</button>')
 
-        $ok_btn.click(function(){
-            let user_marks = {marks: []}
+        $okBtn.click(function(){
+            let userMarks = {marks: []}
             if (setting.type == 'add') {
-                user_marks.name = $mark_dialog.find('#hld__dialog_add_name').val().trim()
-                user_marks.uid = $mark_dialog.find('#hld__dialog_add_uid').val().trim() + ''
+                userMarks.name = $markDialog.find('#hld__dialog_add_name').val().trim()
+                userMarks.uid = $markDialog.find('#hld__dialog_add_uid').val().trim() + ''
             } else {
-                user_marks.name = setting.name
-                user_marks.uid = setting.uid + ''
+                userMarks.name = setting.name
+                userMarks.uid = setting.uid + ''
             }
-            if (!user_marks.name && !user_marks.uid) {
+            if (!userMarks.name && !userMarks.uid) {
                 popMsg('UID与用户名必填一个，其中UID权重较大', 'err')
                 return
             }
             $('#hld__mark_body > tr').each(function(){
                 const mark = $(this).find('.hld__mark-mark').val().trim()
-                const text_color = $(this).find('.hld__mark-text-color').val()
-                const bg_color = $(this).find('.hld__mark-bg-color').val()
+                const textColor = $(this).find('.hld__mark-text-color').val()
+                const bgColor = $(this).find('.hld__mark-bg-color').val()
                 if(mark) {
-                    user_marks.marks.push({mark, text_color, bg_color})
+                    userMarks.marks.push({mark, text_color: textColor, bg_color: bgColor})
                 }
             })
-            if (setting.type == 'add' && user_marks.marks.length == 0) {
+            if (setting.type == 'add' && userMarks.marks.length == 0) {
                 popMsg('至少添加一个标签内容', 'err')
                 return
             }
-            setUserMarks(user_marks)
+            setUserMarks(userMarks)
             popMsg('保存成功，重载页面生效')
             $('.hld__dialog').remove()
             setting.callback()
         })
-        $mark_dialog.find('.hld__dialog-buttons').append($ok_btn)
-        $('body').append($mark_dialog)
-        $('.hld__dialog-color-picker').spectrum(color_picker_config)
+        $markDialog.find('.hld__dialog-buttons').append($okBtn)
+        $('body').append($markDialog)
+        $('.hld__dialog-color-picker').spectrum(colorPickerConfig)
     }
     /**
      * 获取用户标签对象
@@ -1327,38 +1399,38 @@
      * @return {Object|null} 标签对象
      */
     function getUserMarks(user) {
-        const check = mark_list.findIndex(v => (v.uid && user.uid && v.uid == user.uid) || 
+        const check = markList.findIndex(v => (v.uid && user.uid && v.uid == user.uid) || 
         (v.name && user.name && v.name == user.name))
         if(check > -1) {
-            let user_mark = mark_list[check]
-            if ((!user_mark.uid && user.uid) || (!user_mark.name && user.name)) {
-                user_mark.uid = user.uid + '' || ''
-                user_mark.name = user.name || ''
-                window.localStorage.setItem('hld__NGA_mark_list', JSON.stringify(mark_list))
+            let userMark = markList[check]
+            if ((!userMark.uid && user.uid) || (!userMark.name && user.name)) {
+                userMark.uid = user.uid + '' || ''
+                userMark.name = user.name || ''
+                window.localStorage.setItem('hld__NGA_mark_list', JSON.stringify(markList))
             }
-            return mark_list[check]
+            return markList[check]
         } else {
             return null
         }
     }
     /**
      * 保存标签
-     * @param {Object} user_marks 标签对象
+     * @param {Object} userMarks 标签对象
      */
-    function setUserMarks(user_marks) {
+    function setUserMarks(userMarks) {
         //检查是否已有标签
-        const check = mark_list.findIndex(v => (v.uid && user_marks.uid && v.uid == user_marks.uid) || 
-        (v.name && user_marks.name && v.name == user_marks.name))
+        const check = markList.findIndex(v => (v.uid && userMarks.uid && v.uid == userMarks.uid) || 
+        (v.name && userMarks.name && v.name == userMarks.name))
         if(check > -1) {
-            if (user_marks.marks.length == 0) {
-                mark_list.splice(check, 1)
+            if (userMarks.marks.length == 0) {
+                markList.splice(check, 1)
             } else {
-                mark_list[check] = user_marks
+                markList[check] = userMarks
             }
         }else {
-            mark_list.push(user_marks)
+            markList.push(userMarks)
         }
-        window.localStorage.setItem('hld__NGA_mark_list', JSON.stringify(mark_list))
+        window.localStorage.setItem('hld__NGA_mark_list', JSON.stringify(markList))
     }
     /**
      * 颜色RGB转HEX
@@ -1418,7 +1490,7 @@
 .hld__list-panel .hld__list-c > p:first-child {font-weight:bold;font-size:14px;margin-bottom:10px;}
 #hld__updated {position:fixed;top:20px;right:20px;width:200px;padding:10px;border-radius:5px;box-shadow:0 0 15px #666;border:1px solid #591804;background:#fff8e7;z-index: 9999;}
 #hld__updated .hld__readme {text-decoration:underline;color:#591804;}
-.hld__img-resize {outline:'';outline-offset:'';cursor:alias;min-width:auto !important;min-height:auto !important;max-width:${advanced_setting.imgResizeWidth || 200}px !important;margin:5px;}
+.hld__img-resize {outline:'';outline-offset:'';cursor:alias;min-width:auto !important;min-height:auto !important;max-width:${advancedSetting.imgResizeWidth || 200}px !important;margin:5px;}
 #hld__setting_panel {position:relative;background:#fff8e7;width:526px;padding:15px 20px;border-radius:10px;box-shadow:0 0 10px #666;border:1px solid #591804;}
 #hld__setting_panel > div.hld__field {float:left;width:50%;}
 #hld__setting_panel p {margin-bottom:10px;}
@@ -1430,7 +1502,9 @@
 button.hld__btn {padding:3px 8px;border:1px solid #591804;background:#fff8e7;color:#591804;}
 button.hld__btn:hover {background:#591804;color:#fff0cd;}
 .hld__btn-groups {display:flex;justify-content:center !important;margin-top:10px;}
-.hld__post-author {color:${advanced_setting.authorMarkColor};font-weight:bold;}
+.hld__post-author {color:${advancedSetting.authorMarkColor};font-weight:bold;}
+.hld__extra-icon-box {padding: 5px 5px 5px 0;opacity: 0;transition: all ease .2s;}
+.hld__extra-icon-box:hover {opacity: 1;}
 .hld__extra-icon {position: relative;padding:0 2px;background-repeat:no-repeat;background-position:center;}
 .hld__extra-icon svg {width:10px;height:10px;vertical-align:-0.15em;fill:currentColor;overflow:hidden;cursor:pointer;}
 .hld__extra-icon:hover {text-decoration:none;}
@@ -1510,7 +1584,9 @@ code {padding:2px 4px;font-size:90%;font-weight:bold;color:#c7254e;background-co
 .hld__advanced-setting {border-top: 1px solid #e0c19e;border-bottom: 1px solid #e0c19e;padding: 3px 0;margin-top:25px;}
 .hld__advanced-setting >span {font-weight:bold}
 .hld__advanced-setting >button {padding: 0px;margin-right:5px;width: 18px;text-align: center;}
-.hld__advanced-setting-panel {display:none;padding:5px 0;}
+.hld__advanced-setting-panel {display:none;padding:5px 0;flex-wrap: wrap;}
+.hld__advanced-setting-panel>p {width:100%;}
+.hld__advanced-setting-panel>table {width:50%;}
 .hld__advanced-setting-panel>p {margin: 7px 0 !important;font-weight:bold;}
 .hld__advanced-setting-panel>p svg {height:16px;width:16px;vertical-align: top;margin-right:3px;}
 .hld__advanced-setting-panel>table td {padding-right:10px}
@@ -1651,6 +1727,17 @@ input.spectrum.with-add-on{border-top-left-radius:0;border-bottom-left-radius:0;
 .hld__us-action:hover{opacity:.8}
 .hld__us-edit{background-size:20px;background-image:url("data:image/svg+xml,%3Csvg t='1595910222437' class='icon' viewBox='0 0 1024 1024' version='1.1' xmlns='http://www.w3.org/2000/svg' p-id='3699'%3E%3Cpath d='M533.333333 106.666667v85.333333H213.333333v618.666667h618.666667V490.666667h85.333333v405.333333H128V106.666667h405.333333z m355.114667 97.237333L501.504 590.826667l-64.426667-64.426667L824.021333 139.498667l64.426667 64.426666z' p-id='3700'%3E%3C/path%3E%3C/svg%3E")}
 .hld__us-del{background-image:url("data:image/svg+xml,%3Csvg t='1595910451854' class='icon' viewBox='0 0 1024 1024' version='1.1' xmlns='http://www.w3.org/2000/svg' p-id='4969'%3E%3Cpath d='M769.214785 190.785215V0h-511.488511v190.785215H2.365634v65.918082H1022.977023V190.785215h-253.762238zM320.959041 61.954046h384.383616v128.895105H320.959041V61.954046zM386.621379 382.593407h61.954046v446.593406h-61.954046V382.593407zM577.406593 382.593407H639.360639v446.593406h-61.954046V382.593407z' p-id='4970'%3E%3C/path%3E%3Cpath d='M832.191808 959.040959h-639.360639V318.657343h-63.936064v705.342657h767.616384V318.657343h-64.319681V959.040959z' p-id='4971'%3E%3C/path%3E%3C/svg%3E")}
+.hld__docker{position:fixed;height:80px;width:30px;bottom:135px;right:0;transition:all ease .2s}
+.hld__docker:hover{width:150px;height:200px;bottom:80px}
+.hld__docker-sidebar{background:#0f0;position:fixed;height:50px;width:20px;bottom:150px;right:0;display:flex;justify-content:center;align-items:center;background:#fff6df;border:1px solid #591804;box-shadow:0 0 5px #444;border-right:none;border-radius:5px 0 0 5px}
+.hld__excel-body .hld__docker-sidebar{background:#fff;border:1px solid #bbb}
+.hld__docker-btns{position:absolute;top:0;left:50px;bottom:0;right:50px;display:flex;justify-content:center;align-items:center;flex-direction:column}
+.hld__docker .hld__docker-btns>div{opacity:0}
+.hld__docker:hover .hld__docker-btns>div{opacity:1}
+.hld__docker-btns>div{background:#fff6df;border:1px solid #591804;box-shadow:0 0 5px #444;width:50px;height:50px;border-radius:50%;margin:10px 0;cursor:pointer;display:flex;justify-content:center;align-items:center}
+.hld__excel-body .hld__docker-btns>div{background:#fff;border:1px solid #bbb}
+.hld__docker-btns svg{width:30px;height:30px;transition:all ease .2s}
+.hld__docker-btns svg:hover{width:40px;height:40px}
 `))
     document.getElementsByTagName('head')[0].appendChild(style)
 })();
