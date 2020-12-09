@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      3.4
+// @version      3.5
 // @author       HLD
 // @description  NGA论坛显示优化，功能增强，防止突然蹦出一对??而导致的突然性的社会死亡
 // @license      MIT
@@ -25,6 +25,7 @@
         hideSign: true,
         hideHeader: true,
         excelMode: false,
+        foldQuote: true,
         linkTargetBlank: false,
         imgResize: true,
         authorMark: true,
@@ -35,7 +36,7 @@
     }
     let advancedSetting = {
         dynamicEnable: true,
-        banStrictMode: false,
+        banStrictMode: 'REMOVE',
         kwdWithoutTitle: false,
         hideCustomBg: false,
         autoPageOffset: 5,
@@ -43,6 +44,7 @@
         excelTitle: '工作簿1',
         authorMarkColor: '#FF0000',
         imgResizeWidth: 200,
+        foldQuoteHeight: 300,
         classicRemark: false,
         autoHideBanIcon: false
     }
@@ -495,7 +497,9 @@
             }
         }
         if ($('.hld__excel-body').length > 0) {
-            $(document).attr('title') != advancedSetting.excelTitle && $(document).attr('title', advancedSetting.excelTitle);
+            if (advancedSetting.excelTitle) {
+                $(document).attr('title') != advancedSetting.excelTitle && $(document).attr('title', advancedSetting.excelTitle)
+            }
             $('#hld__excel_icon').length == 0 && $('head').append('<link id= "hld__excel_icon" rel="shortcut icon" type="image/png" href="https://s1.ax1x.com/2020/06/28/N25Jpt.png" />')
         }
         //自动翻页
@@ -537,10 +541,10 @@
             let $toggleHeaderBtn = $('<button style="position: absolute;right: 16px;" id="hld__switch_header">切换显示版头</button>')
             $toggleHeaderBtn.click(() => $('#toppedtopic, #sub_forums').toggle())
             $('#toptopics > div > h3').append($toggleHeaderBtn)
-            if(advancedSetting.hideCustomBg) {
-                $('#custombg').hide()
-                $('#mainmenu').css('margin', '0px')
-            }
+        }
+        if(setting.hideHeader && advancedSetting.hideCustomBg) {
+            $('#custombg').hide()
+            $('#mainmenu').css('margin', '0px')
         }
         $('.topicrow[hld-render!=ok]').each(function () {
             const title = $(this).find('.c2>a').text()
@@ -714,6 +718,21 @@
                     advancedSetting.autoHideBanIcon ? $(this).after(`<span class="hld__extra-icon-box">${mbDom}</span>`) : $(this).append(mbDom)
                 })
             }
+            //自动折叠过长引用
+            if (setting.foldQuote && $(this).find('.postcontent .quote').length > 0) {
+                let $quote = $(this).find('.postcontent .quote')
+                if ($quote.height() > (advancedSetting.foldQuoteHeight || 300)) {
+                    const originalHeight = $quote.height()
+                    $quote.addClass('hld__quote-fold')
+                    const foldHeight = $quote.height()
+                    const $openBtn = $(`<div class="hld__quote-box"><button>查看全部 (剩余${100-parseInt(foldHeight/originalHeight*100)}%)</button></div>`)
+                    $openBtn.on('click', 'button', function(){
+                        $(this).parent().remove()
+                        $quote.removeClass('hld__quote-fold')
+                    })
+                    $quote.append($openBtn)
+                }
+            }
             //标记拉黑标签
             markDom($(this))
             //添加标志位
@@ -853,7 +872,22 @@
                 const banUser = getBanUser({name, uid})
                 if (banUser) {
                     //拉黑用户实现
-                    if (advancedSetting.banStrictMode) {
+                    if (advancedSetting.banStrictMode == 'HIDE') {
+                        if ($(this).hasClass('author')) {
+                            if ($(this).parents('div.comment_c').length > 0) {
+                                $(this).parents('div.comment_c').find('.ubbcode').hide()
+                                $(this).parents('div.comment_c').find('.ubbcode').after('<span class="hld__banned">此用户在你的黑名单中，已屏蔽其言论，点击查看</span>')
+                            } else {
+                                $(this).parents('.forumbox.postbox').find('.c2 .postcontent').hide()
+                                $(this).parents('.forumbox.postbox').find('.c2 .postcontent').after('<span class="hld__banned">此用户在你的黑名单中，已屏蔽其言论，点击查看</span>')
+                            }
+                        } else {
+                            if (!$(this).parent().is(':hidden')) {
+                                $(this).parent().hide()
+                                $(this).parent().after('<div class="quote"><span class="hld__banned">此用户在你的黑名单中，已屏蔽其言论，点击查看</span></div>')
+                            }
+                        }
+                    } else if (advancedSetting.banStrictMode == 'ALL') {
                         if ($(this).parents('div.comment_c').length > 0) $(this).parents('div.comment_c').remove()
                         else $(this).parents('.forumbox.postbox').remove()
                     } else {
@@ -861,7 +895,7 @@
                             if ($(this).parents('div.comment_c').length > 0) $(this).parents('div.comment_c').remove()
                             else $(this).parents('.forumbox.postbox').remove()
                         } else {
-                            $(this).parent().html('<span class="hld__banned">此用户在你的黑名单中，已屏蔽其言论</span>')
+                            $(this).parent().html('<span class="hld__banned">此用户在你的黑名单中，已屏蔽其言论，点击查看</span>')
                         }
                     }
                     console.warn(`【NGA优化摸鱼体验脚本-黑名单屏蔽】用户：${name}, UID:${uid}`)
@@ -891,7 +925,16 @@
             }
         })
     }
-
+    $('body').on('click', '.hld__banned', function(){
+        if ($(this).parent().hasClass('quote')) {
+            $(this).parent().prev().show()
+            $(this).parent().hide()
+        } else {
+            $(this).prev().show()
+            $(this).hide()
+        }
+ 
+    })
     //设置面板
     let $panelDom = $(`<div id="hld__setting_cover" class="animated zoomIn"><div id="hld__setting_panel">
    <a href="javascript:void(0)" id="hld__setting_close" class="hld__setting-close">×</a>
@@ -901,10 +944,11 @@
     <p><label><input type="checkbox" id="hld__cb_hideAvatar"> 隐藏头像（快捷键切换显示[<b>${getCodeName(setting.shortcutKeys[0])}</b>]）</label></p>
     <p><label><input type="checkbox" id="hld__cb_hideSmile"> 隐藏表情（快捷键切换显示[<b>${getCodeName(setting.shortcutKeys[1])}</b>]）</label></p>
     <p><label><input type="checkbox" id="hld__cb_hideImage"> 隐藏贴内图片（快捷键切换显示[<b>${getCodeName(setting.shortcutKeys[2])}</b>]）</label></p>
-    <p><label><input type="checkbox" id="hld__cb_imgResize"> 贴内图片缩放(默认缩放至宽200px)</label></p>
+    <p><label><input type="checkbox" id="hld__cb_imgResize"> 贴内图片缩放</label></p>
     <p><label><input type="checkbox" id="hld__cb_hideSign"> 隐藏签名</label></p>
     <p><label><input type="checkbox" id="hld__cb_hideHeader"> 隐藏版头/版规/子版入口</label></p>
     <p><label><input type="checkbox" id="hld__cb_excelMode"> Excel模式（快捷键切换显示[<b>${getCodeName(setting.shortcutKeys[5])}</b>]）</label></p>
+    <p><label><input type="checkbox" id="hld__cb_foldQuote"> 自动折叠过长的引用</label></p>
     <p><button id="hld__shortcut_manage">编辑快捷键</button></p>
     </div>
     <div class="hld__field">
@@ -930,16 +974,17 @@
     <table>
     <!-- <tr><td><span class="hld__adv-help" title=" "> </td><td><input type="checkbox" id="hld__adv_"></td></tr> -->
     <tr><td><span class="hld__adv-help" title="此配置表示部分可以快捷键切换的功能默认行为策略\n选中时：关闭功能(如隐藏头像)也可以通过快捷键切换显示/隐藏\n取消时：关闭功能(如隐藏头像)将彻底关闭功能，快捷键会失效">动态功能启用</span></td><td><input type="checkbox" id="hld__adv_dynamicEnable"></td></tr>
-    <tr><td><span class="hld__adv-help" title="此配置表示拉黑某人后对帖子的屏蔽策略\n选中时：回复被拉黑用户的回复也会被删除\n取消时：仅删除被拉黑者的回复"> 严格拉黑模式</td><td><input type="checkbox" id="hld__adv_banStrictMode"></td></tr>
+    <tr><td><span class="hld__adv-help" title="此配置表示拉黑某人后对帖子的屏蔽策略\n屏蔽：保留楼层, 仅会屏蔽用户的回复\n删除：将会删除楼层\n全部删除: 回复被拉黑用户的回复也会被删除"> 拉黑模式</td><td><select id="hld__adv_banStrictMode"><option value="HIDE">屏蔽</option><option value="REMOVE">删除</option><option value="ALL">全部删除</option></select></td></tr>
     <tr><td><span class="hld__adv-help" title="选中时：默认隐藏标注与拉黑按钮, 当鼠标停留区域时, 才会显示\n取消时：一直显示"> 按需显示标注拉黑按钮</td><td><input type="checkbox" id="hld__adv_autoHideBanIcon"></td></tr>
     <tr><td><span class="hld__adv-help" title="此配置表示关键字的屏蔽策略\n选中时：关键字屏蔽将排除标题\n取消时：标题及正文回复都会被屏蔽"> 关键字屏蔽排除标题</td><td><input type="checkbox" id="hld__adv_kwdWithoutTitle"></td></tr>
     <tr><td><span class="hld__adv-help" title="Excel最左列的显示序号，此策略为尽可能的更像Excel\n选中时：Excel最左栏为从1开始往下，逐行+1\n取消时：Excel最左栏为原始的回帖数\n*此功能仅在贴列表有效">Excel左列序号</span></td><td><input type="checkbox" id="hld__adv_excelNoMode"></td></tr>
-    <tr><td><span class="hld__adv-help" title="Excel模式下标签栏的名称">Excel标题</span></td><td><input type="text" id="hld__adv_excelTitle"></td></tr>    </table>
+    <tr><td><span class="hld__adv-help" title="Excel模式下标签栏的名称, 如留空, 则显示原始标题">Excel覆盖标题</span></td><td><input type="text" id="hld__adv_excelTitle"></td></tr>    </table>
     <table>
     <!-- <tr><td><span class="hld__adv-help" title=" "> </td><td><input type="checkbox" id="hld__adv_"></td></tr> -->
     <tr><td><span class="hld__adv-help" title="滚动条滚动到距离底部多少距离时执行自动翻页\n单位是页面高度的百分比(%)\n例如10即为滚动条滚动到距离底部有页面高度10%距离的时候，进行翻页">自动翻页检测距离</span></td><td><input type="number" id="hld__adv_autoPageOffset"></td></tr>
     <tr><td><span class="hld__adv-help" title="标记楼主中的[楼主]的颜色，单位为16进制颜色代码">标记楼主颜色</span></td><td><input type="text" id="hld__adv_authorMarkColor"></td></tr>
     <tr><td><span class="hld__adv-help" title="图片缩放功能中对图片缩放的大小，单位为像素(px)\n*图片高度自适应">图片缩放宽度</span></td><td><input type="number" id="hld__adv_imgResizeWidth"></td></tr>
+    <tr><td><span class="hld__adv-help" title="自动折叠引用的高度阈值，单位为像素(px)">自动折叠引用高度</span></td><td><input type="number" id="hld__adv_foldQuoteHeight"></td></tr>
     <tr><td><span class="hld__adv-help" title="此配置表示标记功能的风格显示\n选中时：v2.9及以前的备注风格(仿微博)，此风格不能更改颜色\n取消时：新版标记风格"> 经典备注风格</td><td><input type="checkbox" id="hld__adv_classicRemark"></td></tr>
     <tr><td><span class="hld__adv-help" title="选中时：隐藏版头顶部背景图片\n取消时：无操作"> 隐藏版头同时隐藏背景图片</td><td><input type="checkbox" id="hld__adv_hideCustomBg"></td></tr>
     </table>
@@ -975,7 +1020,6 @@
     }
     //高级设置
     for (let k in advancedSetting) {
-        //hld__adv_autoPageOffset
         if ($('#hld__adv_' + k).length > 0) {
             const valueType = typeof advancedSetting[k]
             if (valueType == 'boolean') {
@@ -983,6 +1027,7 @@
             }
             if (valueType == 'number' || valueType == 'string') {
                 $('#hld__adv_' + k).val(advancedSetting[k])
+                console.log(k, $('#hld__adv_' + k).val())
             }
         }
     }
@@ -1100,14 +1145,19 @@
         for (let k in advancedSetting) {
             if ($('#hld__adv_' + k).length > 0) {
                 const valueType = typeof advancedSetting[k]
-                if (valueType == 'boolean') {
-                    advancedSetting[k] =  $('#hld__adv_' + k)[0].checked
-                }
-                if (valueType == 'number') {
-                    advancedSetting[k] = +$('#hld__adv_' + k).val()
-                }
-                if (valueType == 'string') {
+                const inputType = $('#hld__adv_' + k)[0].nodeName
+                if (inputType == 'SELECT') {
                     advancedSetting[k] = $('#hld__adv_' + k).val()
+                } else {
+                    if (valueType == 'boolean') {
+                        advancedSetting[k] = $('#hld__adv_' + k)[0].checked
+                    }
+                    if (valueType == 'number') {
+                        advancedSetting[k] = +$('#hld__adv_' + k).val()
+                    }
+                    if (valueType == 'string') {
+                        advancedSetting[k] = $('#hld__adv_' + k).val()
+                    }
                 }
             }
         }
@@ -1510,6 +1560,7 @@ button.hld__btn:hover {background:#591804;color:#fff0cd;}
 .hld__extra-icon:hover {text-decoration:none;}
 span.hld__remark {color:#666;font-size:0.8em;}
 span.hld__banned {color:#ba2026;}
+span.hld__banned:hover {text-decoration: underline;cursor: pointer;}
 .hld__sp-fold {padding-left:23px;}
 .hld__sp-fold .hld__f-title {font-weight:bold;}
 .hld__buttons {clear:both;display:flex;justify-content:space-between;padding-top:15px;}
@@ -1537,7 +1588,7 @@ code {padding:2px 4px;font-size:90%;font-weight:bold;color:#c7254e;background-co
 .hld__excel-body .hld__excel-footer {position:fixed;bottom:0;left:0;height:50px;}
 .hld__excel-body .hld__excel-header, .hld__excel-body .hld__excel-footer {width: 100%;text-align: center;font-size: 16px;font-weight: bold;background:#e8e8e8;color:#337ab7;line-height: 45px;}
 .hld__excel-body .hld__excel-header>img, .hld__excel-body .hld__excel-footer>img{position:absolute;top:0;left:0}
-.hld__excel-body #m_nav {position:fixed;top:136px;left:261px;margin:0;padding:0;z-index:99;}
+.hld__excel-body #m_nav {position:fixed;top:136px;left:261px;margin:0;padding:0;z-index:99;width: 9999px;}
 .hld__excel-body #m_nav .nav_spr {display:block;border:0;border-radius:0;padding:0;box-shadow:none;background:none;}
 .hld__excel-body #m_nav .nav_spr span {color:#000;font-size:16px;vertical-align:unset;font-weight:normal;}
 .hld__excel-body #m_nav .nav_root,.hld__excel-body #m_nav .nav_link {background:none;border:none;box-shadow:none;padding:0;color:#000;border-radius:0;font-weight:normal;}
@@ -1738,6 +1789,9 @@ input.spectrum.with-add-on{border-top-left-radius:0;border-bottom-left-radius:0;
 .hld__excel-body .hld__docker-btns>div{background:#fff;border:1px solid #bbb}
 .hld__docker-btns svg{width:30px;height:30px;transition:all ease .2s}
 .hld__docker-btns svg:hover{width:40px;height:40px}
+.hld__quote-fold{height:150px;overflow:hidden;position: relative;}
+.hld__quote-box{padding:10px;position: absolute;left:0;right:0;bottom:0;background:#f2eddf;}
+.hld__excel-body .hld__quote-box{background:#FFF;}
 `))
     document.getElementsByTagName('head')[0].appendChild(style)
 })();
