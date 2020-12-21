@@ -1116,11 +1116,11 @@
                     }
                     if (Object.keys(obj).includes('ban_list')) {
                         banList = obj.ban_list
-                        window.localStorage.setItem('hld__NGA_ban_list', banList.join(','))
+                        window.localStorage.setItem('hld__NGA_ban_list', JSON.stringify(banList))
                     }
                     if (Object.keys(obj).includes('mark_list')) {
                         markList = obj.mark_list
-                        window.localStorage.setItem('hld__NGA_mark_list', markList.join(','))
+                        window.localStorage.setItem('hld__NGA_mark_list', JSON.stringify(markList))
                     }
                     if (Object.keys(obj).includes('keywords_list')) {
                         keywordsList = obj.keywords_list
