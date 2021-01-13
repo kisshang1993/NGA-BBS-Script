@@ -1622,12 +1622,14 @@ code {padding:2px 4px;font-size:90%;font-weight:bold;color:#c7254e;background-co
 .hld__excel-body #m_posts td {background:#fff;border-right:1px solid #bbbbbb;border-bottom:1px solid #bbbbbb;}
 .hld__excel-body #m_posts .c0 {width:32px;color:#777;font-size:16px;background:#e8e8e8;text-align:center;}
 .hld__excel-body #m_posts .c0:before {content:counter(num);counter-increment:num;}
+.hld__excel-body #m_posts .null {display:none;}
 .hld__excel-body #m_posts .vertmod {background:#fff !important;color:#ccc;}
 .hld__excel-body #m_posts a[name="uid"]:before {content:"UID:"}
 .hld__excel-body #m_posts .white,.hld__excel-body #m_posts .block_txt_c2,.hld__excel-body #m_posts .block_txt_c0 {background:#fff !important;color:#777777;}
 .hld__excel-body #m_posts .quote {background:#fff;border-color:#bbbbbb;}
 .hld__excel-body #m_posts button {background:#eee;}
 .hld__excel-body #m_posts .postbox {border:none !important;}
+.hld__excel-body #m_posts .postbox + span {display:none;}
 .hld__excel-body.hld__reply-fixed #postbbtm {position:fixed;right:30px;top:75px;z-index:999;border-radius: 10px;overflow: hidden;}
 .hld__flex{display:flex;}
 #hld__noti_container {position:fixed;top:10px;left:10px;}
