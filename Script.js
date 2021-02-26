@@ -1816,13 +1816,6 @@
             default: true,
             title: '自动翻页',
             menu: 'right'
-        }, {
-            type: 'advanced',
-            key: 'autoPageOffset',
-            default: 5,
-            title: '自动翻页检测距离',
-            desc: '滚动条滚动到距离底部多少距离时执行自动翻页\n单位是页面高度的百分比(%)\n例如10即为滚动条滚动到距离底部有页面高度10%距离的时候，进行翻页',
-            menu: 'left'
         }],
         $window: $(window),
         initFunc: function () {
@@ -1836,7 +1829,7 @@
                     if($(this).children('a').text() == '>') {
                         $(this).children('a').attr('id', 'hld__next_page')
                         _this.$window.on('scroll.autoPage', function(){
-                            const offset = +script.setting.advanced.autoPageOffset
+                            const offset = 0
                             if ($(document).scrollTop() != 0 && ($(document).scrollTop() + $(window).height() >= $(document).height() * (1 - offset / 100))) {
                                 if($('#hld__next_page').length > 0) {
                                     console.warn('Auto Page')

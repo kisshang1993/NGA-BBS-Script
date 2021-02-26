@@ -2,7 +2,7 @@
 
 [![Github](https://img.shields.io/github/stars/kisshang1993/NGA-BBS-Script?label=Star&style=social)](https://github.com/kisshang1993/NGA-BBS-Script) [![Greasy Fork](https://img.shields.io/badge/Greasy%20Fork-NGA优化摸鱼体验-brightgreen)](https://greasyfork.org/zh-CN/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C/) ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/kisshang1993/NGA-BBS-Script) ![GitHub](https://img.shields.io/github/license/kisshang1993/NGA-BBS-Script)
 
-[![LOGO](https://s3.ax1x.com/2021/02/26/yxg1SO.png)](https://imgtu.com/i/yxg1SO)
+![LOGO](https://s3.ax1x.com/2021/02/26/yxg1SO.png)
 
 NGA论坛显示优化，功能增强，具体功能见下面【功能列表】
 
@@ -22,6 +22,7 @@ NGA论坛显示优化，功能增强，具体功能见下面【功能列表】
 - 添加功能折叠附件，与折叠引用合并为[**折叠过长引用与附件**]
 - 添加高级设置[**Excel皮肤**]，可选项有：[WPS, Office]
 - 修改[**关键字屏蔽排除标题**]为[**关键字屏蔽方式**]，可选项有：[标题跟正文，仅标题，仅正文]
+- 移除高级设置[**自动翻页检测距离**]，将检测距离设为0，这会修复自动翻页的时候页面跳动的问题
 - 修复载入备份可能导致的脚本失效的问题
 - 修复组合按键也激活快捷键的错误
 - 重构代码架构
