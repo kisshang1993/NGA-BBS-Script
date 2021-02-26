@@ -2,6 +2,8 @@
 
 [![Github](https://img.shields.io/github/stars/kisshang1993/NGA-BBS-Script?label=Star&style=social)](https://github.com/kisshang1993/NGA-BBS-Script) [![Greasy Fork](https://img.shields.io/badge/Greasy%20Fork-NGA优化摸鱼体验-brightgreen)](https://greasyfork.org/zh-CN/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C/) ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/kisshang1993/NGA-BBS-Script) ![GitHub](https://img.shields.io/github/license/kisshang1993/NGA-BBS-Script)
 
+[![LOGO](https://s3.ax1x.com/2021/02/26/yxg1SO.png)](https://imgtu.com/i/yxg1SO)
+
 NGA论坛显示优化，功能增强，具体功能见下面【功能列表】
 
 功能列表中的功能是选择开启的，**>>>>第一次使用请认真阅读本篇文档<<<<**，有助于理解脚本功能的正确使用方式
@@ -52,6 +54,7 @@ NGA论坛显示优化，功能增强，具体功能见下面【功能列表】
 - 隐藏版头/版规/子版（使用一个按钮进行切换）
 - 帖子列表打开时使用新标签栏
 - 自动翻页
+- 折叠引用
 - 楼内图像尺寸优化，每张图最大宽200px
 - 独立预览图片时可以切换楼内图片（默认快捷键为左右箭头按键）
 - 独立预览图片时可以缩放图片，拖拽图片
