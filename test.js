@@ -339,7 +339,7 @@
             }
         }
     }
-    /* 标准模块 */
+
     /**
      * 默认样式
      * @name defaultStyle
@@ -1019,7 +1019,7 @@
         renderFormsFunc: function ($el) {
             $el.find('.c2 img').each(function () {
                 const classs = $(this).attr('class')
-                if ((!classs || !classs.includes('smile')) && script.setting.normal.imgResize) {
+                if (!classs && script.setting.normal.imgResize && !$(this).is(':hidden')) {
                     $(this).addClass('hld__img-resize').attr('hld-img-resize', 'ok').attr('title', '点击大图显示')
                 }
             })
@@ -1049,7 +1049,6 @@
             $el.find('.c2 img').each(function () {
                 const classs = $(this).attr('class')
                 if ((!classs || !classs.includes('smile')) && !$(this).is(':hidden')) {
-                    $(this).addClass('hld__img-postimg')
                     // 显示原图
                     $(this).attr('src', $(this).attr('src').replace('.medium.jpg', '')).attr('hld-hideimg', 'ok')
                     let $imgB = $('<button class="switch-img" style="display:none">图</button>')
@@ -1068,13 +1067,13 @@
         shortcutFunc: {
             hideImage: function () {
                 if (!script.setting.advanced.dynamicEnable) return
-                if ($('.hld__img-postimg:hidden').length < $('.switch-img').length) {
-                    $('.hld__img-postimg').hide()
+                if ($('.hld__img-resize:hidden').length < $('.switch-img').length) {
+                    $('.hld__img-resize').hide()
                     $('.switch-img').text('图').show()
                     script.popNotification(`隐藏图片`)
                     return
                 }
-                $('.hld__img-postimg').each(function () {
+                $('.hld__img-resize').each(function () {
                     $(this).toggle()
                     $(this).is(':hidden') ? $(this).next('button.switch-img').show() : $(this).next('button.switch-img').hide()
                 })
@@ -1435,8 +1434,8 @@
         renderFormsFunc: function ($el) {
             $el.find('img').each(function () {
                 const classs = $(this).attr('class')
-                if (!classs || (classs && !classs.includes('smile'))) {
-                    $(this).attr('hld__imglist', 'ready').removeAttr('onload')
+                if (!classs || !classs.includes('smile')) {
+                    !$(this).is(':hidden') && $(this).attr('hld__imglist', 'ready').removeAttr('onload')
                 }
             })
             //图片增强
@@ -2651,8 +2650,6 @@
         .hld__excel-body .hld__docker-btns>div{background:#fff;border:1px solid #bbb}
         `
     }
-    /* 插件 */
-    // ......
 
     /**
      * 初始化脚本
@@ -2688,4 +2685,6 @@
      * 运行脚本
      */
     script.run()
+
 })();
+

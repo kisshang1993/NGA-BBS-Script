@@ -14,16 +14,15 @@ NGA论坛显示优化，功能增强，具体功能见下面【功能列表】
 
 ---
 
-## v3.5更新 *
+## v3.6更新 *
 
-- 新增功能: **自动折叠过长引用** 当引用的内容高度超过阈值(默认为300px, 可以在高级设置中设置), 会显示一部分内容, 折叠剩下内容, 可以选择显示
-- 修改高级设置 **[Excel标题]** 为 **[Excel覆盖标题]**  当留空时显示原始标题
-- 修改高级设置 **[严格拉黑模式]** 为 **[拉黑模式]**, 选项为列表选项
-  - 屏蔽: 屏蔽黑名单人的回复内容
-  - 删除: 删除黑名单人的回复内容
-  - 全部删除: 连同回复黑名单人的回复一并删除
-- 修复藏背景图功能在打开帖子之后刷新页面会失效的问题
-- 修复excel模式下标题过长会换行挡住内容的问题
+- 贴内图片现在已原图显示
+- 添加功能折叠附件，与折叠引用合并为[**折叠过长引用与附件**]
+- 添加高级设置[**Excel皮肤**]，可选项有：[WPS, Office]
+- 修改[**关键字屏蔽排除标题**]为[**关键字屏蔽方式**]，可选项有：[标题跟正文，仅标题，仅正文]
+- 修复载入备份可能导致的脚本失效的问题
+- 修复组合按键也激活快捷键的错误
+- 重构代码架构
 
 ## 最近更新 *
 
@@ -37,7 +36,7 @@ NGA论坛显示优化，功能增强，具体功能见下面【功能列表】
 
 ## 安装指引
 
- 1. 安装在浏览器脚本管理器：[[安装指引]](https://greasyfork.org/zh-CN/help/installing-user-scripts)
+ 1. 安装在浏览器脚本管理器：[[Tampermonkey]](https://www.tampermonkey.net/?ext=dhdg)
  2. 安装在广告过滤器：找到广告过滤器中的用户脚本管理页面，添加用户脚本，输入[[脚本地址]](https://greasyfork.org/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C/code/NGA%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C.user.js)安装
 
 *开发及调试环境：谷歌浏览器(Chrome) + TamperMonkey浏览器油猴插件
@@ -147,13 +146,13 @@ NGA论坛显示优化，功能增强，具体功能见下面【功能列表】
 
 ### 设置面板
 
-![设置面板预览](https://s1.ax1x.com/2020/05/27/tAo2SP.png)
+![设置面板预览](https://i.loli.net/2020/12/11/NWLnh1yXKoxajgV.jpg)
 
 ### 高级设置
 
 高级设置可以对部分基础设置的功能进一步微调
 
-![高级设置面板预览](https://i.loli.net/2020/10/29/aucUp8HnCWBtFKT.jpg)
+![高级设置面板预览](https://i.loli.net/2020/12/11/SP28gXYHEQqcvJZ.jpg)
 
 #### 可以手动配置快捷键，避免与其他插件冲突
 
@@ -195,5 +194,5 @@ A：存放于图床的图片失效了，请及时联系我重新上传图片
 #### *反馈BUG时请带上浏览器名称版本+油猴插件名称版本，最好配上图文信息，方便定位与调试BUG
 
 - Github [[Github Issue](https://github.com/kisshang1993/NGA-BBS-Script/issues)]
-- Greasy Fork [[新话题](https://greasyfork.org/zh-CN/forum/post/discussion?script=393991&locale=zh-CN)]
+- Greasy Fork [[反馈](https://greasyfork.org/zh-CN/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C/feedback)]
 - NGA玩家中心  [[@kisshang1993 私信](https://ngabbs.com/nuke.php?func=ucp&uid=9034572)]
