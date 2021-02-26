@@ -959,9 +959,10 @@
         },
         shortcutFunc: {
             hideAvatar: function () {
-                if (!script.setting.advanced.dynamicEnable) return
-                $('.avatar').toggle()
-                script.popNotification(`${$('.avatar:hidden').length == 0 ? '显示' : '隐藏'}头像`)
+                if (script.setting.normal.hideAvatar || script.setting.advanced.dynamicEnable) {
+                    $('.avatar').toggle()
+                    script.popNotification(`${$('.avatar:hidden').length == 0 ? '显示' : '隐藏'}头像`)
+                }
             }
         }
     }
@@ -993,13 +994,14 @@
         },
         shortcutFunc: {
             hideSmile: function () {
-                if (!script.setting.advanced.dynamicEnable) return
-                $('.c2 img').each(function () {
-                    const classs = $(this).attr('class');
-                    if (classs && classs.includes('smile')) $(this).toggle()
-                })
-                $('.smile_alt_text').toggle()
-                script.popNotification(`${$('.smile_alt_text:hidden').length > 0 ? '显示' : '隐藏'}表情`)
+                if (script.setting.normal.hideSmile || script.setting.advanced.dynamicEnable) {
+                    $('.c2 img').each(function () {
+                        const classs = $(this).attr('class');
+                        if (classs && classs.includes('smile')) $(this).toggle()
+                    })
+                    $('.smile_alt_text').toggle()
+                    script.popNotification(`${$('.smile_alt_text:hidden').length > 0 ? '显示' : '隐藏'}表情`)
+                }
             }
         }
     }
@@ -1214,8 +1216,7 @@
         },
         shortcutFunc: {
             excelMode: function () {
-                if (!script.setting.advanced.dynamicEnable) return
-                if (script.setting.normal.excelMode) {
+                if (script.setting.normal.excelMode || script.setting.advanced.dynamicEnable) {
                     this.switchExcelMode()
                     script.popNotification($('.hld__excel-body').length > 0 ? 'Excel模式' : '普通模式')
                 }
