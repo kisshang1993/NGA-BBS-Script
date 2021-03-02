@@ -1831,8 +1831,7 @@
                     if($(this).children('a').text() == '>') {
                         $(this).children('a').attr('id', 'hld__next_page')
                         _this.$window.on('scroll.autoPage', function(){
-                            const offset = 0
-                            if ($(document).scrollTop() != 0 && ($(document).scrollTop() + $(window).height() >= $(document).height() * (1 - offset / 100))) {
+                            if ($(document).scrollTop() != 0 && (Math.ceil($(document).scrollTop()) + $(window).height() >= ($(document).height() - 20))) {
                                 if($('#hld__next_page').length > 0) {
                                     console.warn('Auto Page')
                                     document.getElementById('hld__next_page').click()
