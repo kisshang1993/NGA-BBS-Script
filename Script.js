@@ -2248,6 +2248,19 @@
                 })
             }
         },
+        renderThreadsFunc: function($el) {
+            const title = $el.find('.c2>a').text()
+            const uid = ($el.find('.author').attr('href') && $el.find('.author').attr('href').indexOf('uid=') > -1) ? $el.find('.author').attr('href').split('uid=')[1] + '' : ''
+            const name = $el.find('.author').text()
+            if (script.setting.normal.markAndBan) {
+                const banUser = this.getBanUser({name, uid})
+                //黑名单屏蔽
+                if (this.banList.length > 0 && banUser) {
+                    console.warn(`【NGA优化摸鱼体验脚本-黑名单屏蔽】标题：${title}  连接：${$el.find('.c2>a').attr('href')}`)
+                    $el.parents('tbody').remove()
+                }
+            }
+        },
         renderFormsFunc: function($el) {
             const _this = this
             if (script.setting.normal.markAndBan) {
