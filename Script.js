@@ -234,7 +234,7 @@
                 }
             }
             window.localStorage.setItem('hld__NGA_advanced_setting', JSON.stringify(this.setting.advanced))
-            this.popMsg(msg)
+            msg && this.popMsg(msg)
         }
         /**
          * 从本地读取配置
@@ -695,9 +695,13 @@
                 let shortcutKeys = []
                 $('.hld__table tbody>tr').each(function () {
                     const v = $(this).find('input').val().trim().toUpperCase()
-                    const code = _this.getCodeName(v, 'name')
-                    if (code > 0) shortcutKeys.push(code)
-                    else _this.popMsg(`${v}是个无效的快捷键`, 'err')
+                    if (v == '') {
+                        shortcutKeys.push(-1)
+                    } else {
+                        const code = _this.getCodeName(v, 'name')
+                        if (code > 0) shortcutKeys.push(code)
+                        else script.popMsg(`${v}是个无效的快捷键`, 'err')
+                    }
                 })
                 if (shortcutKeys.length != script.setting.normal.shortcutKeys.length) return
                 script.setting.normal.shortcutKeys = shortcutKeys
@@ -712,7 +716,7 @@
                 'O': 79, 'P': 80, 'Q': 81, 'R': 82, 'S': 83, 'T': 84,
                 'U': 85, 'V': 86, 'W': 87, 'X': 88, 'Y': 89, 'Z': 90,
                 '0': 48, '1': 49, '2': 50, '3': 51, '4': 52, '5': 53, '6': 54, '7': 55, '8': 56, '9': 57,
-                'LEFT': 37, 'RIGHT': 39, 'UP': 38, 'DOWN': 40, '': 0
+                'LEFT': 37, 'RIGHT': 39, 'UP': 38, 'DOWN': 40, '': 0, '': -1
             }
             if (valType == 'code') {
                 let keyname = ''
@@ -727,7 +731,6 @@
                 }
                 return code
             }
-
         },
         style: `
         code {padding:2px 4px;font-size:90%;font-weight:bold;color:#c7254e;background-color:#f9f2f4;border-radius:4px;}
@@ -1455,7 +1458,9 @@
             let urlList = []
             let currentIndex = el.parent().find('[hld__imglist=ready]').index(el)
             el.parent().find('[hld__imglist=ready]').each(function () {
-                urlList.push($(this).data('srcorg') || $(this).data('srclazy') || $(this).attr('src'))
+                if ($(this).attr('src') != 'about:blank') {
+                    urlList.push($(this).data('srcorg') || $(this).data('srclazy') || $(this).attr('src'))
+                }
             })
             let $imgBox = $('<div id="hld__img_full" title="点击背景关闭"><div id="loader"></div></div>')
             let $imgContainer = $('<div class="hld__img_container hld__zoom-target"></div>')
@@ -1982,9 +1987,6 @@
                             }
                         }
                     })
-                }
-                if (blockCount > 0) {
-                    script.popNotification(`已屏蔽${blockCount}条内容`, 2000)
                 }
             }
         },
