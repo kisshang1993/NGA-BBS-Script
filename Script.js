@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      3.6
+// @version      3.7.0
 // @author       HLD
 // @description  NGA论坛显示优化，功能增强，防止突然蹦出一对??而导致的突然性的社会死亡
 // @license      MIT
@@ -11,6 +11,7 @@
 // @match        *://bbs.nga.cn/*
 // @match        *://ngabbs.com/*
 // @match        *://nga.178.com/*
+// @grant        GM_registerMenuCommand
 // @inject-into content
 // ==/UserScript==
 
@@ -101,6 +102,7 @@
                     this.setting[setting.type || 'normal'][setting.key] = setting.default
                 }
             }
+            // 功能板块
             if (module.setting && !Array.isArray(module.setting)) {
                 addModule(module.setting)
             }
@@ -174,7 +176,7 @@
             document.getElementsByTagName('head')[0].appendChild(style)
             // 初始化完成
             const endInitTime = new Date().getTime()
-            console.warn(`【NGA摸鱼优化脚本[v${this.getInfo().version}]】初始化完成：共加载${this.modules.length}个模块，总耗时${endInitTime-startInitTime}ms`)
+            console.warn(`【NGA-Script[v${this.getInfo().version}]】初始化完成：共加载${this.modules.length}个模块，总耗时${endInitTime-startInitTime}ms`)
         }
         /**
          * 通知弹框
@@ -290,7 +292,7 @@
                     this.setting.advanced = localAdvancedSetting
                 }
             } catch {
-                this.throwError('【NGA摸鱼脚本】配置文件出现错误，无法加载配置文件！\n遇到此问题请清空浏览器缓存并重新刷新页面\n如还有问题，请前往脚本发布页提出反馈')
+                this.throwError('【NGA-Script】配置文件出现错误，无法加载配置文件！\n遇到此问题请清空浏览器缓存并重新刷新页面\n如还有问题，请前往脚本发布页提出反馈')
             }
 
         }
@@ -299,16 +301,33 @@
          * @method checkUpdate
          */
         checkUpdate() {
+            // 字符串版本转数字
+            const vstr2num = str => {
+                let num = 0
+                str.split('.').forEach((n, i) => num += i < 2 ? +n * 1000 / Math.pow(10, i) : +n)
+                return num
+            }
+            // 字符串中版本截取
+            const vstr2mid = str => {
+                return str.substring(0, str.lastIndexOf('.'))
+            }
             //检查更新
             if (window.localStorage.getItem('hld__NGA_version')) {
-                const current_version = +window.localStorage.getItem('hld__NGA_version')
-                if (GM_info.script.version > current_version) {
-                    const focus = ''
-                    $('body').append(`<div id="hld__updated" class="animated-1s bounce"><p><a href="javascript:void(0)" class="hld__setting-close">×</a><b>NGA优化摸鱼插件已更新至v${GM_info.script.version}</b></p>${focus}<p><a class="hld__readme" href="https://greasyfork.org/zh-CN/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C" target="_blank">查看更新内容</a></p></div>`)
-                    $('body').on('click', '#hld__updated a', function () {
-                        $(this).parents('#hld__updated').remove()
+                const local_version = vstr2num(window.localStorage.getItem('hld__NGA_version'))
+                const current_version = vstr2num(GM_info.script.version)
+                if (current_version > local_version) {
+                    const lv_mid = +vstr2mid(window.localStorage.getItem('hld__NGA_version'))
+                    const cv_mid = +vstr2mid(GM_info.script.version)
+                    if (cv_mid > lv_mid) {
+                        const focus = ''
+                        $('body').append(`<div id="hld__updated" class="animated-1s bounce"><p><a href="javascript:void(0)" class="hld__setting-close">×</a><b>NGA-Script已更新至v${GM_info.script.version}</b></p>${focus}<p><a class="hld__readme" href="https://greasyfork.org/zh-CN/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C" target="_blank">查看更新内容</a></p></div>`)
+                        $('body').on('click', '#hld__updated a', function () {
+                            $(this).parents('#hld__updated').remove()
+                            window.localStorage.setItem('hld__NGA_version', GM_info.script.version)
+                        })
+                    } else {
                         window.localStorage.setItem('hld__NGA_version', GM_info.script.version)
-                    })
+                    }
                 }
             } else window.localStorage.setItem('hld__NGA_version', GM_info.script.version)
         }
@@ -332,13 +351,36 @@
          */
         getInfo() {
             return {
-                version: +GM_info.script.version,
+                version: GM_info.script.version,
                 author: 'HLD',
                 github: 'https://github.com/kisshang1993/NGA-BBS-Script',
                 update: 'https://greasyfork.org/zh-CN/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C'
             }
         }
     }
+    /* 注册菜单按钮 */
+    // 设置面板
+    GM_registerMenuCommand('设置面板', function () {
+        $('#hld__setting_cover').css('display', 'flex')
+    })
+    // 修复脚本
+    GM_registerMenuCommand('修复脚本', function () {
+        if (window.confirm('如脚本运行失败或无效，尝试修复脚本，这会清除脚本的本地缓存信息\n* 本地缓存信息包含配置，各种名单等\n* 此操作不可逆转，如果需要备份，请手动备份localStorage内的hld__*的字段\n\n继续请点击【确定】')) {
+            window.localStorage.removeItem('hld__NGA_setting')
+            window.localStorage.removeItem('hld__NGA_mark_list_bak')
+            window.localStorage.removeItem('hld__NGA_ban_list')
+            window.localStorage.removeItem('hld__NGA_keywords_list')
+            window.localStorage.removeItem('hld__NGA_post_author')
+            window.localStorage.removeItem('hld__NGA_version')
+            alert('操作成功，请刷新页面重试')
+        }
+    })
+    // 反馈问题
+    GM_registerMenuCommand('反馈问题', function () {
+        if (window.confirm('如脚本运行失败而且修复后也无法运行，请反馈问题报告\n* 问题报告请包含使用的：[浏览器]，[脚本管理器]，[脚本版本]\n* 描述问题最好以图文并茂的形式\n* 如脚本运行失败，建议提供F12控制台的红色错误输出以辅助排查\n\n即将打开反馈页面，继续请点击【确定】')) {
+            window.open('https://greasyfork.org/zh-CN/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C/feedback')
+        }
+    })
     /* 标准模块 */
     /**
      * 默认样式
@@ -410,7 +452,6 @@
                     <div class="hld__buttons">
                         <span id="hld_setting_panel_buttons"></span>
                         <span>
-                            <button class="hld__btn" id="hld__reset__data" title="重置配置">重置</button>
                             <button class="hld__btn" id="hld__save__data">保存设置</button>
                         </span>
                     </div>
@@ -519,23 +560,6 @@
             $('body').on('click', '#hld__save__data', () => {
                 script.saveSetting()
                 $('#hld__setting_cover').fadeOut(200)
-            })
-            /**
-             * 重置配置
-             */
-            $('body').on('click', '#hld__reset__data', () => {
-                if(confirm('若发生配置不生效的情况，或者插件失效，重置所有配置\n确认吗？')){
-                    localStorage.removeItem("hld__NGA_setting")
-                    localStorage.removeItem("hld__NGA_advanced_setting")
-                    localStorage.removeItem("hld__NGA_ban_list")
-                    localStorage.removeItem("hld__NGA_mark_list")
-                    localStorage.removeItem("hld__NGA_version")
-                    localStorage.removeItem("hld__NGA_keywords_list")
-                    script.popMsg('重置成功，即将自动刷新')
-                    setTimeout(() => {
-                        window.location.reload()
-                    }, 1000)
-                }
             })
         },
         renderAlwaysFunc: function () {
@@ -770,7 +794,7 @@
                 desc: '导入/导出配置字符串，包含设置，黑名单，标记名单等等'
             })
             $('body').on('click', '#hld__backup_panel', function () {
-                const unsupported = 3.3
+                const unsupported = '3.3.0'
                 const currentVer = script.getInfo().version
                 if($('#hld__export_panel').length > 0) return
                 $('#hld__setting_cover').append(`
@@ -832,15 +856,14 @@
                 $('#hld__import__data').click(function(){
                     if ($('#hld__export_str').val()) {
                         try {
-                            const markAndBanModule = script.getModule('markAndBan')
-                            const keywordsBlockModule = script.getModule('keywordsBlock')
                             let obj = JSON.parse(_this.Base64.decode($('#hld__export_str').val()))
-                            if (obj.ver != 0 && obj.ver > currentVer) {
-                                script.popMsg(`此配置是由更高版本(v${obj.ver.toFixed(1)})的脚本导出，请升级您的脚本 <a title="更新地址" href="https://greasyfork.org/zh-CN/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C" target="_blank">[脚本地址]</a>`, 'warn')
+                            const objVer = _this.vstr2num(obj.ver)
+                            if (objVer != 0 && objVer > _this.vstr2num(currentVer)) {
+                                script.popMsg(`此配置是由更高版本(v${obj.ver})的脚本导出，请升级您的脚本 <a title="更新地址" href="https://greasyfork.org/zh-CN/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C" target="_blank">[脚本地址]</a>`, 'warn')
                                 return
                             }
-                            if (obj.ver != 0 && obj.ver < unsupported) {
-                                script.popMsg(`此配置是由低版本(v${obj.ver.toFixed(1)})的脚本导出，当前版本(v${currentVer})已不支持！`, 'err')
+                            if (objVer != 0 && objVer < _this.vstr2num(unsupported)) {
+                                script.popMsg(`此配置是由低版本(v${obj.ver})的脚本导出，当前版本(v${currentVer})已不支持！`, 'err')
                                 return
                             }
                             let confirm = window.confirm('此操作会覆盖你的配置，确认吗？')
@@ -861,6 +884,7 @@
                             $('#hld__export_msg').html('<span style="color:#009900">导入成功，刷新浏览器以生效</span>')
 
                         } catch (err){
+                            console.error('【NGA-Script】JSON解析失败：', err)
                             $('#hld__export_msg').html('<span style="color:#CC0000">字符串有误，解析失败！</span>')
                         }
                     }
@@ -869,6 +893,12 @@
         },
         addItem: function(item) {
             this.backupItems.push(item)
+        },
+        // 字符串版本转数字
+        vstr2num: function(str) {
+            let num = 0
+            str.split('.').forEach((n, i) => num += i < 2 ? +n * 1000 / Math.pow(10, i) : +n)
+            return num
         },
         /**
          * Base64互转
@@ -904,28 +934,36 @@
                 desc: '好活当赏'
             })
             $('body').on('click', '#hld__reward', function () {
-                $('#hld__setting_cover').append(`<div class="hld__list-panel hld__reward-panel animated fadeInUp">
-                <a href="javascript:void(0)" class="hld__setting-close">×</a>
-                <div class="hld__reward-info">
-                <p><b>本脚本完全开源，并且长期维护<br>您若有好的功能需求或者建议，欢迎反馈</b></p>
-                <p>如果您觉得脚本好用<span class="hld__delete-line">帮助到更好的摸鱼</span>，也可以请作者喝杯咖啡~<img src="https://s1.ax1x.com/2020/06/28/N25w7Q.png"></p>
+                $('#hld__setting_cover').append(`
+                <div class="hld__list-panel hld__reward-panel animated fadeInUp">
+                    <a href="javascript:void(0)" class="hld__setting-close">×</a>
+                    <div class="hld__reward-info">
+                        <p><b>本脚本完全开源，并且长期维护，您喜欢请可以去点个Star！</p>
+                        <p>您若有好的功能需求或者建议，欢迎反馈</p>
+                        <p>如果您觉得脚本好用<span class="hld__delete-line">帮助到更好的摸鱼</span>，也可以请作者喝杯咖啡~<img src="https://s1.ax1x.com/2020/06/28/N25w7Q.png"></p>
+                    </div>
+                    <div class="hld__flex">
+                        <div class="hld__list-c"><img src="https://s1.ax1x.com/2020/06/28/N25Bkj.png"></div>
+                        <div class="hld__list-c"><img src="https://s1.ax1x.com/2020/06/28/N25Dts.png"></div>
+                    </div>
+                    <div class="hld__source">
+                        <a href="${script.getInfo().github}" target="_blank"><img alt="Mozilla Add-on" src="https://img.shields.io/github/stars/kisshang1993/NGA-BBS-Script?label=Star&style=social"></a>
+                        <a href="${script.getInfo().update}" target="_blank"><img alt="Mozilla Add-on" src="https://img.shields.io/badge/Greasy%20Fork-NGA优化摸鱼体验-brightgreen"></a>
+                    </div>
                 </div>
-                <div class="hld__flex">
-                <div class="hld__list-c"><img src="https://s1.ax1x.com/2020/06/28/N25Bkj.png">
-                </div>
-                <div class="hld__list-c"><img src="https://s1.ax1x.com/2020/06/28/N25Dts.png">
-                </div>
-                </div>
-                </div>`)
+            `)
             })
         },
         style: `
         .hld__reward-panel {width:500px;}
         .hld__reward-panel .hld__reward-info {display:block;font-size:15px;margin-bottom:20px;line-height:20px;}
+        .hld__reward-panel .hld__reward-info p {margin-bottom:5px;}
         .hld__delete-line {text-decoration:line-through;color:#666;}
         .hld__reward-panel .hld__list-c {width:50%;}
         .hld__reward-panel .hld__list-c:first-child {margin-right:15px;}
         .hld__reward-panel .hld__list-c>img {width:100%;height:auto;}
+        .hld__reward-panel .hld__source {margin-top:15px;}
+        .hld__reward-panel .hld__source > a {margin-right:10px;}
         `
     }
     /**
@@ -1934,7 +1972,7 @@
             if ((script.setting.advanced.kwdBlockContent === 'ALL' || script.setting.advanced.kwdBlockContent === 'TITLE') && script.setting.normal.keywordsBlock && this.keywordsList.length > 0) {
                 for (let keyword of this.keywordsList) {
                     if (title.includes(keyword)) {
-                        console.warn(`【NGA优化摸鱼体验脚本-关键字屏蔽】标题：${title}  连接：${$el.find('.c2>a').attr('href')}`)
+                        console.warn(`【NGA-Script-关键字屏蔽】标题：${title}  连接：${$el.find('.c2>a').attr('href')}`)
                         $el.remove()
                         break
                     }
@@ -2083,7 +2121,7 @@
             } catch {
                 window.localStorage.setItem('hld__NGA_ban_list_bak', localBanList)
                 window.localStorage.removeItem('hld__NGA_ban_list')
-                script.throwError('【NGA摸鱼脚本】无法加载黑名单列表，数据解析失败\n黑名单已清空，之前的数据已经备份到hld__NGA_ban_list_bak\n请在控制台中的localStorage中查看')
+                script.throwError('【NGA-Script】无法加载黑名单列表，数据解析失败\n黑名单已清空，之前的数据已经备份到hld__NGA_ban_list_bak\n请在控制台中的localStorage中查看')
             }
             const localMarkList = window.localStorage.getItem('hld__NGA_mark_list')
             try {
@@ -2091,7 +2129,7 @@
             } catch {
                 window.localStorage.setItem('hld__NGA_mark_list_bak', localMarkList)
                 window.localStorage.removeItem('hld__NGA_mark_list')
-                script.throwError('【NGA摸鱼脚本】无法加载标记列表，数据解析失败\n标记列表已清空，之前的数据已经备份到hld__NGA_mark_list_bak\n请在控制台中的localStorage中查看')
+                script.throwError('【NGA-Script】无法加载标记列表，数据解析失败\n标记列表已清空，之前的数据已经备份到hld__NGA_mark_list_bak\n请在控制台中的localStorage中查看')
             }
             // 添加到导入导出配置
             script.getModule('backupModule').addItem({
@@ -2258,7 +2296,7 @@
                 const banUser = this.getBanUser({name, uid})
                 //黑名单屏蔽
                 if (this.banList.length > 0 && banUser) {
-                    console.warn(`【NGA优化摸鱼体验脚本-黑名单屏蔽】标题：${title}  连接：${$el.find('.c2>a').attr('href')}`)
+                    console.warn(`【NGA-Script-黑名单屏蔽】标题：${title}  连接：${$el.find('.c2>a').attr('href')}`)
                     $el.parents('tbody').remove()
                 }
             }
@@ -2319,7 +2357,7 @@
                                 $(this).parent().html('<span class="hld__banned">此用户在你的黑名单中，已删除其言论</span>')
                             }
                         }
-                        console.warn(`【NGA优化摸鱼体验脚本-黑名单屏蔽】用户：${name}, UID:${uid}`)
+                        console.warn(`【NGA-Script-黑名单屏蔽】用户：${name}, UID:${uid}`)
                     }
                     if(script.setting.advanced.classicRemark) {
                         //经典备注风格
