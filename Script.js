@@ -176,7 +176,7 @@
             document.getElementsByTagName('head')[0].appendChild(style)
             // 初始化完成
             const endInitTime = new Date().getTime()
-            this.printLog(`初始化完成：共加载${this.modules.length}个模块，总耗时${endInitTime-startInitTime}ms`)
+            this.printLog(`[v${this.getInfo().version}] 初始化完成：共加载${this.modules.length}个模块，总耗时${endInitTime-startInitTime}ms`)
         }
         /**
          * 通知弹框
@@ -396,7 +396,7 @@
         })
     } catch (e) {
         // 不支持此命令
-        script.printLog(`警告：此脚本管理器不支持菜单按钮，可能会导致新特性无法正常使用，建议更改脚本管理器为
+        console.warn(`【NGA Script】警告：此脚本管理器不支持菜单按钮，可能会导致新特性无法正常使用，建议更改脚本管理器为
         Tampermonkey[https://www.tampermonkey.net/] 或 Violentmonkey[https://violentmonkey.github.io/]`)
     }
 
