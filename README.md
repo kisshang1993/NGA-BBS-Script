@@ -25,8 +25,10 @@ NGA论坛显示优化，功能增强，具体功能见下面【功能列表】
   - **反馈问题**：反馈问题的便捷入口
 
     ![脚本管理按钮组](https://i.loli.net/2021/03/12/WmuycV1dEe5FKb4.png)
+
+  *注意：此特性**Greasemonkey**脚本管理器不支持，建议更改为[Tampermonkey](https://www.tampermonkey.net/)或[Violentmonkey](https://violentmonkey.github.io/)*
 - 移除设置面板上的[重置]按钮，此功能由上述[**修复脚本**]替代
-- 版本号变为3位，前两位为主版本号，后一位是补丁版本号，以便于快速更新修复
+- 版本号变为3位，前两位为主版本号，后一位是修订版本号，以便于快速更新修复
 
 ## 安装指引
 

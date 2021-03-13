@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      3.7.0
+// @version      3.7.1
 // @author       HLD
 // @description  NGA论坛显示优化，功能增强，防止突然蹦出一对??而导致的突然性的社会死亡
 // @license      MIT
@@ -176,7 +176,7 @@
             document.getElementsByTagName('head')[0].appendChild(style)
             // 初始化完成
             const endInitTime = new Date().getTime()
-            console.warn(`【NGA-Script[v${this.getInfo().version}]】初始化完成：共加载${this.modules.length}个模块，总耗时${endInitTime-startInitTime}ms`)
+            this.printLog(`初始化完成：共加载${this.modules.length}个模块，总耗时${endInitTime-startInitTime}ms`)
         }
         /**
          * 通知弹框
@@ -205,6 +205,18 @@
             $msg.slideDown(200)
             setTimeout(() => { $msg.fadeOut(500) }, type == 'ok' ? 2000 : 5000)
             setTimeout(() => { $msg.remove() }, type == 'ok' ? 2500 : 5500)
+        }
+        /**
+         * 打印控制台消息
+         * @method printLog
+         * @param {String} msg 消息内容
+         */
+        printLog (msg) {
+            console.log(`%cNGA%cScript%c ${msg}`,
+                'background: #222;color: #fff;font-weight:bold;padding:2px 2px 2px 4px;border-radius:4px 0 0 4px;',
+                'background: #fe9a00;color: #000;font-weight:bold;padding:2px 4px 2px 2px;border-radius:0px 4px 4px 0px;',
+                'background:none;color:#000;'
+            )
         }
         /**
          * 保存配置到本地
@@ -359,28 +371,35 @@
         }
     }
     /* 注册菜单按钮 */
-    // 设置面板
-    GM_registerMenuCommand('设置面板', function () {
-        $('#hld__setting_cover').css('display', 'flex')
-    })
-    // 修复脚本
-    GM_registerMenuCommand('修复脚本', function () {
-        if (window.confirm('如脚本运行失败或无效，尝试修复脚本，这会清除脚本的本地缓存信息\n* 本地缓存信息包含配置，各种名单等\n* 此操作不可逆转，如果需要备份，请手动备份localStorage内的hld__*的字段\n\n继续请点击【确定】')) {
-            window.localStorage.removeItem('hld__NGA_setting')
-            window.localStorage.removeItem('hld__NGA_mark_list_bak')
-            window.localStorage.removeItem('hld__NGA_ban_list')
-            window.localStorage.removeItem('hld__NGA_keywords_list')
-            window.localStorage.removeItem('hld__NGA_post_author')
-            window.localStorage.removeItem('hld__NGA_version')
-            alert('操作成功，请刷新页面重试')
-        }
-    })
-    // 反馈问题
-    GM_registerMenuCommand('反馈问题', function () {
-        if (window.confirm('如脚本运行失败而且修复后也无法运行，请反馈问题报告\n* 问题报告请包含使用的：[浏览器]，[脚本管理器]，[脚本版本]\n* 描述问题最好以图文并茂的形式\n* 如脚本运行失败，建议提供F12控制台的红色错误输出以辅助排查\n\n即将打开反馈页面，继续请点击【确定】')) {
-            window.open('https://greasyfork.org/zh-CN/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C/feedback')
-        }
-    })
+    try {
+        // 设置面板
+        GM_registerMenuCommand('设置面板', function () {
+            $('#hld__setting_cover').css('display', 'flex')
+        })
+        // 修复脚本
+        GM_registerMenuCommand('修复脚本', function () {
+            if (window.confirm('如脚本运行失败或无效，尝试修复脚本，这会清除脚本的本地缓存信息\n* 本地缓存信息包含配置，各种名单等\n* 此操作不可逆转，如果需要备份，请手动备份localStorage内的hld__*的字段\n\n继续请点击【确定】')) {
+                window.localStorage.removeItem('hld__NGA_setting')
+                window.localStorage.removeItem('hld__NGA_mark_list_bak')
+                window.localStorage.removeItem('hld__NGA_ban_list')
+                window.localStorage.removeItem('hld__NGA_keywords_list')
+                window.localStorage.removeItem('hld__NGA_post_author')
+                window.localStorage.removeItem('hld__NGA_version')
+                alert('操作成功，请刷新页面重试')
+            }
+        })
+        // 反馈问题
+        GM_registerMenuCommand('反馈问题', function () {
+            if (window.confirm('如脚本运行失败而且修复后也无法运行，请反馈问题报告\n* 问题报告请包含使用的：[浏览器]，[脚本管理器]，[脚本版本]\n* 描述问题最好以图文并茂的形式\n* 如脚本运行失败，建议提供F12控制台的红色错误输出以辅助排查\n\n即将打开反馈页面，继续请点击【确定】')) {
+                window.open('https://greasyfork.org/zh-CN/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C/feedback')
+            }
+        })
+    } catch (e) {
+        // 不支持此命令
+        script.printLog(`警告：此脚本管理器不支持菜单按钮，可能会导致新特性无法正常使用，建议更改脚本管理器为
+        Tampermonkey[https://www.tampermonkey.net/] 或 Violentmonkey[https://violentmonkey.github.io/]`)
+    }
+
     /* 标准模块 */
     /**
      * 默认样式
@@ -884,7 +903,7 @@
                             $('#hld__export_msg').html('<span style="color:#009900">导入成功，刷新浏览器以生效</span>')
 
                         } catch (err){
-                            console.error('【NGA-Script】JSON解析失败：', err)
+                            script.printLog(`JSON解析失败：${err}`)
                             $('#hld__export_msg').html('<span style="color:#CC0000">字符串有误，解析失败！</span>')
                         }
                     }
@@ -1972,7 +1991,7 @@
             if ((script.setting.advanced.kwdBlockContent === 'ALL' || script.setting.advanced.kwdBlockContent === 'TITLE') && script.setting.normal.keywordsBlock && this.keywordsList.length > 0) {
                 for (let keyword of this.keywordsList) {
                     if (title.includes(keyword)) {
-                        console.warn(`【NGA-Script-关键字屏蔽】标题：${title}  连接：${$el.find('.c2>a').attr('href')}`)
+                        script.printLog(`关键字屏蔽：标题：${title}  连接：${$el.find('.c2>a').attr('href')}`)
                         $el.remove()
                         break
                     }
@@ -1984,7 +2003,7 @@
             if (script.setting.normal.keywordsBlock && this.keywordsList.length > 0 && (script.setting.advanced.kwdBlockContent === 'ALL' || script.setting.advanced.kwdBlockContent === 'BODY')) {
                 const $postcontent = $el.find('.postcontent')
                 const $postcontentClone = $postcontent.clone()
-                const consoleLog = (text) => console.warn(`【NGA优化摸鱼体验脚本-关键字屏蔽】内容：${text}`)
+                const consoleLog = (text) => script.printLog(`关键字屏蔽：内容：${text}`)
                 let postcontentQuote = ''
                 let postcontentText = ''
 
@@ -2296,7 +2315,7 @@
                 const banUser = this.getBanUser({name, uid})
                 //黑名单屏蔽
                 if (this.banList.length > 0 && banUser) {
-                    console.warn(`【NGA-Script-黑名单屏蔽】标题：${title}  连接：${$el.find('.c2>a').attr('href')}`)
+                    script.printLog(`黑名单屏蔽：标题：${title}  连接：${$el.find('.c2>a').attr('href')}`)
                     $el.parents('tbody').remove()
                 }
             }
@@ -2357,7 +2376,7 @@
                                 $(this).parent().html('<span class="hld__banned">此用户在你的黑名单中，已删除其言论</span>')
                             }
                         }
-                        console.warn(`【NGA-Script-黑名单屏蔽】用户：${name}, UID:${uid}`)
+                        script.printLog(`黑名单屏蔽：用户：${name}, UID:${uid}`)
                     }
                     if(script.setting.advanced.classicRemark) {
                         //经典备注风格
