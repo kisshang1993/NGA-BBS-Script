@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      3.7.1
+// @version      3.7.2
 // @author       HLD
 // @description  NGA论坛显示优化，功能增强，防止突然蹦出一对??而导致的突然性的社会死亡
 // @license      MIT
@@ -1071,13 +1071,19 @@
      * @description 此模块提供了可以调整贴内图片的尺寸
      */
     const imgResize = {
-        setting: {
+        settings: [{
             type: 'normal',
             key: 'imgResize',
-            default: 200,
             title: '贴内图片缩放',
             menu: 'left'
-        },
+        }, {
+            type: 'advanced',
+            key: 'imgResizeWidth',
+            default: 200,
+            title: '图片缩放宽度',
+            desc: '贴内图片缩放的宽度，高度自适应，单位px',
+            menu: 'left'
+        }],
         renderFormsFunc: function ($el) {
             $el.find('.c2 img').each(function () {
                 const classs = $(this).attr('class')
