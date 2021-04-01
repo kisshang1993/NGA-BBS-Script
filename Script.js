@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      3.7.2
+// @version      3.7.3
 // @author       HLD
 // @description  NGA论坛显示优化，功能增强，防止突然蹦出一对??而导致的突然性的社会死亡
 // @license      MIT
@@ -1241,12 +1241,12 @@
         beforeUrl: window.location.href,
         initFunc: function() {
             const headerTheme = {
-                'wps': 'https://s1.ax1x.com/2020/06/28/N25bjK.png',
-                'office': 'https://s3.ax1x.com/2021/02/22/y7wJtf.png'
+                'wps': 'https://img.imgdb.cn/item/5eb65188c2a9a83be59c86ce.png',
+                'office': 'https://img.imgdb.cn/item/603dfb62360785be5434c4a9.png'
             }
             const footerTheme = {
-                'wps': 'https://s1.ax1x.com/2020/06/28/N2I93t.jpg',
-                'office': 'https://s3.ax1x.com/2021/02/22/y7w23F.png'
+                'wps': 'https://img.imgdb.cn/item/606537178322e6675c595d77.png',
+                'office': 'https://img.imgdb.cn/item/6063d13d8322e6675cee406f.png'
             }
             $('body').append(`<div class="hld__excel-div hld__excel-header"><img src="${headerTheme[script.setting.advanced.excelTheme]}"></div>`)
             $('body').append(`<div class="hld__excel-div hld__excel-footer"><img src="${footerTheme[script.setting.advanced.excelTheme]}"></div>`)
