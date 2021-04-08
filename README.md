@@ -2,7 +2,7 @@
 
 [![Github](https://img.shields.io/github/stars/kisshang1993/NGA-BBS-Script?label=Star&style=social)](https://github.com/kisshang1993/NGA-BBS-Script) [![Greasy Fork](https://img.shields.io/badge/Greasy%20Fork-NGA优化摸鱼体验-brightgreen)](https://greasyfork.org/zh-CN/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C/) ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/kisshang1993/NGA-BBS-Script) ![GitHub](https://img.shields.io/github/license/kisshang1993/NGA-BBS-Script)
 
-![LOGO](https://s3.ax1x.com/2021/02/26/yxg1SO.png)
+![NGA-Script LOGO](https://i.loli.net/2021/04/02/iyUhwTpYXm8SKN6.png)
 
 NGA论坛显示优化，功能增强，具体功能见下面【功能列表】
 
@@ -16,24 +16,28 @@ NGA论坛显示优化，功能增强，具体功能见下面【功能列表】
 
 ---
 
-## v3.7更新 *
+## v3.8更新 *
 
-- 修复3.6更新之后累积的问题
-- 新增脚本管理按钮组，包含
-  - **设置面板**：等同脚本的设置面板，多了个入口
-  - **修复脚本**：当脚本工作异常的时候可以尝试修复脚本
-  - **反馈问题**：反馈问题的便捷入口
+- 在Excel模式下添加菜单栏至右上角
 
-    ![脚本管理按钮组](https://i.loli.net/2021/03/12/WmuycV1dEe5FKb4.png)
+  - WPS风格
 
-  *注意：此特性**Greasemonkey**脚本管理器不支持，建议更改为[Tampermonkey](https://www.tampermonkey.net/)或[Violentmonkey](https://violentmonkey.github.io/)*
-- 移除设置面板上的[重置]按钮，此功能由上述[**修复脚本**]替代
-- 版本号变为3位，前两位为主版本号，后一位是修订版本号，以便于快速更新修复
+    ![WPS风格预览](https://i.loli.net/2021/03/31/VNRQibFS6Mas9dy.png)
+
+  - Office风格
+
+    ![Office风格预览](https://i.loli.net/2021/03/31/aAsS3FL6IpMkUhl.png)
+
+- 移除Excel模式右上角的“摸鱼”设置面板入口
+- 新增功能[**链接直接跳转**]，开启功能后超链接直接打开新页面，无须确认，默认开启
+- 修复脚本低概率会在详情页部分功能失灵的问题
 
 ## 安装指引
 
- 1. 安装在浏览器脚本管理器：[[Tampermonkey]](https://www.tampermonkey.net/?ext=dhdg)
- 2. 安装在广告过滤器：找到广告过滤器中的用户脚本管理页面，添加用户脚本，输入[[脚本地址]](https://greasyfork.org/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C/code/NGA%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C.user.js)安装
+- 安装在浏览器脚本管理器：[[Tampermonkey]](https://www.tampermonkey.net/?ext=dhdg)
+- 安装在广告过滤器：找到广告过滤器中的用户脚本管理页面，添加用户脚本，输入[[脚本地址]](https://greasyfork.org/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C/code/NGA%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C.user.js)安装
+
+  *注意：此种安装方式部分脚本管理器特有的功能将不可用*
 
 *开发及调试环境：谷歌浏览器(Chrome) + TamperMonkey浏览器油猴插件
 
@@ -47,6 +51,7 @@ NGA论坛显示优化，功能增强，具体功能见下面【功能列表】
 - 隐藏签名
 - 隐藏版头/版规/子版（使用一个按钮进行切换）
 - 帖子列表打开时使用新标签栏
+- 连接直接跳转
 - 自动翻页
 - 折叠引用
 - 楼内图像尺寸优化，每张图最大宽200px

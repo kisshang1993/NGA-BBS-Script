@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      3.7.3
+// @version      3.8.0
 // @author       HLD
 // @description  NGA论坛显示优化，功能增强，防止突然蹦出一对??而导致的突然性的社会死亡
 // @license      MIT
 // @require      https://cdn.staticfile.org/jquery/3.4.0/jquery.min.js
 // @require      https://cdn.staticfile.org/spectrum/1.8.0/spectrum.js
-// @icon         https://s1.ax1x.com/2020/06/28/N25WBF.png
+// @icon         https://i.loli.net/2021/04/07/8x3yFj2pWEKluSY.png
 // @match        *://bbs.nga.cn/*
 // @match        *://ngabbs.com/*
 // @match        *://nga.178.com/*
@@ -79,6 +79,8 @@
         renderForms () {
             $('.forumbox.postbox[hld-forms-render!=ok]').each((index, dom) => {
                 const $el = $(dom)
+                // 等待NGA页面渲染完成
+                if ($el.find('.small_colored_text_btn').length == 0) return true
                 for (const module of this.modules) {
                     module.renderFormsFunc && module.renderFormsFunc($el)
                 }
@@ -90,7 +92,7 @@
          * @method addModule
          * @param {Object} module 模块对象
          */
-        addModule (module) {
+        addModule (module, plugin=false) {
             // 组件预处理函数
             if (module.beforeFunc) {
                 module.beforeFunc()
@@ -115,6 +117,7 @@
             if (module.style) {
                 this.style += module.style
             }
+            plugin && (module.type = 'plugin')
             this.modules.push(module)
         }
         /**
@@ -151,7 +154,6 @@
             const startInitTime = new Date().getTime()
             //同步配置
             this.loadSetting()
-
             // 组件初始化函数
             for (const module of this.modules) {
                 if (module.initFunc) {
@@ -957,7 +959,7 @@
                 <div class="hld__list-panel hld__reward-panel animated fadeInUp">
                     <a href="javascript:void(0)" class="hld__setting-close">×</a>
                     <div class="hld__reward-info">
-                        <p><b>本脚本完全开源，并且长期维护，您喜欢请可以去点个Star！</p>
+                        <p><b>本脚本完全开源，并且长期维护，您喜欢请可以去Github点个Star！</p>
                         <p>您若有好的功能需求或者建议，欢迎反馈</p>
                         <p>如果您觉得脚本好用<span class="hld__delete-line">帮助到更好的摸鱼</span>，也可以请作者喝杯咖啡~<img src="https://s1.ax1x.com/2020/06/28/N25w7Q.png"></p>
                     </div>
@@ -1241,18 +1243,18 @@
         beforeUrl: window.location.href,
         initFunc: function() {
             const headerTheme = {
-                'wps': 'https://img.imgdb.cn/item/5eb65188c2a9a83be59c86ce.png',
-                'office': 'https://img.imgdb.cn/item/603dfb62360785be5434c4a9.png'
+                'wps': 'https://i.loli.net/2021/04/07/xwTM4FiZdAb7u8j.png',
+                'office': 'https://i.loli.net/2021/04/07/A4BksxqXL8hZy9H.png'
             }
             const footerTheme = {
-                'wps': 'https://img.imgdb.cn/item/606537178322e6675c595d77.png',
-                'office': 'https://img.imgdb.cn/item/6063d13d8322e6675cee406f.png'
+                'wps': 'https://i.loli.net/2021/04/07/jcJIoUwvf27gt6L.png',
+                'office': 'https://i.loli.net/2021/04/07/InflMj3tFU2SCB7.png'
             }
             $('body').append(`<div class="hld__excel-div hld__excel-header"><img src="${headerTheme[script.setting.advanced.excelTheme]}"></div>`)
             $('body').append(`<div class="hld__excel-div hld__excel-footer"><img src="${footerTheme[script.setting.advanced.excelTheme]}"></div>`)
             $('.hld__excel-header, .hld__excel-footer').append('【这里应该是一张仿造Excel的图片，如不显示，请刷新重试，如还不显示，请及时反馈！】')
-            $('body').append('<div class="hld__excel-div hld__excel-setting"><img src="https://s1.ax1x.com/2020/06/28/N25WBF.png"><a id="hld__excel_setting" href="javascript:void(0)" title="打开NGA优化摸鱼插件设置面板">摸鱼</div>')
             $('#hld__excel_setting').click(()=>$('#hld__setting_cover').css('display', 'flex'))
+            $('#mainmenu .half').parent().append($('#mainmenu .half').clone(true).addClass('hld__half-clone').text($('#mainmenu .half').text().replace('你好', '')))
             if(script.setting.normal.excelMode) {
                 if(this.beforeUrl.includes('thread.php') || this.beforeUrl.includes('read.php')) {
                     this.switchExcelMode()
@@ -1297,9 +1299,19 @@
         style: `
         /* 默认风格(WPS) */
         .hld__excel-body-err {padding-top: 200px}
-        .hld__excel-header, .hld__excel-footer, .hld__excel-setting {display: none;}
+        .hld__excel-header, .hld__excel-footer, .hld__excel-setting, .hld__half-clone {display: none;}
         .hld__excel-body {background:#fff !important;}
-        .hld__excel-body #mainmenu,.hld__excel-body .catenew,.hld__excel-body #toptopics,.hld__excel-body #m_pbtntop,.hld__excel-body #m_fopts,.hld__excel-body #b_nav,.hld__excel-body #fast_post_c,.hld__excel-body #custombg,.hld__excel-body #m_threads th,.hld__excel-body #m_posts th,.hld__excel-body .r_container,.hld__excel-body #footer,.hld__excel-body .clickextend {display:none !important;}
+        .hld__excel-body #mainmenu {position: fixed;top: 5px;right: 75px;width: 425px;z-index: 98;}
+        .hld__excel-body #mainmenu .right {float:none;}
+        .hld__excel-body #mainmenu .stdbtn {background:none;box-shadow:none;}
+        .hld__excel-body #mainmenu .half {display:none;}
+        .hld__excel-body #mainmenu .hld__half-clone {display:block;width: 150px;text-align: right;overflow: hidden;text-overflow:ellipsis;white-space: nowrap;}
+        .hld__excel-body #mainmenu .half {color:#f4f4f4 !important;}
+        .hld__excel-body #mainmenu .stdbtn a:hover {background:none;text-decoration:underline;color:#2c5787 !important;}
+        .hld__excel-body #mainmenu .mmdefault.cell input {padding:0;margin:0;background:#ededed;border:1px solid #c9d0dc;border-radius:10px;box-shadow:none;}
+        .hld__excel-body #mainmenu, .hld__excel-body #mainmenu .half, .hld__excel-body #mainmenu td a, .hld__excel-body #mainmenu .stdbtn .innerbg, .hld__excel-body #mainmenu, .hld__excel-body #mainmenu .stdbtn a, .hld__excel-body #mainmenu .stdbtn .td {height: 20px !important;line-height: 20px !important;padding: 0 5px !important;background:none;color:#424242 !important;}
+        .hld__excel-body .single_ttip2 {position: fixed !important;z-index:999 !important;top:30px !important;border-color:#888;}
+        .hld__excel-body .hld__excel-body #mainmenu, .hld__excel-body .catenew,.hld__excel-body #toptopics,.hld__excel-body #m_pbtntop,.hld__excel-body #m_fopts,.hld__excel-body #b_nav,.hld__excel-body #fast_post_c,.hld__excel-body #custombg,.hld__excel-body #m_threads th,.hld__excel-body #m_posts th,.hld__excel-body .r_container,.hld__excel-body #footer,.hld__excel-body .clickextend {display:none !important;}
         .hld__excel-body #mmc {margin-top:195px;margin-bottom:35px;}
         .hld__excel-body .postBtnPos > div, .hld__excel-body .postBtnPos .stdbtn a {background:#fff !important;border-color:#bbb;}
         .hld__excel-body .hld__excel-div,.hld__excel-body .hld__excel-setting {display:block;}
@@ -1366,6 +1378,10 @@
         .hld__excel-body.hld__excel-theme-office.hld__reply-fixed #postbbtm {top: 160px;}
         .hld__excel-body.hld__excel-theme-office #m_pbtnbtm td a,
         .hld__excel-body.hld__excel-theme-office #m_pbtnbtm .stdbtn {background: none;}
+        .hld__excel-body.hld__excel-theme-office #mainmenu {top:35px;right:30px;}
+        .hld__excel-body.hld__excel-theme-office #mainmenu .mmdefault.cell input {border-radius:0;}
+        .hld__excel-body.hld__excel-theme-office #mainmenu .stdbtn a, .hld__excel-body.hld__excel-theme-office #mainmenu .hld__half-clone {color:#FFF !important;}
+        .hld__excel-body.hld__excel-theme-office .single_ttip2 {top:59px !important;}
         `
     }
     /**
@@ -1474,6 +1490,29 @@
                 $link.click(() => {
                     window.open($link.data('href'))
                     return false
+                })
+            }
+        }
+    }
+    /**
+     * 链接直接跳转
+     * @name directLinkJump
+     * @description 此模块提供了超链接等直接跳转无须弹窗确认
+     */
+    const directLinkJump = {
+        setting: {
+            type: 'normal',
+            key: 'directLinkJump',
+            default: true,
+            title: '链接直接跳转',
+            menu: 'right'
+        },
+        renderFormsFunc: function ($el) {
+            if (script.setting.normal.directLinkJump) {
+                $el.find('a[onclick]').each(function(){
+                    if ($(this).attr('onclick').includes('showUrlAlert')) {
+                        $(this).removeAttr('onclick onmouseover onmouseout')
+                    }
                 })
             }
         }
@@ -1901,7 +1940,6 @@
                         _this.$window.on('scroll.autoPage', function(){
                             if ($(document).scrollTop() != 0 && (Math.ceil($(document).scrollTop()) + $(window).height() >= ($(document).height() - 20))) {
                                 if($('#hld__next_page').length > 0) {
-                                    console.warn('Auto Page')
                                     document.getElementById('hld__next_page').click()
                                     $('#hld__next_page').removeAttr('id')
                                     _this.$window.off('scroll.autoPage')
@@ -2623,7 +2661,7 @@
             window.localStorage.setItem('hld__NGA_mark_list', JSON.stringify(_this.markList))
         },
         style: `
-        #hld__setting {color:#6666CC;cursor:pointer;}
+        #hld__setting {color:#6666CC !important;cursor:pointer;}
         .hld__list-panel {position:fixed;background:#fff8e7;padding:15px 20px;border-radius:10px;box-shadow:0 0 10px #666;border:1px solid #591804;z-index:9999;}
         #hld__banlist_panel {width:500px;}
         #hld__keywords_panel {width:182px;}
@@ -2783,6 +2821,7 @@
     script.addModule(excelTitle)
     script.addModule(foldQuote)
     script.addModule(linkTargetBlank)
+    script.addModule(directLinkJump)
     script.addModule(imgEnhance)
     script.addModule(authorMark)
     script.addModule(authorMarkColor)
