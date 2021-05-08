@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      3.8.1
+// @version      3.9.0
 // @author       HLD
 // @description  NGA论坛显示优化，功能增强，防止突然蹦出一对??而导致的突然性的社会死亡
 // @license      MIT
 // @require      https://cdn.staticfile.org/jquery/3.4.0/jquery.min.js
 // @require      https://cdn.staticfile.org/spectrum/1.8.0/spectrum.js
-// @require      https://greasyfork.org/scripts/424901-nga-script-resource/code/NGA-Script-Resource.js?version=920889
+// @require      https://greasyfork.org/scripts/424901-nga-script-resource/code/NGA-Script-Resource.js?version=926265
 // @icon         https://i.loli.net/2021/04/07/8x3yFj2pWEKluSY.png
 // @match        *://bbs.nga.cn/*
 // @match        *://ngabbs.com/*
@@ -29,8 +29,7 @@
             // 配置
             this.setting = {
                 normal: {},
-                advanced: {},
-                plugin: {}
+                advanced: {}
             }
             // 模块
             this.modules = []
@@ -57,7 +56,12 @@
          */
         renderAlways() {
             for (const module of this.modules) {
-                module.renderAlwaysFunc && module.renderAlwaysFunc(null)
+                try {
+                    module.renderAlwaysFunc && module.renderAlwaysFunc(this)
+                } catch (error) {
+                    this.printLog(`[${module.name}]模块在[renderAlwaysFunc()]中运行失败！`)
+                    console.log(error)
+                }
             }
         }
         /**
@@ -68,7 +72,12 @@
             $('.topicrow[hld-threads-render!=ok]').each((index, dom) => {
                 const $el = $(dom)
                 for (const module of this.modules) {
-                    module.renderThreadsFunc && module.renderThreadsFunc($el)
+                    try {
+                        module.renderThreadsFunc && module.renderThreadsFunc($el, this)
+                    } catch (error) {
+                        this.printLog(`[${module.name}]模块在[renderThreadsFunc()]中运行失败！`)
+                        console.log(error)
+                    }
                 }
                 $el.attr('hld-threads-render', 'ok')
             })
@@ -83,7 +92,12 @@
                 // 等待NGA页面渲染完成
                 if ($el.find('.small_colored_text_btn').length == 0) return true
                 for (const module of this.modules) {
-                    module.renderFormsFunc && module.renderFormsFunc($el)
+                    try {
+                        module.renderFormsFunc && module.renderFormsFunc($el, this)
+                    } catch (error) {
+                        this.printLog(`[${module.name}]模块在[renderFormsFunc()]中运行失败！`)
+                        console.log(error)
+                    }
                 }
                 $el.attr('hld-forms-render', 'ok')
             })
@@ -92,11 +106,17 @@
          * 添加模块
          * @method addModule
          * @param {Object} module 模块对象
+         * @param {Boolean} plugin 是否为插件
          */
         addModule (module, plugin=false) {
             // 组件预处理函数
             if (module.beforeFunc) {
-                module.beforeFunc()
+                try {
+                    module.beforeFunc(this)
+                } catch (error) {
+                    this.printLog(`[${module.name}]模块在[beforeFunc()]中运行失败！`)
+                    console.log(error)
+                }
             }
             // 添加模块
             const addModule = setting => {
@@ -152,26 +172,48 @@
          */
         init () {
             // 开始初始化
+            this.printLog('初始化...')
             const startInitTime = new Date().getTime()
+            const modulesTable = []
             //同步配置
             this.loadSetting()
             // 组件初始化函数
             for (const module of this.modules) {
                 if (module.initFunc) {
-                    module.initFunc()
+                    try {
+                        module.initFunc(this)
+                    } catch (error) {
+                        this.printLog(`[${module.name}]模块在[initFunc()]中运行失败！`)
+                        console.log(error)
+                    }
                 }
             }
             // 组件后处理函数
             for (const module of this.modules) {
                 if (module.afterFunc) {
-                    module.afterFunc()
+                    try {
+                        module.afterFunc(this)
+                    } catch (error) {
+                        this.printLog(`[${module.name}]模块在[afterFunc()]中运行失败！`)
+                        console.log(error)
+                    }
                 }
             }
             // 异步样式
             for (const module of this.modules) {
                 if (module.asyncStyle) {
-                    this.style += module.asyncStyle()
+                    try {
+                        this.style += module.asyncStyle(this)
+                    } catch (error) {
+                        this.printLog(`[${module.name}]模块在[asyncStyle()]中运行失败！`)
+                        console.log(error)
+                    }
                 }
+                modulesTable.push({
+                    name: module.title || module.name || 'UNKNOW',
+                    type: module.type == 'plugin' ? '插件' : '内置模块',
+                    version: module.version || '-'
+                })
             }
             // 插入样式
             const style = document.createElement("style")
@@ -179,6 +221,7 @@
             document.getElementsByTagName('head')[0].appendChild(style)
             // 初始化完成
             const endInitTime = new Date().getTime()
+            console.table(modulesTable)
             this.printLog(`[v${this.getInfo().version}] 初始化完成：共加载${this.modules.length}个模块，总耗时${endInitTime-startInitTime}ms`)
         }
         /**
@@ -382,12 +425,10 @@
         // 修复脚本
         GM_registerMenuCommand('修复脚本', function () {
             if (window.confirm('如脚本运行失败或无效，尝试修复脚本，这会清除脚本的本地缓存信息\n* 本地缓存信息包含配置，各种名单等\n* 此操作不可逆转，如果需要备份，请手动备份localStorage内的hld__*的字段\n\n继续请点击【确定】')) {
-                window.localStorage.removeItem('hld__NGA_setting')
-                window.localStorage.removeItem('hld__NGA_mark_list_bak')
-                window.localStorage.removeItem('hld__NGA_ban_list')
-                window.localStorage.removeItem('hld__NGA_keywords_list')
-                window.localStorage.removeItem('hld__NGA_post_author')
-                window.localStorage.removeItem('hld__NGA_version')
+                for (let i=0;i<localStorage.length;i++) {
+                    let key = localStorage.key(i)
+                    key.startsWith('hld__NGA_') && localStorage.removeItem(key)
+                }
                 alert('操作成功，请刷新页面重试')
             }
         })
@@ -410,6 +451,7 @@
      * @description 脚本的初始样式
      */
     const defaultStyle = {
+        name: 'defaultStyle',
         style: `
         .animated {animation-duration:.3s;animation-fill-mode:both;}
         .animated-1s {animation-duration:1s;animation-fill-mode:both;}
@@ -562,6 +604,7 @@
                 }
             }
             /**
+             * Bind:Click
              * 设置面板-展开切换高级设置
              */
             $('body').on('click', '#hld__advanced_button', function () {
@@ -573,10 +616,15 @@
                     $(this).text('+')
                 }
             })
+            /**
+             * Bind:Click
+             * 关闭面板（通用）
+             */
             $('body').on('click', '.hld__list-panel .hld__setting-close', function () {
                 $(this).parent().remove()
             })
             /**
+             * Bind:Click
              * 保存配置
              */
             $('body').on('click', '#hld__save__data', () => {
@@ -625,14 +673,12 @@
         button.hld__btn:hover {background:#591804;color:#fff0cd;}
         .hld__sp-fold {padding-left:23px;}
         .hld__sp-fold .hld__f-title {font-weight:bold;}
-
         `
     }
     /**
      * 快捷键模块
      * @name shortCutKeys
      * @description 为模块提供快捷键切换的能力，提供修改，保存快捷键等
-
     */
     const shortCutKeys = {
         name: 'shortCutKeys',
@@ -645,7 +691,10 @@
         },
         initFunc: function () {
             const _this = this
-            //注册按键
+            /**
+             * Bind:keyup
+             * 注册监听按键
+             */
             $('body').keyup(event => {
                 if (/textarea|select|input/i.test(event.target.nodeName)
                     || /text|password|number|email|url|range|date|month/i.test(event.target.type)) {
@@ -682,14 +731,15 @@
                 }
             })
             /**
-             * 展开快捷键编辑列表
+             * Bind:Click
+             * 快捷键编辑面板
              */
             $('body').on('click', '#hld__shortcut_manage', () => {
                 if($('#hld__shortcut_panel').length > 0) return
                 let $shortcutPanel = $(`<div id="hld__shortcut_panel" class="hld__list-panel animated fadeInUp">
                 <a href="javascript:void(0)" class="hld__setting-close">×</a>
                 <div>
-                <div><p>编辑快捷键</p><div class="hld__float-left"><table class="hld__table hld__table-keyword"><thead><tr><td>功能</td><td width="60">快捷键</td></tr></thead>
+                <div><p><b>编辑快捷键</b></p><div class="hld__float-left"><table class="hld__table hld__table-keyword"><thead><tr><td>功能</td><td width="60">快捷键</td></tr></thead>
                 <tbody></tbody></table></div><div class="hld__float-left hld__shortcut-desc"><p><b>支持的快捷键范围</b></p><p>键盘 <code>A</code>~<code>Z</code></p><p>左箭头 <code>LEFT</code></p><p>右箭头 <code>RIGHT</code></p><p>上箭头 <code>UP</code></p><p>下箭头 <code>DOWN</code></p><p><i>* 留空则取消快捷键</i></p><br><p>如按键异常请尝试重置按键</p>
                 </div>
                 <div class="clearfix"></div></div>
@@ -699,8 +749,8 @@
                 <button class="hld__btn" id="hld__save_shortcut">保存快捷键</button>
                 </div>
                 </div>`)
+                const insertDom = setting => $shortcutPanel.find('.hld__table tbody').append(`<tr><td>${setting.title || setting.key}</td><td><input type="text" value="${this.getCodeName(setting.rewriteShortCutCode || setting.shortCutCode)}"></td></tr>`)
                 for (const module of script.modules) {
-                    const insertDom = setting => $shortcutPanel.find('.hld__table tbody').append(`<tr><td>${setting.title || setting.key}</td><td><input type="text" value="${this.getCodeName(setting.rewriteShortCutCode || setting.shortCutCode)}"></td></tr>`)
                     if (module.setting && module.setting.shortCutCode) {
                         insertDom(module.setting)
                     }
@@ -715,6 +765,7 @@
                 $('#hld__setting_cover').append($shortcutPanel)
             })
             /**
+             * Bind:Click
              * 重置快捷键
              */
             $('body').on('click', '#hld__reset_shortcut', () => {
@@ -734,6 +785,7 @@
                 $('#hld__shortcut_panel').remove()
             })
             /**
+             * Bind:Click
              * 保存快捷键
              */
             $('body').on('click', '#hld__save_shortcut', () => {
@@ -810,11 +862,16 @@
              * 导入导出设置面板
              */
             const _this = this
+            // 在设置面板上添加按钮
             script.getModule('settingPanel').addButton({
                 id: 'hld__backup_panel',
                 title: '导入/导出',
                 desc: '导入/导出配置字符串，包含设置，黑名单，标记名单等等'
             })
+            /**
+             * Bind:Click
+             * 导入导出面板
+             */
             $('body').on('click', '#hld__backup_panel', function () {
                 const unsupported = '3.3.0'
                 const currentVer = script.getInfo().version
@@ -846,6 +903,7 @@
                     `)
                 }
                 /**
+                 * Bind:Click
                  * 导出配置
                  */
                 $('#hld__export__data').click(function(){
@@ -862,17 +920,18 @@
                             obj[item.writeKey] = item.module[item.valueKey]
                         }
                     }
-
                     if (Object.keys(obj).length == 0) {
                         $('#hld__export_msg').html('<span style="color:#CC0000">没有选择任何项目可供导出！</span>')
                         return
                     }
-                    obj['name'] = 'HLD-NGA-BBS'
+                    obj['name'] = 'HLD-NGA-SCRIPT'
                     obj['ver'] = script.getInfo().version
-                    $('#hld__export_str').val(_this.Base64.encode(JSON.stringify(obj)))
-                    $('#hld__export_msg').html('<span style="color:#009900">导出成功，请复制右侧字符串以备份</span>')
+                    const backupB64 = _this.Base64.encode(JSON.stringify(obj))
+                    $('#hld__export_str').val(backupB64)
+                    $('#hld__export_msg').html(`<span style="color:#009900">导出成功(${_this.calculateSize(backupB64.length)})，请复制右侧字符串以备份</span>`)
                 })
                 /**
+                 * Bind:Click
                  * 导入配置
                  */
                 $('#hld__import__data').click(function(){
@@ -922,6 +981,17 @@
             str.split('.').forEach((n, i) => num += i < 2 ? +n * 1000 / Math.pow(10, i) : +n)
             return num
         },
+        calculateSize: function (num) {
+            if (num == 0) return '0 B'
+            let k = 1024
+            let sizeStr = ['B','KB','MB','GB']
+            let i = 0
+            for(let l=0;l<8;l++){
+            　　if(num / Math.pow(k, l) < 1) break
+            　　i = l
+            }
+        　　return (num / Math.pow(k, i)).toFixed(2) + ' ' + sizeStr[i]
+        },
         /**
          * Base64互转
          */
@@ -946,6 +1016,7 @@
      * @description 别问，好活当赏
      */
     const rewardPanel = {
+        name: 'rewardPanel',
         initFunc: function () {
             /**
              * 打赏
@@ -955,6 +1026,10 @@
                 title: '<span style="margin-right:3px">¥</span>赏',
                 desc: '好活当赏'
             })
+            /**
+             * Bind:Click
+             * 打赏面板
+             */
             $('body').on('click', '#hld__reward', function () {
                 $('#hld__setting_cover').append(`
                 <div class="hld__list-panel hld__reward-panel animated fadeInUp">
@@ -994,6 +1069,7 @@
      * @description 此模块提供了快捷键动态启用的功能
      */
     const dynamicEnable = {
+        name: 'dynamicEnable',
         setting: {
             type: 'advanced',
             key: 'dynamicEnable',
@@ -1009,6 +1085,7 @@
      * @description 此模块提供了可以快捷键切换显示隐藏头像
      */
     const hideAvatar = {
+        name: 'hideAvatar',
         setting: {
             shortCutCode: 81, // Q
             type: 'normal',
@@ -1036,6 +1113,7 @@
      *              其中隐藏的表情会用文字来替代
      */
     const hideSmile = {
+        name: 'hideSmile',
         setting: {
             shortCutCode: 87, // W
             type: 'normal',
@@ -1074,10 +1152,12 @@
      * @description 此模块提供了可以调整贴内图片的尺寸
      */
     const imgResize = {
+        name: 'imgResize',
         settings: [{
             type: 'normal',
             key: 'imgResize',
             title: '贴内图片缩放',
+            default: true,
             menu: 'left'
         }, {
             type: 'advanced',
@@ -1108,6 +1188,7 @@
      *              其中隐藏的图片会用一个按钮来替代
      */
     const hideImage = {
+        name: 'hideImage',
         setting: {
             shortCutCode: 69, // E
             type: 'normal',
@@ -1159,6 +1240,7 @@
      * @description 此模块提供了可以配置默认隐藏签名
      */
     const hideSign = {
+        name: 'hideSign',
         setting: {
             type: 'normal',
             key: 'hideSign',
@@ -1177,6 +1259,7 @@
      *              以及一个高级配置可选一起隐藏顶部背景
      */
     const hideHeader = {
+        name: 'hideHeader',
         settings: [{
             type: 'normal',
             key: 'hideHeader',
@@ -1203,7 +1286,11 @@
                 $('#custombg').hide()
                 $('#mainmenu').css('margin', '0px')
             }
-        }
+        },
+        style: `
+        #m_threads .toptopicsRight {float:none;width:auto;}
+        .topicrowsLeftC {margin-right:0;}
+        `
     }
     /**
      * Excel模块
@@ -1212,6 +1299,7 @@
      *              以及一个高级配置可选更改Excel左侧序号的类型
      */
     const excelMode = {
+        name: 'excelMode',
         settings: [{
             shortCutCode: 82, // R
             type: 'normal',
@@ -1243,17 +1331,50 @@
         }],
         beforeUrl: window.location.href,
         initFunc: function() {
-            const headerTheme = {
-                'wps': IMG_WPS_HEADER,
-                'office': IMG_OFFICE_HEADER
+            // 生成列标题字母列表
+            const columnLetters = () => {
+                let capital = []
+                let columnLetters = []
+                for (let i=65;i<91;i++) capital.push(String.fromCharCode(i))
+                Array('', 'A', 'B', 'C').forEach(n => capital.forEach(c => columnLetters.push(`${n}${c}`)))
+                return columnLetters
             }
-            const footerTheme = {
-                'wps': IMG_WPS_FOOTER,
-                'office': IMG_OFFICE_FOOTER
-            }
-            $('body').append(`<div class="hld__excel-div hld__excel-header"><img src="${headerTheme[script.setting.advanced.excelTheme]}"></div>`)
-            $('body').append(`<div class="hld__excel-div hld__excel-footer"><img src="${footerTheme[script.setting.advanced.excelTheme]}"></div>`)
-            $('.hld__excel-header, .hld__excel-footer').append('【这里应该是一张仿造Excel的图片，如不显示，请刷新重试，如还不显示，请及时反馈！】')
+            // 插入Excel头部
+            $('body').append(`
+                <div class="hld__excel-div hld__excel-header">
+                    <div class="hld__excel-h1">
+                        <div class="hld__excel-title">${script.setting.advanced.excelTitle || document.title} - Excel</div>
+                        <img class="hld__excel-img-h1-l1" src="${getExcelTheme(script.setting.advanced.excelTheme, 'H_L_1')}">
+                        <img class="hld__excel-img-h1-r1" src="${getExcelTheme(script.setting.advanced.excelTheme, 'H_R_1')}">
+                    </div>
+                    <div class="hld__excel-h2">
+                        <img class="hld__excel-img-h2-l1" src="${getExcelTheme(script.setting.advanced.excelTheme, 'H_L_2')}">
+                        <img class="hld__excel-img-h2-r1" src="${getExcelTheme(script.setting.advanced.excelTheme, 'H_R_2')}">
+                    </div>
+                    <div class="hld__excel-h3">
+                        <img class="hld__excel-img-h3-l1" src="${getExcelTheme(script.setting.advanced.excelTheme, 'H_L_3')}">
+                        <img class="hld__excel-img-h3-r1" src="${getExcelTheme(script.setting.advanced.excelTheme, 'H_R_3')}">
+                        <div class="hld__excel-fx"></div>
+                    </div>
+                    <div class="hld__excel-h4">
+                        <div class="hld__excel-sub"><div></div></div>
+                        ${(columnLetters().map(c => '<div class="hld__excel-column">'+c+'</div>')).join('')}
+                    </div>
+                </div>
+            `)
+            // 插入Excel尾部
+            $('body').append(`
+                <div class="hld__excel-div hld__excel-footer">
+                    <div class="hld__excel-f1">
+                        <img class="hld__excel-img-f1-l1" src="${getExcelTheme(script.setting.advanced.excelTheme, 'F_L_1')}">
+                        <img class="hld__excel-img-f1-r1" src="${getExcelTheme(script.setting.advanced.excelTheme, 'F_R_1')}">
+                    </div>
+                    <div class="hld__excel-f2">
+                    <img class="hld__excel-img-fl2" src="${getExcelTheme(script.setting.advanced.excelTheme, 'F_L_2')}">
+                    <img class="hld__excel-img-fr2" src="${getExcelTheme(script.setting.advanced.excelTheme, 'F_R_2')}">
+                    </div>
+                </div>
+            `)
             $('#hld__excel_setting').click(()=>$('#hld__setting_cover').css('display', 'flex'))
             $('#mainmenu .half').parent().append($('#mainmenu .half').clone(true).addClass('hld__half-clone').text($('#mainmenu .half').text().replace('你好', '')))
             if(script.setting.normal.excelMode) {
@@ -1301,6 +1422,25 @@
         /* 默认风格(WPS) */
         .hld__excel-body-err {padding-top: 200px}
         .hld__excel-header, .hld__excel-footer, .hld__excel-setting, .hld__half-clone {display: none;}
+        .hld__excel-header>div, .hld__excel-footer>div {position: relative;box-sizing: border-box;}
+        .hld__excel-header img, .hld__excel-footer img {position: absolute;}
+        .hld__excel-header {border-bottom:1px solid #bbbbbb;}
+        .hld__excel-title {display:none;}
+        .hld__excel-h1 {height:30px;background:#f3f5f8;border-bottom:1px solid #c5cbd6;}
+        .hld__excel-h2 {height:102px;background:#f4f4f4;}
+        .hld__excel-img-h1-l1, .hld__excel-img-h2-l1, .hld__excel-img-f1-l1, .hld__excel-img-fl2 {top:0;left:0;}
+        .hld__excel-img-h1-r1, .hld__excel-img-h2-r1, .hld__excel-img-f1-r1, .hld__excel-img-fr2 {top:0;right:0;}
+        .hld__excel-h3 {height:44px;background:#e8e8e8;box-shadow: inset 0 3px 5px #d9d9d9;}
+        .hld__excel-img-h3-l1 {top:12px;left:0;}
+        .hld__excel-img-h3-r1 {toP:8px;right:0;}
+        .hld__excel-fx {position: absolute;top:12px;left:253px;right:45px;height:24px;box-sizing: border-box;border:1px solid #cccccc;border-radius:4px;background:#ffffff;}
+        .hld__excel-h4 {height:21px;display:flex;flex-wrap: wrap;overflow: hidden;}
+        .hld__excel-h4 > div {height:21px;border-right:1px solid #c8c8c8;box-sizing:border-box;}
+        .hld__excel-sub {width:34px;position: relative;}
+        .hld__excel-sub > div {position: absolute;right:4px;bottom:4px;width: 0px;height: 0px;border-top: 6px solid transparent;border-left: 6px solid transparent;border-right: 6px solid #b8b8b8;border-bottom: 6px solid #b8b8b8;}
+        .hld__excel-column {width: 72px;line-height:21px;text-align:center;color:#444444;font-family: sans-serif;font-weight:100;font-size:14px;}
+        .hld__excel-f1 {height:22px;background:#e8e8e8;}
+        .hld__excel-f2 {height:28px;background:#f4f4f4;}
         .hld__excel-body {background:#fff !important;}
         .hld__excel-body #mainmenu {position: fixed;top: 5px;right: 75px;width: 425px;z-index: 98;}
         .hld__excel-body #mainmenu .right {float:none;}
@@ -1309,7 +1449,7 @@
         .hld__excel-body #mainmenu .hld__half-clone {display:block;width: 150px;text-align: right;overflow: hidden;text-overflow:ellipsis;white-space: nowrap;}
         .hld__excel-body #mainmenu .half {color:#f4f4f4 !important;}
         .hld__excel-body #mainmenu .stdbtn a:hover {background:none;text-decoration:underline;color:#2c5787 !important;}
-        .hld__excel-body #mainmenu .mmdefault.cell input {padding:0;margin:0;background:#ededed;border:1px solid #c9d0dc;border-radius:10px;box-shadow:none;}
+        .hld__excel-body #mainmenu .mmdefault.cell input {padding:0;margin:0;background:#ededed;border:1px solid #c9d0dc;border-radius:10px;box-shadow:none;font-size:13px !important;}
         .hld__excel-body #mainmenu, .hld__excel-body #mainmenu .half, .hld__excel-body #mainmenu td a, .hld__excel-body #mainmenu .stdbtn .innerbg, .hld__excel-body #mainmenu, .hld__excel-body #mainmenu .stdbtn a, .hld__excel-body #mainmenu .stdbtn .td {height: 20px !important;line-height: 20px !important;padding: 0 5px !important;background:none;color:#424242 !important;}
         .hld__excel-body .single_ttip2 {position: fixed !important;z-index:999 !important;top:30px !important;border-color:#888;}
         .hld__excel-body .hld__excel-body #mainmenu, .hld__excel-body .catenew,.hld__excel-body #toptopics,.hld__excel-body #m_pbtntop,.hld__excel-body #m_fopts,.hld__excel-body #b_nav,.hld__excel-body #fast_post_c,.hld__excel-body #custombg,.hld__excel-body #m_threads th,.hld__excel-body #m_posts th,.hld__excel-body .r_container,.hld__excel-body #footer,.hld__excel-body .clickextend {display:none !important;}
@@ -1327,6 +1467,8 @@
         .hld__excel-body #m_nav .nav_spr {display:block;border:0;border-radius:0;padding:0;box-shadow:none;background:none;}
         .hld__excel-body #m_nav .nav_spr span {color:#000;font-size:16px;vertical-align:unset;font-weight:normal;}
         .hld__excel-body #m_nav .nav_root,.hld__excel-body #m_nav .nav_link {background:none;border:none;box-shadow:none;padding:0;color:#000;border-radius:0;font-weight:normal;}
+        .hld__excel-body .nav {font-size:14px !important;}
+        .hld__excel-body #mainmenu .stdbtn a {font-size:13px !important;}
         .hld__excel-body #m_threads {margin:0;}
         .hld__excel-body #topicrows {border:none;box-shadow:none;border-radius:0;margin:0;background-color:#fff;counter-reset:num;border-spacing:0;}
         .hld__excel-body #topicrows tbody {border-spacing:0;}
@@ -1348,7 +1490,7 @@
         .hld__excel-body #pagebbtm,.hld__excel-body #m_pbtnbtm .right_ {margin:0;}
         .hld__excel-body #pagebbtm:before {display:block;line-height:35px;width:33px;float:left;content:"#";border-right:1px solid #bbbbbb;color:#777;font-size:16px;background:#e8e8e8;}
         .hld__excel-body #m_pbtnbtm td {line-height:35px;padding:0 5px;}
-        .hld__excel-body #m_pbtnbtm .stdbtn {box-shadow:none;border:none;padding:0;padding-left:5px;background:#fff;border-radius:0;}
+        .hld__excel-body #m_pbtnbtm .stdbtn {box-shadow:none;border:none !important;padding:0;padding-left:5px;background:#fff;border-radius:0;font-size:13px !important;}
         .hld__excel-body #m_pbtnbtm .stdbtn .invert {color:#591804;}
         .hld__excel-body #m_pbtnbtm td a {background:#fff;padding:0;border:0;}
         .hld__excel-body #m_posts .comment_c .comment_c_1 {border-top-color:#bbbbbb;}
@@ -1367,19 +1509,29 @@
         .hld__excel-body.hld__reply-fixed #postbbtm {position:fixed;right:30px;top:75px;z-index:999;border-radius: 10px;overflow: hidden;}
         /* Office风格 */
         .hld__excel-body.hld__excel-theme-office .hld__excel-header {height:221px;}
+        .hld__excel-body.hld__excel-theme-office .hld__excel-h1 {height:59px;background:#227447;display:flex;justify-content: center;}
+        .hld__excel-body.hld__excel-theme-office .hld__excel-title {display: block;color:#FFF;font-size: 12px;font-weight: 400;font-family: sans-serif;line-height:30px;}
+        .hld__excel-body.hld__excel-theme-office .hld__excel-h2 {height:95px;background:#f1f1f1;border-bottom:1px solid #d5d5d5;}
+        .hld__excel-body.hld__excel-theme-office .hld__excel-h3 {height:48px;background:#e6e6e6;box-shadow:none;}
+        .hld__excel-body.hld__excel-theme-office .hld__excel-fx {left:250px;right: 5px;border-color:#c6c6c6;border-radius:0;height:28px;}
+        .hld__excel-body.hld__excel-theme-office .hld__excel-h4 {height:20px;}
+        .hld__excel-body.hld__excel-theme-office .hld__excel-f1 {height:29px;}
+        .hld__excel-body.hld__excel-theme-office .hld__excel-f2 {height:21px;}
+        .hld__excel-body.hld__excel-theme-office .hld__excel-f1 {border-top:1px solid #999999;border-bottom:1px solid #bfbfbf;}
+        .hld__excel-body.hld__excel-theme-office .hld__excel-img-f1-l1, .hld__excel-body.hld__excel-theme-office .hld__excel-img-f1-r1 {top:-1px;}
         .hld__excel-body.hld__excel-theme-office #mmc {margin-top:221px;}
-        .hld__excel-body.hld__excel-theme-office #m_nav {top:158px;}
+        .hld__excel-body.hld__excel-theme-office #m_nav {top:160px;}
         .hld__excel-body.hld__excel-theme-office #m_posts .c0,
-        .hld__excel-body.hld__excel-theme-office .topicrow .c1 {width:27px;}
+        .hld__excel-body.hld__excel-theme-office .topicrow .c1 {width:32px;}
         .hld__excel-body.hld__excel-theme-office #pagebbtm:before,
         .hld__excel-body.hld__excel-theme-office .topicrow .c1 a {width:28px;}
         .hld__excel-body.hld__excel-theme-office .hld__excel-setting {top: 36px;background:none;text-align: center;}
         .hld__excel-body.hld__excel-theme-office .hld__excel-setting a {color:#FFFFFF;}
         .hld__excel-body.hld__excel-theme-office .hld__excel-setting img {display:none;}
-        .hld__excel-body.hld__excel-theme-office.hld__reply-fixed #postbbtm {top: 160px;}
+        .hld__excel-body.hld__excel-theme-office.hld__reply-fixed #postbbtm {top: 162px;}
         .hld__excel-body.hld__excel-theme-office #m_pbtnbtm td a,
         .hld__excel-body.hld__excel-theme-office #m_pbtnbtm .stdbtn {background: none;}
-        .hld__excel-body.hld__excel-theme-office #mainmenu {top:35px;right:30px;}
+        .hld__excel-body.hld__excel-theme-office #mainmenu {top:35px;right:45px;}
         .hld__excel-body.hld__excel-theme-office #mainmenu .mmdefault.cell input {border-radius:0;}
         .hld__excel-body.hld__excel-theme-office #mainmenu .stdbtn a, .hld__excel-body.hld__excel-theme-office #mainmenu .hld__half-clone {color:#FFF !important;}
         .hld__excel-body.hld__excel-theme-office .single_ttip2 {top:59px !important;}
@@ -1392,6 +1544,7 @@
      *              提供一个高级配置输入自定义标题
      */
     const excelTitle = {
+        name: 'excelTitle',
         setting: {
             type: 'advanced',
             key: 'excelTitle',
@@ -1417,6 +1570,7 @@
      *              提供一个高级配置可以设置折叠的阈值
      */
     const foldQuote = {
+        name: 'foldQuote',
         settings: [{
             type: 'normal',
             key: 'foldQuote',
@@ -1477,6 +1631,7 @@
      * @description 此模块提供了可以选择配置在新页面打开链接
      */
     const linkTargetBlank = {
+        name: 'linkTargetBlank',
         setting: {
             type: 'normal',
             key: 'linkTargetBlank',
@@ -1501,6 +1656,7 @@
      * @description 此模块提供了超链接等直接跳转无须弹窗确认
      */
     const directLinkJump = {
+        name: 'directLinkJump',
         setting: {
             type: 'normal',
             key: 'directLinkJump',
@@ -1525,6 +1681,7 @@
      *              可以快速切换，缩放，旋转等
      */
     const imgEnhance = {
+        name: 'imgEnhance',
         settings: [{
             type: 'normal',
             key: 'imgEnhance',
@@ -1608,18 +1765,21 @@
                 });
             })
             $img.mouseup(function () { $(document).unbind("mousemove") })
-
             $imgContainer.append($img)
             $imgBox.append($imgContainer)
             $imgBox.click(function (e) { !$(e.target).hasClass('hld__img') && $(this).remove() })
             $imgBox.append(`
-            <div class="hld__if_control">
-            <div class="change prev-img" title="本楼内上一张"><div></div></div>
-            <div class="change rotate-right" title="逆时针旋转90°"><div></div></div>
-            <div class="change rotate-left" title="顺时针旋转90°"><div></div></div>
-            <div class="change next-img" title="本楼内下一张"><div></div></div>
-            </div>
+                <div class="hld__if_control">
+                <div class="change prev-img" title="本楼内上一张"><div></div></div>
+                <div class="change rotate-right" title="逆时针旋转90°"><div></div></div>
+                <div class="change rotate-left" title="顺时针旋转90°"><div></div></div>
+                <div class="change next-img" title="本楼内下一张"><div></div></div>
+                </div>
             `)
+            /**
+             * Bind:Click
+             * 切换图片
+             */
             $imgBox.on('click', '.change', function () {
                 if ($(this).hasClass('prev-img') && currentIndex - 1 >= 0)
                     renderImg(--currentIndex)
@@ -1639,7 +1799,10 @@
                 window.getSelection ? window.getSelection().removeAllRanges() : document.selection.empty()
                 return false;
             })
-
+            /**
+             * Bind:MouseWheel
+             * 大图鼠标滚动缩放
+             */
             $imgBox.on("mousewheel DOMMouseScroll", function (e) {
                 const delta = (e.originalEvent.wheelDelta && (e.originalEvent.wheelDelta > 0 ? 1 : -1)) ||
                     (e.originalEvent.detail && (e.originalEvent.detail > 0 ? -1 : 1));
@@ -1677,7 +1840,11 @@
                 e.stopPropagation()
                 return false
             })
-
+            /**
+             * Bind:Keyup
+             * Esc关闭大图
+             */
+            $('body').keyup(event => (event.keyCode == 27 && $('#hld__img_full').length > 0) && $('#hld__img_full').remove())
             $('body').append($imgBox)
         },
         shortcutFunc: {
@@ -1717,6 +1884,7 @@
      * @description 此模块提供了自动标记楼主，使其更醒目
      */
     const authorMark = {
+        name: 'authorMark',
         setting: {
             type: 'normal',
             key: 'authorMark',
@@ -1920,6 +2088,7 @@
      *              提供一个高级配置可以设置自动翻页的检测阈值
      */
     const autoPage = {
+        name: 'autoPage',
         settings: [{
             type: 'normal',
             key: 'autoPage',
@@ -2008,7 +2177,10 @@
                 valueKey: 'keywordsList',
                 module: this
             })
-            // 管理弹窗
+            /**
+             * Bind:Click
+             * 管理弹窗面板
+             */
             $('body').on('click', '#hld__keywords_manage', function () {
                 if($('#hld__keywords_panel').length > 0) return
                 $('#hld__setting_cover').append(`<div id="hld__keywords_panel" class="hld__list-panel animated fadeInUp">
@@ -2020,7 +2192,10 @@
                 </div>`)
                 $('#hld__keywords_list_textarea').val(_this.keywordsList.join('\n'))
             })
-            // 保存关键字
+            /**
+             * Bind:Click
+             * 保存关键字
+             */
             $('body').on('click', '#hld__save_keywords', function () {
                 let keywordsList = $('#hld__keywords_list_textarea').val().split('\n')
                 keywordsList = _this.removeBlank(keywordsList)
@@ -2092,7 +2267,7 @@
                 }
             }
         },
-    /**
+        /**
          * 列表去空
          * @method removeBlank
          * @param {Array} array 列表
@@ -2210,7 +2385,10 @@
             })
             // 拉黑标签-名单
             if (script.setting.normal.markAndBan) {
-                //绑定事件
+                /**
+                 * Bind:Click
+                 * 操作按钮点击事件
+                 */
                 $('body').on('click', '.hld__extra-icon', function () {
                     const type = $(this).data('type')
                     const name = $(this).data('name')
@@ -2234,6 +2412,10 @@
                         })
                     }
                 })
+                /**
+                 * Bind:Click
+                 * 屏蔽按钮
+                 */
                 $('body').on('click', '.hld__banned-block', function(){
                     if ($(this).parent().hasClass('quote')) {
                         $(this).parent().prev().show()
@@ -2243,7 +2425,10 @@
                         $(this).hide()
                     }
                 })
-                //名单管理
+                /**
+                 * Bind:Click
+                 * 名单管理
+                 */
                 $('body').on('click', '#hld__list_manage', function () {
                     if($('#hld__banlist_panel').length > 0) return
                     $('#hld__setting_cover').append(`<div id="hld__banlist_panel"  class="hld__list-panel animated fadeInUp">
@@ -2271,20 +2456,29 @@
                     <div class="hld__btn-groups" style="width: 100%;"><button class="hld__btn" id="hld__save_banlist">保存列表</button></div>
                     </div>
                     </div>`)
-                    //切换选项卡
+                    /**
+                     * Bind:Click
+                     * 切换选项卡
+                     */
                     $('body').on('click', '.hld__tab-header > span', function(){
                         $('.hld__tab-header > span, .hld__tab-content').removeClass('hld__table-active')
                         $(this).addClass('hld__table-active')
                         $('.hld__tab-content').eq($(this).index()).addClass('hld__table-active')
                     })
-                    //移除黑名单用户
+                    /**
+                     * Bind:Click
+                     * 移除黑名单
+                     */
                     $('body').on('click', '.hld__bl-del', function(){
                         const index = $(this).data('index')
                         _this.banList.splice(index, 1)
                         window.localStorage.setItem('hld__NGA_ban_list', JSON.stringify(_this.banList))
                         _this.reloadBanlist()
                     })
-                    //添加黑名单用户
+                    /**
+                     * Bind:Click
+                     * 添加黑名单
+                     */
                     $('body').on('click', '#hld__banlist_add_btn', function(){
                         _this.banlistPopup({
                             type: 'add',
@@ -2295,6 +2489,10 @@
                             callback: () => {_this.reloadBanlist()}
                         })
                     })
+                    /**
+                     * Bind:Click
+                     * 保存黑名单
+                     */
                     $('body').on('click', '#hld__save_banlist', function(){
                         const banList = $('#hld__ban_list_textarea').val()
                         const markList = $('#hld__mark_list_textarea').val()
@@ -2316,7 +2514,10 @@
                         }
                         script.popMsg('数据已成功')
                     })
-                    //修改标记
+                    /**
+                     * Bind:Click
+                     * 修改标记
+                     */
                     $('body').on('click', '.hld__ml-edit', function(){
                         const name = $(this).data('name')
                         const uid = $(this).data('uid') + ''
@@ -2328,14 +2529,20 @@
                             callback: () => {_this.reloadMarklist()}
                         })
                     })
-                    //删除标记
+                    /**
+                     * Bind:Click
+                     * 删除标记
+                     */
                     $('body').on('click', '.hld__ml-del', function(){
                         const index = $(this).data('index')
                         _this.markList.splice(index, 1)
                         window.localStorage.setItem('hld__NGA_mark_list', JSON.stringify(_this.markList))
                         _this.reloadMarklist()
                     })
-                    //添加标记
+                    /**
+                     * Bind:Click
+                     * 添加标记
+                     */
                     $('body').on('click', '#hld__marklist_add_btn', function(){
                         _this.userMarkPopup({
                             type: 'add',
@@ -2710,6 +2917,92 @@
         `
     }
     /**
+     * 护眼模式
+     * @name eyeCareMode
+     * @description 此模块提供了护眼模式（绿色）
+     */
+    const eyeCareMode = {
+        name: 'eyeCareMode',
+        setting: {
+            type: 'normal',
+            key: 'eyeCareMode',
+            default: false,
+            title: '护眼模式',
+            desc: '不是屎黄色的NGA没有味道，但是它可以呵护你的眼睛~',
+            menu: 'left'
+        },
+        mainColor: '#cce8cc', // 主背景颜色
+        buttonColor: '#c7edcc', // 按钮颜色
+        borderColor: '#ffffff', // 边框颜色
+        initFunc: function () {
+            script.setting.normal.eyeCareMode && $('body').addClass('hld__eye-care')
+        },
+        asyncStyle: function () {
+            return `
+            .hld__eye-care body, .hld__eye-care .stdbtn, .hld__eye-care .stdbtn .innerbg, .hld__eye-care .stdbtn a, .hld__eye-care .nav_root,
+            .hld__eye-care .nav_link, .hld__eye-care .nav_spr, .hld__eye-care .stdbtn a:hover, .hld__eye-care .row2c1, .hld__eye-care .row1c1,
+            .hld__eye-care .c1, .hld__eye-care .c2, .hld__eye-care .c3, .hld__eye-care .c4, .hld__eye-care .catenew,
+            .hld__eye-care .cateblock, .hld__eye-care .forumbox, .hld__eye-care .quote, .hld__eye-care textarea, .hld__eye-care select, .hld__eye-care input,
+            .hld__eye-care #m_posts .white, .hld__eye-care #m_posts .block_txt_c0, .hld__eye-care #m_posts .block_txt_c2, .hld__eye-care .block_txt_c3, .hld__eye-care .block_txt, .hld__eye-care .hld__docker-sidebar,
+            .hld__eye-care .hld__docker-btns > div, .hld__eye-care .forumbox th, .hld__eye-care .contentBlock, .hld__eye-care .catenew .b2, .hld__eye-care .catenew .b3,
+            .hld__eye-care .catenew h2, .hld__eye-care .catenew div, .hld__eye-care .topicrow .c2 > span:first-child, .hld__eye-care .urltip.nobr,
+            .hld__eye-care #hld__setting_panel, .hld__eye-care .hld__list-panel, .hld__eye-care .single_ttip2 .tip_title, .hld__eye-care .single_ttip2 .div2,
+            .hld__eye-care  .postBtnPos > div, .hld__eye-care .postBtnPos .stdbtn a, .hld__eye-care .postbtnsc td, .hld__eye-care #mc > div:not(.module_wrap):not(#mainmenu),
+            .hld__eye-care {background-color: ${this.mainColor} !important;}
+            .hld__eye-care .nav_root, .hld__eye-care .nav_link, .hld__eye-care .nav_spr, .hld__eye-care .stdbtn, .hld__eye-care .quote, .hld__eye-care textarea,
+            .hld__eye-care select, .hld__eye-care input, .hld__eye-care .block_txt_c2, .hld__eye-care .block_txt_c3, .hld__eye-care .hld__docker-btns>div,
+            .hld__eye-care .r_container, .hld__eye-care .forumbox .postrow .stat {border:1px solid ${this.borderColor} !important;}
+            .hld__eye-care .b .block_txt, .hld__eye-care .block_txt.block_txt_c0 {color: #1a3959 !important;padding:0 !important;}
+            .hld__eye-care .forumbox.postbox {border-bottom: 2px solid  ${this.borderColor} !important;border: none !important;}
+            .hld__eye-care .r_bar {background-color:  ${this.borderColor};}
+            .hld__eye-care .forumbox .postrow .sigline, .hld__eye-care #m_posts .block_txt_c0 {color:  ${this.borderColor} !important;border-color:  ${this.borderColor} !important;}
+            .hld__eye-care .nav_root, .hld__eye-care .invert, .hld__eye-care #mainmenu .stdbtn .half, .hld__eye-care .catenew .invert .uitxt1, .hld__eye-care .catenew .invert .uitxt3 {color:#591804;}
+            .hld__eye-care:not(.hld__excel-body) #mainmenu {border-bottom: 1px solid  ${this.borderColor} !important;}
+            .hld__eye-care #m_posts, .hld__eye-care #toptopics, .hld__eye-care #topicrows, .hld__eye-care #mc > div:not(.module_wrap):not(#mainmenu) {box-shadow:none;border-color:  ${this.borderColor} !important;}
+            .hld__eye-care .stdbtn a, .hld__eye-care .hld__advanced-setting, .hld__eye-care .hld__docker-sidebar {border-color:  ${this.borderColor};}
+            .hld__eye-care .block_txt.block_txt_c3 {border:none !important;}
+            .hld__eye-care button, .hld__eye-care .hld__setting-close, .hld__eye-care .colored_text_btn, .hld__eye-care .rep.block_txt_big {border: 1px solid ${this.borderColor} !important;background: ${this.buttonColor} !important;}
+            .hld__eye-care #toppedtopic table, .hld__eye-care .single_ttip2 .tip_title, .hld__eye-care .collapse_btn {border-color:  ${this.borderColor} !important;}
+            .hld__eye-care .apd {color: ${this.borderColor} !important;}
+            .hld__eye-care .forumbox td:not(.c0) {border-color:  ${this.borderColor} !important;border-bottom: 1px solid  ${this.borderColor};border-right: 1px solid  ${this.borderColor};}
+            .hld__eye-care .c4 {border-right:none !important;}
+            /* Excel 适配 */
+            .hld__eye-care.hld__excel-body .hld__quote-box, .hld__eye-care.hld__excel-body #m_pbtnbtm td a {background: ${this.mainColor};}
+            .hld__eye-care.hld__excel-body #postbbtm .stdbtn, .hld__eye-care.hld__excel-body #postbbtm td a {background: #FFF !important;}
+            .hld__eye-care.hld__excel-body .nav_root, .hld__eye-care.hld__excel-body .nav_spr,.hld__eye-care.hld__excel-body .nav_link,
+            .hld__eye-care.hld__excel-body #mainmenu .stdbtn, .hld__eye-care.hld__excel-body #mainmenu .innerbg, .hld__eye-care.hld__excel-body #mainmenu .stdbtn a {background: none !important;border: none !important;}
+            .hld__eye-care.hld__excel-body #mainmenu .mmdefault.cell input {background-color:#ededed !important;border-color: #c9d0dc !important;}
+            `
+        }
+    }
+    /**
+     * 字体大小调整
+     * @name fontResize
+     * @description 此模块提供了调整字体大小的功能
+     */
+    const fontResize = {
+        name: 'fontResize',
+        setting: {
+            type: 'advanced',
+            key: 'fontResize',
+            default: 12,
+            title: '字体大小调整',
+            desc: '字体大小调整，单位为像素(px)，初始值是12',
+            menu: 'left'
+        },
+        initFunc: function () {
+            const fontResizeInput = script.setting.advanced.fontResize
+            try {
+                const fontSize = parseInt(fontResizeInput)
+                if (fontSize && fontSize != 12) {
+                    $('body').css('font-size', fontSize + 'px')
+                }
+            } catch {
+                script.printLog(`字体大小的值${script.setting.advanced.fontResize}无效，不是一个有效的数字`)
+            }
+        }
+    }
+    /**
      * 扩展坞模块
      * @name extraDocker
      * @description 此模块提供了一个悬浮的扩展坞，来添加某些功能
@@ -2718,6 +3011,7 @@
      *                  跳转尾页：跳转到当前帖子的尾页
      */
     const extraDocker = {
+        name: 'extraDocker',
         settings: [{
             shortCutCode: 84, // T
             key: 'backTop',
@@ -2734,6 +3028,10 @@
             <div data-type="TOP" id="hld__jump_top"><svg t="1603962702679" title="返回顶部" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="9013" width="64" height="64"><path d="M528.73 161.5c-9.39-9.38-24.6-9.38-33.99 0L319.65 336.59a24.028 24.028 0 0 0-7.05 23.59A24.04 24.04 0 0 0 330 377.6c8.56 2.17 17.62-0.52 23.6-7.02l158.14-158.14 158.1 158.14a23.901 23.901 0 0 0 17 7.09c6.39 0 12.5-2.55 17-7.09 9.38-9.39 9.38-24.61 0-34L528.73 161.5zM63.89 607.09h102.79V869.5h48.04V607.09h102.79v-48.04H63.89v48.04z m518.69-48.05h-127.3c-15.37 0-30.75 5.85-42.49 17.59a59.846 59.846 0 0 0-17.59 42.49v190.3c0 15.37 5.89 30.75 17.59 42.49 11.74 11.74 27.12 17.59 42.49 17.59h127.3c15.37 0 30.75-5.85 42.49-17.59 11.7-11.74 17.59-27.12 17.59-42.49V619.17a59.903 59.903 0 0 0-17.53-42.55 59.912 59.912 0 0 0-42.55-17.54v-0.04z m12 250.38c0 2.31-0.6 5.59-3.5 8.54a11.785 11.785 0 0 1-8.5 3.5h-127.3c-3.2 0.02-6.26-1.26-8.5-3.54a11.785 11.785 0 0 1-3.5-8.5V619.17c0-2.31 0.6-5.59 3.5-8.54 2.24-2.27 5.31-3.53 8.5-3.5h127.3c2.27 0 5.55 0.64 8.5 3.55 2.27 2.24 3.53 5.31 3.5 8.5v190.29-0.05z m347.4-232.78a59.846 59.846 0 0 0-42.49-17.59H734.74V869.5h48.04V733.32h116.71a59.94 59.94 0 0 0 42.54-17.55 59.923 59.923 0 0 0 17.55-42.54v-54.07c0-15.37-5.85-30.74-17.59-42.49v-0.03z m-30.44 96.64c0 2.26-0.64 5.55-3.55 8.5a11.785 11.785 0 0 1-8.5 3.5H782.78v-78.15h116.71c2.27 0 5.59 0.6 8.54 3.5 2.27 2.24 3.53 5.31 3.5 8.5v54.15z m0 0" p-id="9014" fill="#591804"></path></svg></div>
             <div data-type="BOTTOM" id="hld__jump_bottom"><svg t="1603962680160" title="跳转至最后一页" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="7501" width="64" height="64"><path d="M792.855 465.806c-6.24-6.208-14.369-9.312-22.56-9.312s-16.447 3.169-22.688 9.44l-207.91 207.74v-565.28c0-17.697-14.336-32-32-32s-32.002 14.303-32.002 32v563.712l-206.24-206.164c-6.271-6.209-14.432-9.344-22.624-9.344-8.224 0-16.417 3.135-22.656 9.407-12.511 12.513-12.48 32.768 0.032 45.248L483.536 770.38c3.265 3.263 7.104 5.6 11.136 7.135 4 1.793 8.352 2.88 13.024 2.88 1.12 0 2.08-0.544 3.2-0.64 8.288 0.064 16.608-3.009 22.976-9.408l259.11-259.292c12.48-12.511 12.448-32.8-0.127-45.248z m99.706 409.725c0 17.665-14.303 32.001-31.999 32.001h-704c-17.665 0-32-14.334-32-31.999s14.335-32 32-32h704c17.696 0 32 14.334 32 31.998z" p-id="7502" fill="#591804"></path></svg></div></div></div>`)
             $('body').append($dockerDom)
+            /**
+             * Bind:Click
+             * 按钮点击事件
+             */
             $('body').on('click', '.hld__docker-btns>div', function () {
                 const type = $(this).data('type')
                 if (type == 'TOP') {
@@ -2752,6 +3050,9 @@
                     window.location.href = `${window.location.origin}${window.location.pathname}${search}`
                 }
             })
+        },
+        renderAlwaysFunc: function (script) {
+            (script.isThreads() || script.isForms()) ? $('.hld__docker').show() : $('.hld__docker').hide()
         },
         shortcutFunc: {
             backTop: function () {
@@ -2796,8 +3097,6 @@
         .hld__excel-body .hld__docker-btns>div{background:#fff;border:1px solid #bbb}
         `
     }
-    /* 插件 */
-    // ......
 
     /**
      * 初始化脚本
@@ -2829,6 +3128,8 @@
     script.addModule(autoPage)
     script.addModule(keywordsBlock)
     script.addModule(markAndBan)
+    script.addModule(eyeCareMode)
+    script.addModule(fontResize)
     script.addModule(extraDocker)
     /**
      * 运行脚本
