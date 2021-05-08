@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      3.9.0
+// @version      3.9.1
 // @author       HLD
 // @description  NGA论坛显示优化，功能增强，防止突然蹦出一对??而导致的突然性的社会死亡
 // @license      MIT
@@ -1482,6 +1482,8 @@
         .hld__excel-body .topicrow .c1:before {content:counter(num);counter-increment:num;color:#777777;font-size:16px;}
         .hld__excel-body .topicrow .c2 {padding-left:5px !important;}
         .hld__excel-body .topicrow .c3 {color:#1a3959 !important;}
+        .hld__excel-body .topicrow .c3 > div, .hld__excel-body .topicrow .c4 > div {background:#FFF !important;}
+        .hld__excel-body .topicrow .c3 > div a, .hld__excel-body .topicrow .c4 > div a {color:#888 !important;}
         .hld__excel-body .block_txt {background:#fff !important;color:#1a3959 !important;border-radius:0;padding:0 !important;min-width:0 !important;font-weight:normal;}
         .hld__excel-body .quote {background:#fff !important;}
         .hld__excel-body #m_posts .block_txt {font-weight:bold;}
@@ -2711,7 +2713,7 @@
                     if ((!u.uid && banObj.uid) || (!u.name && banObj.name)) {
                         u.uid = banObj.uid + '' || ''
                         u.name = banObj.name || ''
-                        window.localStorage.setItem('hld__NGA_ban_list', JSON.stringify(banList))
+                        window.localStorage.setItem('hld__NGA_ban_list', JSON.stringify(_this.banList))
                     }
                     return u
                 }
