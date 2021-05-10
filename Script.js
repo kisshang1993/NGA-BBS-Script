@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      3.9.1
+// @version      3.9.2
 // @author       HLD
 // @description  NGA论坛显示优化，功能增强，防止突然蹦出一对??而导致的突然性的社会死亡
 // @license      MIT
@@ -685,12 +685,14 @@
         beforeFunc: function () {
             script.setting.normal.shortcutKeys = []
         },
-        afterFunc: function () {
-            // 快捷键编辑面板
-            $('#hld__normal_left').append('<p><button id="hld__shortcut_manage">编辑快捷键</button></p>')
-        },
         initFunc: function () {
             const _this = this
+            // 添加到配置面板的设置入口
+            script.getModule('settingPanel').addButton({
+                id: 'hld__shortcut_manage',
+                title: '编辑快捷键',
+                desc: '编辑快捷键'
+            })
             /**
              * Bind:keyup
              * 注册监听按键
@@ -2934,6 +2936,7 @@
             menu: 'left'
         },
         mainColor: '#cce8cc', // 主背景颜色
+        textColor: '#10273f', //文字颜色
         buttonColor: '#c7edcc', // 按钮颜色
         borderColor: '#ffffff', // 边框颜色
         initFunc: function () {
@@ -2941,6 +2944,7 @@
         },
         asyncStyle: function () {
             return `
+            body.hld__eye-care {color: ${this.textColor};}
             .hld__eye-care body, .hld__eye-care .stdbtn, .hld__eye-care .stdbtn .innerbg, .hld__eye-care .stdbtn a, .hld__eye-care .nav_root,
             .hld__eye-care .nav_link, .hld__eye-care .nav_spr, .hld__eye-care .stdbtn a:hover, .hld__eye-care .row2c1, .hld__eye-care .row1c1,
             .hld__eye-care .c1, .hld__eye-care .c2, .hld__eye-care .c3, .hld__eye-care .c4, .hld__eye-care .catenew,
@@ -2960,7 +2964,8 @@
             .hld__eye-care .forumbox .postrow .sigline, .hld__eye-care #m_posts .block_txt_c0 {color:  ${this.borderColor} !important;border-color:  ${this.borderColor} !important;}
             .hld__eye-care .nav_root, .hld__eye-care .invert, .hld__eye-care #mainmenu .stdbtn .half, .hld__eye-care .catenew .invert .uitxt1, .hld__eye-care .catenew .invert .uitxt3 {color:#591804;}
             .hld__eye-care:not(.hld__excel-body) #mainmenu {border-bottom: 1px solid  ${this.borderColor} !important;}
-            .hld__eye-care #m_posts, .hld__eye-care #toptopics, .hld__eye-care #topicrows, .hld__eye-care #mc > div:not(.module_wrap):not(#mainmenu) {box-shadow:none;border-color:  ${this.borderColor} !important;}
+            .hld__eye-care #m_posts, .hld__eye-care #toptopics, .hld__eye-care #topicrows, .hld__eye-care #mc > div:not(.module_wrap):not(#mainmenu),
+            .hld__eye-care #msg_block_c .subblock {box-shadow:none;border-color:  ${this.borderColor} !important;}
             .hld__eye-care .stdbtn a, .hld__eye-care .hld__advanced-setting, .hld__eye-care .hld__docker-sidebar {border-color:  ${this.borderColor};}
             .hld__eye-care .block_txt.block_txt_c3 {border:none !important;}
             .hld__eye-care button, .hld__eye-care .hld__setting-close, .hld__eye-care .colored_text_btn, .hld__eye-care .rep.block_txt_big {border: 1px solid ${this.borderColor} !important;background: ${this.buttonColor} !important;}
