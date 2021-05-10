@@ -525,7 +525,7 @@
             const insertDom = setting => {
                 if (setting.type === 'normal') {
                     $panelDom.find(`#hld__normal_${setting.menu || 'left'}`).append(`
-                    <p><label title="${setting.desc || ''}"><input type="checkbox" id="hld__cb_${setting.key}"> ${setting.title || setting.key}${setting.shortCutCode ? '（快捷键切换[<b>'+script.getModule('shortCutKeys').getCodeName(setting.rewriteShortCutCode || setting.shortCutCode)+'</b>]）' : ''}</label></p>
+                    <p><label ${setting.desc ? 'class="hld__adv-help" title="'+setting.desc+'"' : ''}><input type="checkbox" id="hld__cb_${setting.key}"> ${setting.title || setting.key}${setting.shortCutCode ? '（快捷键切换[<b>'+script.getModule('shortCutKeys').getCodeName(setting.rewriteShortCutCode || setting.shortCutCode)+'</b>]）' : ''}</label></p>
                     `)
                     if (setting.extra) {
                         $panelDom.find(`#hld__cb_${setting.key}`).attr('enable', `hld__${setting.key}_${setting.extra.mode || 'fold'}`)
@@ -667,7 +667,7 @@
         .hld__advanced-setting-panel>p svg {height:16px;width:16px;vertical-align: top;margin-right:3px;}
         .hld__advanced-setting-panel>table td {padding-right:10px}
         .hld__advanced-setting-panel input[type=text],.hld__advanced-setting-panel input[type=number] {width:80px}
-        .hld__advanced-setting-panel .hld__adv-help {cursor:help;text-decoration: underline;}
+        .hld__adv-help {cursor:help;text-decoration: underline;}
         .hld__buttons {clear:both;display:flex;justify-content:space-between;padding-top:15px;}
         button.hld__btn {padding:3px 8px;border:1px solid #591804;background:#fff8e7;color:#591804;}
         button.hld__btn:hover {background:#591804;color:#fff0cd;}
@@ -2932,7 +2932,7 @@
             key: 'eyeCareMode',
             default: false,
             title: '护眼模式',
-            desc: '不是屎黄色的NGA没有味道，但是它可以呵护你的眼睛~',
+            desc: 'NGA自带的界面色调会与此功能有一定冲突\n使用前请先将NGA的界面色调设置为默认',
             menu: 'left'
         },
         mainColor: '#cce8cc', // 主背景颜色
@@ -2944,7 +2944,7 @@
         },
         asyncStyle: function () {
             return `
-            body.hld__eye-care {color: ${this.textColor};}
+            body.hld__eye-care, .hld__eye-care #msg_block_c .menu a, #msg_block_c .pager a, .hld__eye-care .nav_link, .hld__eye-care button.hld__btn:hover {color: ${this.textColor} !important;}
             .hld__eye-care body, .hld__eye-care .stdbtn, .hld__eye-care .stdbtn .innerbg, .hld__eye-care .stdbtn a, .hld__eye-care .nav_root,
             .hld__eye-care .nav_link, .hld__eye-care .nav_spr, .hld__eye-care .stdbtn a:hover, .hld__eye-care .row2c1, .hld__eye-care .row1c1,
             .hld__eye-care .c1, .hld__eye-care .c2, .hld__eye-care .c3, .hld__eye-care .c4, .hld__eye-care .catenew,
@@ -2953,7 +2953,7 @@
             .hld__eye-care .hld__docker-btns > div, .hld__eye-care .forumbox th, .hld__eye-care .contentBlock, .hld__eye-care .catenew .b2, .hld__eye-care .catenew .b3,
             .hld__eye-care .catenew h2, .hld__eye-care .catenew div, .hld__eye-care .topicrow .c2 > span:first-child, .hld__eye-care .urltip.nobr,
             .hld__eye-care #hld__setting_panel, .hld__eye-care .hld__list-panel, .hld__eye-care .single_ttip2 .tip_title, .hld__eye-care .single_ttip2 .div2,
-            .hld__eye-care  .postBtnPos > div, .hld__eye-care .postBtnPos .stdbtn a, .hld__eye-care .postbtnsc td, .hld__eye-care #mc > div:not(.module_wrap):not(#mainmenu),
+            .hld__eye-care  .postBtnPos > div, .hld__eye-care .postBtnPos .stdbtn a, .hld__eye-care .postbtnsc td, .hld__eye-care #mc > div:not(.module_wrap):not(#mainmenu), .hld__eye-care #m_nav > div:not(.nav),
             .hld__eye-care {background-color: ${this.mainColor} !important;}
             .hld__eye-care .nav_root, .hld__eye-care .nav_link, .hld__eye-care .nav_spr, .hld__eye-care .stdbtn, .hld__eye-care .quote, .hld__eye-care textarea,
             .hld__eye-care select, .hld__eye-care input, .hld__eye-care .block_txt_c2, .hld__eye-care .block_txt_c3, .hld__eye-care .hld__docker-btns>div,
