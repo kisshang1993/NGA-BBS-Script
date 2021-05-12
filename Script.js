@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      3.9.2
+// @version      3.9.3
 // @author       HLD
 // @description  NGA论坛显示优化，功能增强，防止突然蹦出一对??而导致的突然性的社会死亡
 // @license      MIT
@@ -1097,15 +1097,20 @@
             menu: 'left'
         },
         renderFormsFunc: function ($el) {
-            script.setting.normal.hideAvatar && $el.find('.avatar').css('display', 'none')
+            script.setting.normal.hideAvatar && $el.find('.avatar, .avatar+img').css('display', 'none')
         },
         shortcutFunc: {
             hideAvatar: function () {
                 if (script.setting.normal.hideAvatar || script.setting.advanced.dynamicEnable) {
-                    $('.avatar').toggle()
+                    $('.avatar, .avatar+img').toggle()
                     script.popNotification(`${$('.avatar:hidden').length == 0 ? '显示' : '隐藏'}头像`)
                 }
             }
+        },
+        asyncStyle: function () {
+            return `
+            .posterinfo .avatar+img {display:${script.setting.normal.hideAvatar ? 'none' : 'inline'};}
+            `
         }
     }
     /**
