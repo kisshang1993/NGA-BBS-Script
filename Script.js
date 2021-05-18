@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      3.9.3
+// @version      3.9.4
 // @author       HLD
 // @description  NGA论坛显示优化，功能增强，防止突然蹦出一对??而导致的突然性的社会死亡
 // @license      MIT
@@ -525,7 +525,7 @@
             const insertDom = setting => {
                 if (setting.type === 'normal') {
                     $panelDom.find(`#hld__normal_${setting.menu || 'left'}`).append(`
-                    <p><label ${setting.desc ? 'class="hld__adv-help" title="'+setting.desc+'"' : ''}><input type="checkbox" id="hld__cb_${setting.key}"> ${setting.title || setting.key}${setting.shortCutCode ? '（快捷键切换[<b>'+script.getModule('shortCutKeys').getCodeName(setting.rewriteShortCutCode || setting.shortCutCode)+'</b>]）' : ''}</label></p>
+                    <p><label ${setting.desc ? 'class="hld__adv-help" help="'+setting.desc+'"' : ''}><input type="checkbox" id="hld__cb_${setting.key}"> ${setting.title || setting.key}${setting.shortCutCode ? '（快捷键切换[<b>'+script.getModule('shortCutKeys').getCodeName(setting.rewriteShortCutCode || setting.shortCutCode)+'</b>]）' : ''}</label></p>
                     `)
                     if (setting.extra) {
                         $panelDom.find(`#hld__cb_${setting.key}`).attr('enable', `hld__${setting.key}_${setting.extra.mode || 'fold'}`)
@@ -558,7 +558,7 @@
                     }
                     $panelDom.find(`#hld__advanced_${setting.menu || 'left'}`).append(`
                     <tr>
-                        <td><span class="hld__adv-help" title="${setting.desc || ''}">${setting.title || setting.key}</span></td>
+                        <td><span class="hld__adv-help" help="${setting.desc || ''}">${setting.title || setting.key}</span></td>
                         <td>${formItem}</td>
                     </tr>`)
                 }
@@ -573,6 +573,18 @@
                     }
                 }
             }
+            /**
+             * Bind:Mouseover Mouseout
+             * 提示信息Tips
+             */
+            $panelDom.find('.hld__adv-help').mouseover(function(e){
+                const $help = $(`<div class="hld__help-tips">${$(this).attr('help').replace(/\n/g, '<br>')}</div>`)
+                $help.css({
+                    top: ($(this).offset().top + $(this).height() + 5) + 'px',
+                    left: $(this).offset().left + 'px'
+                })
+                $('body').append($help)
+            }).mouseout(()=>$('.hld__help-tips').remove())
             $('body').append($panelDom)
             //本地恢复设置
             //基础设置
@@ -673,6 +685,7 @@
         button.hld__btn:hover {background:#591804;color:#fff0cd;}
         .hld__sp-fold {padding-left:23px;}
         .hld__sp-fold .hld__f-title {font-weight:bold;}
+        .hld__help-tips {position: absolute;padding: 5px 10px;background: rgba(0,0,0,.6);color: #FFF;border-radius: 5px;z-index: 9999;}
         `
     }
     /**
@@ -1767,8 +1780,8 @@
                 let downy = e.pageY
                 e.preventDefault()
                 $(document).on("mousemove", function (es) {
-                    let endx = es.pageX - downx + left
-                    let endy = es.pageY - downy + top
+                    endx = es.pageX - downx + left
+                    endy = es.pageY - downy + top
                     $imgContainer.css("left", endx + "px").css("top", endy + "px")
                     return false
                 });
@@ -1872,7 +1885,7 @@
         .hld__img_container {position:absolute;display:flex;justify-content:center;align-items:center;}
         .hld__if_control {position:absolute;display:flex;left:50%;bottom:15px;width:160px;margin-left:-80px;height:40px;background:rgba(0,0,0,0.6);z-index:9999999;}
         .postcontent img {margin:0 5px 5px 0 !important;box-shadow:none !important;outline:none !important;}
-        #hld__img_full {position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:99999;/*display:flex;*//*align-items:center;*//*justify-content:center;*/}
+        #hld__img_full {position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:99999;}
         #hld__img_full img {cursor:move;transition:transform .2s ease;}
         #hld__img_full .hld__imgcenter {top:50%;left:50%;transform:translate(-50%,-50%);}
         #hld__img_full .change {width:40px;height:40px;cursor:pointer;}
