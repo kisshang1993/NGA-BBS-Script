@@ -1915,36 +1915,27 @@
             menu: 'right'
         },
         postAuthor: [],
+        initFunc: function () {
+            const localPostAuthor = window.localStorage.getItem('hld__NGA_post_author')
+            localPostAuthor && (this.postAuthor = localPostAuthor.split(','))
+        },
         renderFormsFunc: function ($el) {
+            const _this = this
             if (script.setting.normal.authorMark) {
                 const author = $('#postauthor0').text().replace('[楼主]', '')
-                if (author && $('#hld__post-author').val() != author) {
-                    const localPostAuthor = window.localStorage.getItem('hld__NGA_post_author')
-                    localPostAuthor && (this.postAuthor = localPostAuthor.split(','))
-                    const tid = this.getQueryString('tid')
-                    if (tid) {
-                        const authorStr = `${tid}:${author}`
-                        if (!this.postAuthor.includes(authorStr))
-                        this.postAuthor.unshift(authorStr) > 10 && this.postAuthor.pop()
-                        window.localStorage.setItem('hld__NGA_post_author', this.postAuthor.join(','))
-                    }
-                    for (let pa of this.postAuthor) {
-                        const t = pa.split(':')
-                        if (t[0] == tid) {
-                            if ($('#hld__post-author').length == 0) $('body').append(`<input type="hidden" value="${t[1]}" id="hld__post-author">`)
-                            else $('#hld__post-author').val(t[1])
-                            break
-                        }
-                    }
+                const tid = this.getQueryString('tid')
+                const authorStr = `${tid}:${author}`
+                if (author && !this.postAuthor.includes(authorStr)) {
+                    this.postAuthor.unshift(authorStr) > 10 && this.postAuthor.pop()
+                    window.localStorage.setItem('hld__NGA_post_author', this.postAuthor.join(','))
                 }
-            }
-            $el.find('a.b').each(function () {
-                const name = $(this).attr('hld-mark-before-name') || $(this).text().replace('[', '').replace(']', '')
-                if (script.setting.normal.authorMark) {
-                    if (name == $('#hld__post-author').val() && $(this).find('span.hld__post-author').length == 0)
+                $el.find('a.b').each(function () {
+                    const name = $(this).attr('hld-mark-before-name') || $(this).text().replace('[', '').replace(']', '')
+                    if (name && _this.postAuthor.includes(`${tid}:${name}`)) {
                         $(this).append('<span class="hld__post-author">[楼主]</span>')
-                }
-            })
+                    }
+                })
+            }
         },
         /**
          * 获取URL参数
