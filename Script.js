@@ -3354,6 +3354,9 @@
     script.addModule(eyeCareMode)
     script.addModule(fontResize)
     script.addModule(extraDocker)
+
+    script.addModule(freeF5)
+    
     /**
      * 运行脚本
      */
