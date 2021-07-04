@@ -253,6 +253,23 @@
             setTimeout(() => { $msg.remove() }, type == 'ok' ? 2500 : 5500)
         }
         /**
+         * 消息弹框 可跳转
+         * @method popMsg
+         * @param {String} msg 消息内容
+         * @param {String} type 消息类型 [ok, err, warn]
+         */
+        popMsgWithUrl(msg, type = 'ok', url) {
+            $('.hld__msg').length > 0 && $('.hld__msg').remove()
+            let $msg = $(`<div class="hld__msg hld__msg-${type}"><a href=${url}"> ${msg}</a> </div>`)
+            $('body').append($msg)
+            $msg.slideDown(200)
+            setTimeout(() => { $msg.fadeOut(500) }, type == 'ok' ? 20000 : 5000)
+            setTimeout(() => { $msg.remove() }, type == 'ok' ? 25000 : 5500)
+        }
+
+
+
+        /**
          * 打印控制台消息
          * @method printLog
          * @param {String} msg 消息内容
@@ -3184,11 +3201,20 @@
 
                 let f5List = $('#hld__F5_list_textarea').val();
 
-                window.localStorage.setItem('hld__NGA_F5_List', JSON.stringify(f5List))
-                _this.f5List = f5List
+                try {
+                    window.localStorage.setItem('hld__NGA_F5_List', JSON.stringify(JSON.parse(f5List)))
 
-                $('.hld__list-panel').remove()
-                script.popMsg('保存成功，刷新页面生效')
+                    _this.f5List = f5List
+
+                    $('.hld__list-panel').remove()
+                    script.popMsg('保存成功，刷新页面生效')
+
+
+                } catch (err) {
+                    script.popMsg('格式错误 未保存')
+                }
+
+
 
             })
 
@@ -3219,7 +3245,7 @@
             } catch (err) {
                 script.printLog(err)
                 console.log('样例数据')
-                console.log(JSON.stringify([{ url: 'https://nga.178.com/read.php?tid=27363657&authorid=62395645', last: 0 }]))
+                console.log(JSON.stringify([{ url: 'https://nga.178.com/read.php?tid=26722661&authorid=61124196', last: 0 }]))
                 return;
             }
 
@@ -3227,7 +3253,7 @@
             if (!this.f5List) {
                 script.printLog(`freeF5 未设置相关参数`)
                 console.log('样例数据')
-                console.log(JSON.stringify([{ url: 'https://nga.178.com/read.php?tid=27363657&authorid=62395645', last: 0 }]))
+                console.log(JSON.stringify([{ url: 'https://nga.178.com/read.php?tid=26722661&authorid=61124196', last: 0 }]))
                 return;
             }
 
@@ -3241,7 +3267,7 @@
             if (!Array.isArray(this.f5List)) {
                 script.printLog(`freeF5 f5List不是Array`)
                 console.log('样例数据')
-                console.log(JSON.stringify([{ url: 'https://nga.178.com/read.php?tid=27363657&authorid=62395645', last: 0 }]))
+                console.log(JSON.stringify([{ url: 'https://nga.178.com/read.php?tid=26722661&authorid=61124196', last: 0 }]))
                 return;
             }
 
@@ -3273,7 +3299,7 @@
 
                                     item.last = last
                                     script.printLog(`帖子 ${title} 已更新至 ${item.last} 层`)
-                                    script.popMsg(`帖子 ${title} 已更新至 ${item.last} 层`)
+                                    script.popMsgWithUrl(`帖子 ${title} 已更新至 ${item.last} 层`, 'ok', `${url.origin}/read.php?tid=${searchParams.get('tid')}&authorid=${searchParams.get('authorid')}&page=${lastPage}`)
                                     window.localStorage.setItem('hld__NGA_F5_List', JSON.stringify(this.f5List))
 
                                 } else {
