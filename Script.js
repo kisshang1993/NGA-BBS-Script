@@ -25,7 +25,7 @@
      * @constructor
      */
     class NGABBSScript {
-        constructor () {
+        constructor() {
             // 配置
             this.setting = {
                 normal: {},
@@ -42,7 +42,7 @@
          * @param {String} name 模块name
          * @return {Object} 模块对象
          */
-        getModule (name) {
+        getModule(name) {
             for (const m of this.modules) {
                 if (m.name && m.name === name) {
                     return m
@@ -68,7 +68,7 @@
          * 列表页渲染函数
          * @method renderThreads
          */
-        renderThreads () {
+        renderThreads() {
             $('.topicrow[hld-threads-render!=ok]').each((index, dom) => {
                 const $el = $(dom)
                 for (const module of this.modules) {
@@ -86,7 +86,7 @@
          * 详情页渲染函数
          * @method renderForms
          */
-        renderForms () {
+        renderForms() {
             $('.forumbox.postbox[hld-forms-render!=ok]').each((index, dom) => {
                 const $el = $(dom)
                 // 等待NGA页面渲染完成
@@ -108,7 +108,7 @@
          * @param {Object} module 模块对象
          * @param {Boolean} plugin 是否为插件
          */
-        addModule (module, plugin=false) {
+        addModule(module, plugin = false) {
             // 组件预处理函数
             if (module.beforeFunc) {
                 try {
@@ -146,7 +146,7 @@
          * @method isThreads
          * @return {Boolean} 判断状态
          */
-        isThreads () {
+        isThreads() {
             return $('#m_threads').length > 0
         }
         /**
@@ -154,7 +154,7 @@
          * @method isForms
          * @return {Boolean} 判断状态
          */
-        isForms () {
+        isForms() {
             return $('#m_posts').length > 0
         }
         /**
@@ -162,15 +162,15 @@
          * @method throwError
          * @param {String} msg 异常信息
          */
-        throwError (msg) {
+        throwError(msg) {
             alert(msg)
-            throw(msg)
+            throw (msg)
         }
         /**
          * 初始化
          * @method init
          */
-        init () {
+        init() {
             // 开始初始化
             this.printLog('初始化...')
             const startInitTime = new Date().getTime()
@@ -222,7 +222,7 @@
             // 初始化完成
             const endInitTime = new Date().getTime()
             console.table(modulesTable)
-            this.printLog(`[v${this.getInfo().version}] 初始化完成：共加载${this.modules.length}个模块，总耗时${endInitTime-startInitTime}ms`)
+            this.printLog(`[v${this.getInfo().version}] 初始化完成：共加载${this.modules.length}个模块，总耗时${endInitTime - startInitTime}ms`)
         }
         /**
          * 通知弹框
@@ -230,7 +230,7 @@
          * @param {String} msg 消息内容
          * @param {Number} duration 显示市场(ms)
          */
-        popNotification (msg, duration=1000) {
+        popNotification(msg, duration = 1000) {
             $('#hld__noti_container').length == 0 && $('body').append('<div id="hld__noti_container"></div>')
             let $msgBox = $(`<div class="hld__noti-msg">${msg}</div>`)
             $('#hld__noti_container').append($msgBox)
@@ -244,7 +244,7 @@
          * @param {String} msg 消息内容
          * @param {String} type 消息类型 [ok, err, warn]
          */
-        popMsg(msg, type='ok') {
+        popMsg(msg, type = 'ok') {
             $('.hld__msg').length > 0 && $('.hld__msg').remove()
             let $msg = $(`<div class="hld__msg hld__msg-${type}">${msg}</div>`)
             $('body').append($msg)
@@ -257,7 +257,7 @@
          * @method printLog
          * @param {String} msg 消息内容
          */
-        printLog (msg) {
+        printLog(msg) {
             console.log(`%cNGA%cScript%c ${msg}`,
                 'background: #222;color: #fff;font-weight:bold;padding:2px 2px 2px 4px;border-radius:4px 0 0 4px;',
                 'background: #fe9a00;color: #000;font-weight:bold;padding:2px 4px 2px 2px;border-radius:0px 4px 4px 0px;',
@@ -269,7 +269,7 @@
          * @method saveSetting
          * @param {String} msg 自定义消息信息
          */
-        saveSetting (msg='保存配置成功，刷新页面生效') {
+        saveSetting(msg = '保存配置成功，刷新页面生效') {
             for (let k in this.setting.normal) {
                 $('input#hld__cb_' + k).length > 0 && (this.setting.normal[k] = $('input#hld__cb_' + k)[0].checked)
             }
@@ -300,7 +300,7 @@
          * 从本地读取配置
          * @method loadSetting
          */
-        loadSetting () {
+        loadSetting() {
             // 基础设置
             try {
                 if (window.localStorage.getItem('hld__NGA_setting')) {
@@ -320,7 +320,7 @@
                                         module.setting.rewriteShortCutCode = localSetting[k][index]
                                     }
                                     index += 1
-                                }else if (module.settings) {
+                                } else if (module.settings) {
                                     for (const setting of module.settings) {
                                         if (setting.shortCutCode) {
                                             if (localSetting[k][index] != setting.shortCutCode) {
@@ -425,7 +425,7 @@
         // 修复脚本
         GM_registerMenuCommand('修复脚本', function () {
             if (window.confirm('如脚本运行失败或无效，尝试修复脚本，这会清除脚本的本地缓存信息\n* 本地缓存信息包含配置，各种名单等\n* 此操作不可逆转，如果需要备份，请手动备份localStorage内的hld__*的字段\n\n继续请点击【确定】')) {
-                for (let i=0;i<localStorage.length;i++) {
+                for (let i = 0; i < localStorage.length; i++) {
                     let key = localStorage.key(i)
                     key.startsWith('hld__NGA_') && localStorage.removeItem(key)
                 }
@@ -525,7 +525,7 @@
             const insertDom = setting => {
                 if (setting.type === 'normal') {
                     $panelDom.find(`#hld__normal_${setting.menu || 'left'}`).append(`
-                    <p><label ${setting.desc ? 'class="hld__adv-help" help="'+setting.desc+'"' : ''}><input type="checkbox" id="hld__cb_${setting.key}"> ${setting.title || setting.key}${setting.shortCutCode ? '（快捷键切换[<b>'+script.getModule('shortCutKeys').getCodeName(setting.rewriteShortCutCode || setting.shortCutCode)+'</b>]）' : ''}</label></p>
+                    <p><label ${setting.desc ? 'class="hld__adv-help" help="' + setting.desc + '"' : ''}><input type="checkbox" id="hld__cb_${setting.key}"> ${setting.title || setting.key}${setting.shortCutCode ? '（快捷键切换[<b>' + script.getModule('shortCutKeys').getCodeName(setting.rewriteShortCutCode || setting.shortCutCode) + '</b>]）' : ''}</label></p>
                     `)
                     if (setting.extra) {
                         $panelDom.find(`#hld__cb_${setting.key}`).attr('enable', `hld__${setting.key}_${setting.extra.mode || 'fold'}`)
@@ -577,14 +577,14 @@
              * Bind:Mouseover Mouseout
              * 提示信息Tips
              */
-            $panelDom.find('.hld__adv-help').mouseover(function(e){
+            $panelDom.find('.hld__adv-help').mouseover(function (e) {
                 const $help = $(`<div class="hld__help-tips">${$(this).attr('help').replace(/\n/g, '<br>')}</div>`)
                 $help.css({
                     top: ($(this).offset().top + $(this).height() + 5) + 'px',
                     left: $(this).offset().left + 'px'
                 })
                 $('body').append($help)
-            }).mouseout(()=>$('.hld__help-tips').remove())
+            }).mouseout(() => $('.hld__help-tips').remove())
             $('body').append($panelDom)
             //本地恢复设置
             //基础设置
@@ -645,11 +645,11 @@
             })
         },
         renderAlwaysFunc: function () {
-            if($('.hld__setting-box').length == 0) {
+            if ($('.hld__setting-box').length == 0) {
                 $('#startmenu > tbody > tr > td.last').append('<div><div class="item hld__setting-box"></div></div>')
                 let $entry = $('<a id="hld__setting" title="打开NGA优化摸鱼插件设置面板">NGA优化摸鱼插件设置</a>')
-                $entry.click(()=>$('#hld__setting_cover').css('display', 'flex'))
-                $('#hld__setting_close').click(()=>$('#hld__setting_cover').fadeOut(200))
+                $entry.click(() => $('#hld__setting_cover').css('display', 'flex'))
+                $('#hld__setting_close').click(() => $('#hld__setting_cover').fadeOut(200))
                 $('.hld__setting-box').append($entry)
             }
         },
@@ -750,7 +750,7 @@
              * 快捷键编辑面板
              */
             $('body').on('click', '#hld__shortcut_manage', () => {
-                if($('#hld__shortcut_panel').length > 0) return
+                if ($('#hld__shortcut_panel').length > 0) return
                 let $shortcutPanel = $(`<div id="hld__shortcut_panel" class="hld__list-panel animated fadeInUp">
                 <a href="javascript:void(0)" class="hld__setting-close">×</a>
                 <div>
@@ -822,7 +822,7 @@
                 $('#hld__shortcut_panel').remove()
             })
         },
-        getCodeName (val, valType='code') {
+        getCodeName(val, valType = 'code') {
             const shortcutCode = {
                 'A': 65, 'B': 66, 'C': 67, 'D': 68, 'E': 69, 'F': 70, 'G': 71,
                 'H': 72, 'I': 73, 'J': 74, 'K': 75, 'L': 76, 'M': 77, 'N': 78,
@@ -890,7 +890,7 @@
             $('body').on('click', '#hld__backup_panel', function () {
                 const unsupported = '3.3.0'
                 const currentVer = script.getInfo().version
-                if($('#hld__export_panel').length > 0) return
+                if ($('#hld__export_panel').length > 0) return
                 $('#hld__setting_cover').append(`
                     <div id="hld__export_panel" class="hld__list-panel animated fadeInUp">
                         <a href="javascript:void(0)" class="hld__setting-close">×</a>
@@ -921,7 +921,7 @@
                  * Bind:Click
                  * 导出配置
                  */
-                $('#hld__export__data').click(function(){
+                $('#hld__export__data').click(function () {
                     let obj = {}
                     // 基础配置
                     if ($('#hld__cb_export_setting').prop('checked')) {
@@ -949,7 +949,7 @@
                  * Bind:Click
                  * 导入配置
                  */
-                $('#hld__import__data').click(function(){
+                $('#hld__import__data').click(function () {
                     if ($('#hld__export_str').val()) {
                         try {
                             let obj = JSON.parse(_this.Base64.decode($('#hld__export_str').val()))
@@ -979,7 +979,7 @@
                             }
                             $('#hld__export_msg').html('<span style="color:#009900">导入成功，刷新浏览器以生效</span>')
 
-                        } catch (err){
+                        } catch (err) {
                             script.printLog(`JSON解析失败：${err}`)
                             $('#hld__export_msg').html('<span style="color:#CC0000">字符串有误，解析失败！</span>')
                         }
@@ -987,11 +987,11 @@
                 })
             })
         },
-        addItem: function(item) {
+        addItem: function (item) {
             this.backupItems.push(item)
         },
         // 字符串版本转数字
-        vstr2num: function(str) {
+        vstr2num: function (str) {
             let num = 0
             str.split('.').forEach((n, i) => num += i < 2 ? +n * 1000 / Math.pow(10, i) : +n)
             return num
@@ -999,13 +999,13 @@
         calculateSize: function (num) {
             if (num == 0) return '0 B'
             let k = 1024
-            let sizeStr = ['B','KB','MB','GB']
+            let sizeStr = ['B', 'KB', 'MB', 'GB']
             let i = 0
-            for(let l=0;l<8;l++){
-            　　if(num / Math.pow(k, l) < 1) break
-            　　i = l
+            for (let l = 0; l < 8; l++) {
+                if (num / Math.pow(k, l) < 1) break
+                i = l
             }
-        　　return (num / Math.pow(k, i)).toFixed(2) + ' ' + sizeStr[i]
+            return (num / Math.pow(k, i)).toFixed(2) + ' ' + sizeStr[i]
         },
         /**
          * Base64互转
@@ -1302,7 +1302,7 @@
                 $toggleHeaderBtn.click(() => $('#toppedtopic, #sub_forums').toggle())
                 $('#toptopics > div > h3').append($toggleHeaderBtn)
             }
-            if(script.setting.normal.hideHeader && script.setting.advanced.hideCustomBg) {
+            if (script.setting.normal.hideHeader && script.setting.advanced.hideCustomBg) {
                 $('#custombg').hide()
                 $('#mainmenu').css('margin', '0px')
             }
@@ -1350,12 +1350,12 @@
             menu: 'left'
         }],
         beforeUrl: window.location.href,
-        initFunc: function() {
+        initFunc: function () {
             // 生成列标题字母列表
             const columnLetters = () => {
                 let capital = []
                 let columnLetters = []
-                for (let i=65;i<91;i++) capital.push(String.fromCharCode(i))
+                for (let i = 65; i < 91; i++) capital.push(String.fromCharCode(i))
                 Array('', 'A', 'B', 'C').forEach(n => capital.forEach(c => columnLetters.push(`${n}${c}`)))
                 return columnLetters
             }
@@ -1378,7 +1378,7 @@
                     </div>
                     <div class="hld__excel-h4">
                         <div class="hld__excel-sub"><div></div></div>
-                        ${(columnLetters().map(c => '<div class="hld__excel-column">'+c+'</div>')).join('')}
+                        ${(columnLetters().map(c => '<div class="hld__excel-column">' + c + '</div>')).join('')}
                     </div>
                 </div>
             `)
@@ -1395,27 +1395,27 @@
                     </div>
                 </div>
             `)
-            $('#hld__excel_setting').click(()=>$('#hld__setting_cover').css('display', 'flex'))
+            $('#hld__excel_setting').click(() => $('#hld__setting_cover').css('display', 'flex'))
             $('#mainmenu .half').parent().append($('#mainmenu .half').clone(true).addClass('hld__half-clone').text($('#mainmenu .half').text().replace('你好', '')))
-            if(script.setting.normal.excelMode) {
-                if(this.beforeUrl.includes('thread.php') || this.beforeUrl.includes('read.php')) {
+            if (script.setting.normal.excelMode) {
+                if (this.beforeUrl.includes('thread.php') || this.beforeUrl.includes('read.php')) {
                     this.switchExcelMode()
                 }
             }
         },
         renderAlwaysFunc: function ($el) {
             $('.hld__excel-theme-' + script.setting.advanced.excelTheme).length == 0 && $('body').addClass('hld__excel-theme-' + script.setting.advanced.excelTheme)
-            if(script.setting.normal.excelMode && window.location.href != this.beforeUrl) {
+            if (script.setting.normal.excelMode && window.location.href != this.beforeUrl) {
                 this.beforeUrl = window.location.href
-                if(this.beforeUrl.includes('thread.php') || this.beforeUrl.includes('read.php')) {
+                if (this.beforeUrl.includes('thread.php') || this.beforeUrl.includes('read.php')) {
                     $('.hld__excel-body').length == 0 && $('body').addClass('hld__excel-body')
-                }else {
+                } else {
                     $('.hld__excel-body').length > 0 && $('body').removeClass('hld__excel-body')
                 }
             }
-            if(script.setting.normal.excelMode && $('.hld__excel-body').length > 0 && $('#mmc').length == 0) {
+            if (script.setting.normal.excelMode && $('.hld__excel-body').length > 0 && $('#mmc').length == 0) {
                 $('body').addClass('hld__excel-body-err')
-            }else {
+            } else {
                 $('body').removeClass('hld__excel-body-err')
             }
         },
@@ -1599,7 +1599,7 @@
             default: true,
             title: '折叠过长引用与附件',
             menu: 'left'
-        },{
+        }, {
             type: 'advanced',
             key: 'foldQuoteHeight',
             default: 300,
@@ -1616,8 +1616,8 @@
                         const originalHeight = $quote.height()
                         $quote.addClass('hld__quote-fold')
                         const foldHeight = $quote.height()
-                        const $openBtn = $(`<div class="hld__quote-box"><button>查看全部 (剩余${100-parseInt(foldHeight/originalHeight*100)}%)</button></div>`)
-                        $openBtn.on('click', 'button', function(){
+                        const $openBtn = $(`<div class="hld__quote-box"><button>查看全部 (剩余${100 - parseInt(foldHeight / originalHeight * 100)}%)</button></div>`)
+                        $openBtn.on('click', 'button', function () {
                             $(this).parent().remove()
                             $quote.removeClass('hld__quote-fold')
                         })
@@ -1626,12 +1626,12 @@
                 }
                 // 折叠附件
                 if ($el.find('h4.silver.subtitle').length > 0) {
-                    $el.find('h4.silver.subtitle').each(function (){
+                    $el.find('h4.silver.subtitle').each(function () {
                         if ($(this).html() === '附件' && $(this).next().attr('id').includes('postattach')) {
                             const $attach = $(this).next()
                             $attach.hide()
                             const $openBtn = $(`<button>显示附件</button>`)
-                            $openBtn.on('click', function(){
+                            $openBtn.on('click', function () {
                                 $(this).remove()
                                 $attach.show()
                             })
@@ -1688,7 +1688,7 @@
         },
         renderFormsFunc: function ($el) {
             if (script.setting.normal.directLinkJump) {
-                $el.find('a[onclick]').each(function(){
+                $el.find('a[onclick]').each(function () {
                     if ($(this).attr('onclick').includes('showUrlAlert')) {
                         $(this).removeAttr('onclick onmouseover onmouseout')
                     }
@@ -1984,17 +1984,17 @@
             togglePaletteMoreText: '更多选项',
             togglePaletteLessText: '隐藏',
             palette: [
-                ['#000000','#444444','#5b5b5b','#999999','#bcbcbc','#eeeeee','#f3f6f4','#ffffff'],
-                ['#f44336','#744700','#ce7e00','#8fce00','#2986cc','#16537e','#6a329f','#c90076'],
-                ['#f4cccc','#fce5cd','#fff2cc','#d9ead3','#d0e0e3','#cfe2f3','#d9d2e9','#ead1dc'],
-                ['#ea9999','#f9cb9c','#ffe599','#b6d7a8','#a2c4c9','#9fc5e8','#b4a7d6','#d5a6bd'],
-                ['#e06666','#f6b26b','#ffd966','#93c47d','#76a5af','#6fa8dc','#8e7cc3','#c27ba0'],
-                ['#cc0000','#e69138','#f1c232','#6aa84f','#45818e','#3d85c6','#674ea7','#a64d79'],
-                ['#990000','#b45f06','#bf9000','#38761d','#134f5c','#0b5394','#351c75','#741b47'],
-                ['#660000','#783f04','#7f6000','#274e13','#0c343d','#073763','#20124d','#4c1130']
+                ['#000000', '#444444', '#5b5b5b', '#999999', '#bcbcbc', '#eeeeee', '#f3f6f4', '#ffffff'],
+                ['#f44336', '#744700', '#ce7e00', '#8fce00', '#2986cc', '#16537e', '#6a329f', '#c90076'],
+                ['#f4cccc', '#fce5cd', '#fff2cc', '#d9ead3', '#d0e0e3', '#cfe2f3', '#d9d2e9', '#ead1dc'],
+                ['#ea9999', '#f9cb9c', '#ffe599', '#b6d7a8', '#a2c4c9', '#9fc5e8', '#b4a7d6', '#d5a6bd'],
+                ['#e06666', '#f6b26b', '#ffd966', '#93c47d', '#76a5af', '#6fa8dc', '#8e7cc3', '#c27ba0'],
+                ['#cc0000', '#e69138', '#f1c232', '#6aa84f', '#45818e', '#3d85c6', '#674ea7', '#a64d79'],
+                ['#990000', '#b45f06', '#bf9000', '#38761d', '#134f5c', '#0b5394', '#351c75', '#741b47'],
+                ['#660000', '#783f04', '#7f6000', '#274e13', '#0c343d', '#073763', '#20124d', '#4c1130']
             ]
         },
-        initFunc: function() {
+        initFunc: function () {
             $('#hld__setting_cover').find('#hld__adv_authorMarkColor').spectrum(this.colorPickerConfig)
         },
         style: `
@@ -2115,14 +2115,14 @@
         },
         renderAlwaysFunc: function () {
             const _this = this
-            if(script.setting.normal.autoPage) {
-                if($('#hld__next_page').length > 0) return
-                $('#pagebbtm>.stdbtn[hld-auto-page!=ok] td').each(function(){
-                    if($(this).children('a').text() == '>') {
+            if (script.setting.normal.autoPage) {
+                if ($('#hld__next_page').length > 0) return
+                $('#pagebbtm>.stdbtn[hld-auto-page!=ok] td').each(function () {
+                    if ($(this).children('a').text() == '>') {
                         $(this).children('a').attr('id', 'hld__next_page')
-                        _this.$window.on('scroll.autoPage', function(){
+                        _this.$window.on('scroll.autoPage', function () {
                             if ($(document).scrollTop() != 0 && (Math.ceil($(document).scrollTop()) + $(window).height() >= ($(document).height() - 20))) {
-                                if($('#hld__next_page').length > 0) {
+                                if ($('#hld__next_page').length > 0) {
                                     document.getElementById('hld__next_page').click()
                                     $('#hld__next_page').removeAttr('id')
                                     _this.$window.off('scroll.autoPage')
@@ -2195,7 +2195,7 @@
              * 管理弹窗面板
              */
             $('body').on('click', '#hld__keywords_manage', function () {
-                if($('#hld__keywords_panel').length > 0) return
+                if ($('#hld__keywords_panel').length > 0) return
                 $('#hld__setting_cover').append(`<div id="hld__keywords_panel" class="hld__list-panel animated fadeInUp">
                 <a href="javascript:void(0)" class="hld__setting-close">×</a>
                 <div>
@@ -2412,16 +2412,16 @@
                             type: 'confirm',
                             name,
                             uid,
-                            top: $(this).offset().top+20,
-                            left: $(this).offset().left-10
+                            top: $(this).offset().top + 20,
+                            left: $(this).offset().left - 10
                         })
                     }
                     if (type == 'mark') {
                         _this.userMarkPopup({
                             name,
                             uid,
-                            top: $(this).offset().top+20,
-                            left: $(this).offset().left-10
+                            top: $(this).offset().top + 20,
+                            left: $(this).offset().left - 10
                         })
                     }
                 })
@@ -2429,7 +2429,7 @@
                  * Bind:Click
                  * 屏蔽按钮
                  */
-                $('body').on('click', '.hld__banned-block', function(){
+                $('body').on('click', '.hld__banned-block', function () {
                     if ($(this).parent().hasClass('quote')) {
                         $(this).parent().prev().show()
                         $(this).parent().hide()
@@ -2443,7 +2443,7 @@
                  * 名单管理
                  */
                 $('body').on('click', '#hld__list_manage', function () {
-                    if($('#hld__banlist_panel').length > 0) return
+                    if ($('#hld__banlist_panel').length > 0) return
                     $('#hld__setting_cover').append(`<div id="hld__banlist_panel"  class="hld__list-panel animated fadeInUp">
                     <a href="javascript:void(0)" class="hld__setting-close">×</a>
                     <div class="hld__tab-header"><span class="hld__table-active">简易模式</span><span>原始数据</span></div>
@@ -2473,7 +2473,7 @@
                      * Bind:Click
                      * 切换选项卡
                      */
-                    $('body').on('click', '.hld__tab-header > span', function(){
+                    $('body').on('click', '.hld__tab-header > span', function () {
                         $('.hld__tab-header > span, .hld__tab-content').removeClass('hld__table-active')
                         $(this).addClass('hld__table-active')
                         $('.hld__tab-content').eq($(this).index()).addClass('hld__table-active')
@@ -2482,7 +2482,7 @@
                      * Bind:Click
                      * 移除黑名单
                      */
-                    $('body').on('click', '.hld__bl-del', function(){
+                    $('body').on('click', '.hld__bl-del', function () {
                         const index = $(this).data('index')
                         _this.banList.splice(index, 1)
                         window.localStorage.setItem('hld__NGA_ban_list', JSON.stringify(_this.banList))
@@ -2492,21 +2492,21 @@
                      * Bind:Click
                      * 添加黑名单
                      */
-                    $('body').on('click', '#hld__banlist_add_btn', function(){
+                    $('body').on('click', '#hld__banlist_add_btn', function () {
                         _this.banlistPopup({
                             type: 'add',
                             name: $(this).data('name'),
                             uid: $(this).data('uid'),
                             top: $(this).offset().top + 30,
                             left: $(this).offset().left - 5,
-                            callback: () => {_this.reloadBanlist()}
+                            callback: () => { _this.reloadBanlist() }
                         })
                     })
                     /**
                      * Bind:Click
                      * 保存黑名单
                      */
-                    $('body').on('click', '#hld__save_banlist', function(){
+                    $('body').on('click', '#hld__save_banlist', function () {
                         const banList = $('#hld__ban_list_textarea').val()
                         const markList = $('#hld__mark_list_textarea').val()
                         try {
@@ -2531,7 +2531,7 @@
                      * Bind:Click
                      * 修改标记
                      */
-                    $('body').on('click', '.hld__ml-edit', function(){
+                    $('body').on('click', '.hld__ml-edit', function () {
                         const name = $(this).data('name')
                         const uid = $(this).data('uid') + ''
                         _this.userMarkPopup({
@@ -2539,14 +2539,14 @@
                             uid,
                             top: $(this).offset().top + 30,
                             left: $(this).offset().left - 5,
-                            callback: () => {_this.reloadMarklist()}
+                            callback: () => { _this.reloadMarklist() }
                         })
                     })
                     /**
                      * Bind:Click
                      * 删除标记
                      */
-                    $('body').on('click', '.hld__ml-del', function(){
+                    $('body').on('click', '.hld__ml-del', function () {
                         const index = $(this).data('index')
                         _this.markList.splice(index, 1)
                         window.localStorage.setItem('hld__NGA_mark_list', JSON.stringify(_this.markList))
@@ -2556,14 +2556,14 @@
                      * Bind:Click
                      * 添加标记
                      */
-                    $('body').on('click', '#hld__marklist_add_btn', function(){
+                    $('body').on('click', '#hld__marklist_add_btn', function () {
                         _this.userMarkPopup({
                             type: 'add',
                             name: $(this).data('name'),
                             uid: $(this).data('uid'),
                             top: $(this).offset().top + 30,
                             left: $(this).offset().left - 5,
-                            callback: () => {_this.reloadMarklist()}
+                            callback: () => { _this.reloadMarklist() }
                         })
                     })
                     //重载名单
@@ -2572,12 +2572,12 @@
                 })
             }
         },
-        renderThreadsFunc: function($el) {
+        renderThreadsFunc: function ($el) {
             const title = $el.find('.c2>a').text()
             const uid = ($el.find('.author').attr('href') && $el.find('.author').attr('href').indexOf('uid=') > -1) ? $el.find('.author').attr('href').split('uid=')[1] + '' : ''
             const name = $el.find('.author').text()
             if (script.setting.normal.markAndBan) {
-                const banUser = this.getBanUser({name, uid})
+                const banUser = this.getBanUser({ name, uid })
                 //黑名单屏蔽
                 if (this.banList.length > 0 && banUser) {
                     script.printLog(`黑名单屏蔽：标题：${title}  连接：${$el.find('.c2>a').attr('href')}`)
@@ -2585,7 +2585,7 @@
                 }
             }
         },
-        renderFormsFunc: function($el) {
+        renderFormsFunc: function ($el) {
             const _this = this
             if (script.setting.normal.markAndBan) {
                 // 插入操作面板
@@ -2612,7 +2612,7 @@
                     } else {
                         name = $(this).attr('hld-mark-before-name') || $(this).text().replace('[', '').replace(']', '')
                     }
-                    const banUser = _this.getBanUser({name, uid})
+                    const banUser = _this.getBanUser({ name, uid })
                     if (banUser) {
                         //拉黑用户实现
                         if (script.setting.advanced.banStrictMode == 'HIDE') {
@@ -2643,18 +2643,18 @@
                         }
                         script.printLog(`黑名单屏蔽：用户：${name}, UID:${uid}`)
                     }
-                    if(script.setting.advanced.classicRemark) {
+                    if (script.setting.advanced.classicRemark) {
                         //经典备注风格
-                        const userMarks = _this.getUserMarks({name, uid})
+                        const userMarks = _this.getUserMarks({ name, uid })
                         if (userMarks) {
                             let f = []
                             userMarks.marks.forEach(e => f.push(e.mark))
                             $(this).attr('hld-mark-before-name', name).append(`<span class="hld__remark"> (${f.join(', ')}) </span>`)
                         }
-                    }else {
+                    } else {
                         //新版标签风格
-                        const userMarks = _this.getUserMarks({name, uid})
-                        if(userMarks) {
+                        const userMarks = _this.getUserMarks({ name, uid })
+                        if (userMarks) {
                             const $el = $(this).parents('.c1').find('.clickextend')
                             let marksDom = ''
                             userMarks.marks.forEach(item => marksDom += `<span style="color: ${item.text_color};background-color: ${item.bg_color};" title="${item.mark}">${item.mark}</span>`);
@@ -2683,25 +2683,25 @@
             if (setting.type == 'confirm') {
                 $banDialog.find('#container_dom').append(`<div><span>您确定要拉黑用户</span><span class="hld__dialog-user">${setting.name}</span><span>吗？</span></div>`)
                 let $okBtn = $('<button class="hld__btn">拉黑</button>')
-                $okBtn.click(function(){
-                    const banObj = {name: setting.name, uid: setting.uid}
+                $okBtn.click(function () {
+                    const banObj = { name: setting.name, uid: setting.uid }
                     !_this.getBanUser(banObj) && _this.banList.push(banObj)
                     window.localStorage.setItem('hld__NGA_ban_list', JSON.stringify(_this.banList))
                     $('.hld__dialog').remove()
                     script.popMsg('拉黑成功，重载页面生效')
                 })
                 $banDialog.find('.hld__dialog-buttons').append($okBtn)
-            }else if (setting.type == 'add') {
+            } else if (setting.type == 'add') {
                 $banDialog.find('#container_dom').append(`<div>添加用户：</div><div><input id="hld__dialog_add_uid" type="text" value="" placeholder="UID"></div><div><input id="hld__dialog_add_name" type="text" value="" placeholder="用户名"></div>`)
                 let $okBtn = $('<button class="hld__btn">添加</button>')
-                $okBtn.click(function(){
+                $okBtn.click(function () {
                     const name = $banDialog.find('#hld__dialog_add_name').val().trim()
                     const uid = $banDialog.find('#hld__dialog_add_uid').val().trim() + ''
                     if (!name && !uid) {
                         script.popMsg('UID与用户名必填一个，其中UID权重较大', 'err')
                         return
                     }
-                    !_this.getBanUser({name, uid}) && _this.banList.push({name, uid})
+                    !_this.getBanUser({ name, uid }) && _this.banList.push({ name, uid })
                     window.localStorage.setItem('hld__NGA_ban_list', JSON.stringify(_this.banList))
                     $('.hld__dialog').remove()
                     setting.callback()
@@ -2719,7 +2719,7 @@
         getBanUser: function (banObj) {
             const _this = this
             for (let u of _this.banList) {
-                if ((u.uid && banObj.uid && u.uid == banObj.uid) || 
+                if ((u.uid && banObj.uid && u.uid == banObj.uid) ||
                     (u.name && banObj.name && u.name == banObj.name)) {
                     if ((!u.uid && banObj.uid) || (!u.name && banObj.name)) {
                         u.uid = banObj.uid + '' || ''
@@ -2781,21 +2781,21 @@
             </table>
             <div class="hld__dialog-buttons" style="justify-content: space-between !important;"></div>
             </div>`)
-            const insertRemarkRow = (r='', t='#ffffff', b='#1f72f1', n=true) => {
+            const insertRemarkRow = (r = '', t = '#ffffff', b = '#1f72f1', n = true) => {
                 let $tr = $(`<tr>
                 <td><input type="text" class="hld__mark-mark" value="${r}"></td>
                 <td><input class="hld__dialog-color-picker hld__mark-text-color" value="${t}"></td>
                 <td><input class="hld__dialog-color-picker hld__mark-bg-color" value="${b}"></td>
                 <td><button title="删除此标签" class="hld__mark-del">x</button></td>
                 </tr>`)
-                $tr.find('.hld__mark-del').click(function(){$(this).parents('tr').remove()})
+                $tr.find('.hld__mark-del').click(function () { $(this).parents('tr').remove() })
                 $tr.find('.hld__dialog-color-picker').spectrum(script.getModule('authorMarkColor').colorPickerConfig)
                 $markDialog.find('#hld__mark_body').append($tr)
                 n && $tr.find('.hld__mark-mark').focus()
             }
 
             //恢复标签
-            const existMark = _this.getUserMarks({name: setting.name, uid: setting.uid})
+            const existMark = _this.getUserMarks({ name: setting.name, uid: setting.uid })
             existMark !== null && existMark.marks.forEach(item => insertRemarkRow(item.mark, item.text_color, item.bg_color, false))
 
             let $addBtn = $('<button class="hld__btn">+添加标签</button>')
@@ -2803,8 +2803,8 @@
             $markDialog.find('.hld__dialog-buttons').append($addBtn)
             let $okBtn = $('<button class="hld__btn">保存</button>')
 
-            $okBtn.click(function(){
-                let userMarks = {marks: []}
+            $okBtn.click(function () {
+                let userMarks = { marks: [] }
                 if (setting.type == 'add') {
                     userMarks.name = $markDialog.find('#hld__dialog_add_name').val().trim()
                     userMarks.uid = $markDialog.find('#hld__dialog_add_uid').val().trim() + ''
@@ -2816,12 +2816,12 @@
                     script.popMsg('UID与用户名必填一个，其中UID权重较大', 'err')
                     return
                 }
-                $('#hld__mark_body > tr').each(function(){
+                $('#hld__mark_body > tr').each(function () {
                     const mark = $(this).find('.hld__mark-mark').val().trim()
                     const textColor = $(this).find('.hld__mark-text-color').val()
                     const bgColor = $(this).find('.hld__mark-bg-color').val()
-                    if(mark) {
-                        userMarks.marks.push({mark, text_color: textColor, bg_color: bgColor})
+                    if (mark) {
+                        userMarks.marks.push({ mark, text_color: textColor, bg_color: bgColor })
                     }
                 })
                 if (setting.type == 'add' && userMarks.marks.length == 0) {
@@ -2846,9 +2846,9 @@
          */
         getUserMarks: function (user) {
             const _this = this
-            const check = _this.markList.findIndex(v => (v.uid && user.uid && v.uid == user.uid) || 
-            (v.name && user.name && v.name == user.name))
-            if(check > -1) {
+            const check = _this.markList.findIndex(v => (v.uid && user.uid && v.uid == user.uid) ||
+                (v.name && user.name && v.name == user.name))
+            if (check > -1) {
                 let userMark = _this.markList[check]
                 if ((!userMark.uid && user.uid) || (!userMark.name && user.name)) {
                     userMark.uid = user.uid + '' || ''
@@ -2868,15 +2868,15 @@
         setUserMarks: function (userMarks) {
             // 检查是否已有标签
             const _this = this
-            const check = _this.markList.findIndex(v => (v.uid && userMarks.uid && v.uid == userMarks.uid) || 
-            (v.name && userMarks.name && v.name == userMarks.name))
-            if(check > -1) {
+            const check = _this.markList.findIndex(v => (v.uid && userMarks.uid && v.uid == userMarks.uid) ||
+                (v.name && userMarks.name && v.name == userMarks.name))
+            if (check > -1) {
                 if (userMarks.marks.length == 0) {
                     _this.markList.splice(check, 1)
                 } else {
                     _this.markList[check] = userMarks
                 }
-            }else {
+            } else {
                 _this.markList.push(userMarks)
             }
             window.localStorage.setItem('hld__NGA_mark_list', JSON.stringify(_this.markList))
@@ -3053,7 +3053,7 @@
                 if (type == 'TOP') {
                     const $nav_link = $('#m_nav a.nav_link')
                     if ($nav_link.length > 0) {
-                        $nav_link[$nav_link.length-1].click()
+                        $nav_link[$nav_link.length - 1].click()
                     }
                 }
                 if (type == 'BOTTOM') {
@@ -3123,7 +3123,7 @@
      * @description 定时确认帖子楼主是否更新
      */
 
-     const freeF5 = {
+    const freeF5 = {
         name: 'freeF5',
         settings: [{
             type: 'normal',
@@ -3185,23 +3185,15 @@
              * 保存关键字
              */
             $('body').on('click', '#hld__save_F5_list', function () {
-                let f5List;
-                try {
-                    f5List = JSON.parse($('#hld__F5_list_textarea').val())
-                } catch(err) {
-                    //样例数据
-                    f5List = [{ url: 'https://nga.178.com/read.php?tid=27363657&authorid=62395645', last: 0 }]
-                    script.popMsg('格式错误')
-                    console.error(err)
-                }
 
+                let f5List = $('#hld__F5_list_textarea').val();
 
-                f5List = _this.removeBlank(f5List)
-                f5List = _this.uniq(f5List)
+                window.localStorage.setItem('hld__NGA_F5_List', JSON.stringify(f5List))
                 _this.f5List = f5List
-                window.localStorage.setItem('hld__NGA_F5_List', JSON.stringify(_this.f5List))
+
                 $('.hld__list-panel').remove()
                 script.popMsg('保存成功，刷新页面生效')
+
             })
 
 
@@ -3228,7 +3220,23 @@
         async Work() {
             const _this = this
 
-            this.f5List = JSON.parse(window.localStorage.getItem('hld__NGA_F5_List'))
+            try {
+                this.f5List = JSON.parse(window.localStorage.getItem('hld__NGA_F5_List'))
+            } catch (err) {
+                script.printLog(err)
+                console.log('样例数据')
+                console.log(JSON.stringify([{ url: 'https://nga.178.com/read.php?tid=27363657&authorid=62395645', last: 0 }]))
+                return;
+            }
+
+
+            if (!this.f5List) {
+                script.printLog(`freeF5 未设置相关参数`)
+                console.log('样例数据')
+                console.log(JSON.stringify([{ url: 'https://nga.178.com/read.php?tid=27363657&authorid=62395645', last: 0 }]))
+                return;
+            }
+
 
             function sleep(time) {
                 return new Promise((resolve) => setTimeout(resolve, time));
@@ -3236,6 +3244,12 @@
 
             script.printLog(`freeF5 Working`)
 
+            if (!Array.isArray(this.f5List)) {
+                script.printLog(`freeF5 f5List不是Array`)
+                console.log('样例数据')
+                console.log(JSON.stringify([{ url: 'https://nga.178.com/read.php?tid=27363657&authorid=62395645', last: 0 }]))
+                return;
+            }
 
             for (let i = 0; i < this.f5List.length; i++) {
                 let item = this.f5List[i]
@@ -3250,7 +3264,7 @@
                 $.get(`${url.origin}/read.php?tid=${searchParams.get('tid')}&authorid=${searchParams.get('authorid')}`
                     , (data, status) => {
                         let dom = $(data);
-                        lettitle = dom.find('h1.x').text()
+                        let title = dom.find('h1.x').text()
 
                         let dataStr = data.match('__PAGE = ([^\n]+);')[1]
 
@@ -3273,7 +3287,7 @@
 
                                     window.localStorage.setItem('hld__NGA_F5_List', JSON.stringify(this.f5List))
 
-                                }else{
+                                } else {
                                     script.printLog(`帖子 ${title} 最新层数不变 ------- ${item.last} 层`)
                                 }
 
@@ -3356,7 +3370,7 @@
     script.addModule(extraDocker)
 
     script.addModule(freeF5)
-    
+
     /**
      * 运行脚本
      */
