@@ -3137,18 +3137,14 @@
                 label: '列表管理',
                 id: 'hld__F5_list'
             },
-
         }, {
             type: 'advanced',
             key: 'freeF5Dealy',
             default: 60,
             title: '跟踪帖子更新间隔时间',
             desc: '单位为 秒 ',
-            menu: 'right'
-        }
-
-
-        ],
+            menu: 'right',
+        }],
         $window: $(window),
         initFunc() {
             script.printLog(`freeF5 initing`)
@@ -3209,9 +3205,7 @@
             if (!this.lastRun || this.lastRun.getTime() + script.setting.advanced.freeF5Dealy * 1000 < new Date().getTime()) {
 
                 script.printLog(`freeF5 设置时间 并 刷新帖子状态 ` + new Date())
-
                 this.Work()
-
                 this.lastRun = new Date()
 
             }
@@ -3265,26 +3259,21 @@
                     , (data, status) => {
                         let dom = $(data);
                         let title = dom.find('h1.x').text()
-
                         let dataStr = data.match('__PAGE = ([^\n]+);')[1]
-
                         let lastPage = dataStr.split(/,|:/)[3]
 
+                        //请求尾页
                         $.get(`${url.origin}/read.php?tid=${searchParams.get('tid')}&authorid=${searchParams.get('authorid')}&page=${lastPage}`
                             , (data, status) => {
 
                                 let arr = data.match(/<div id='postsign\d+' class='x'><\/div>/g);
-
                                 let last = arr[arr.length - 1].replace(/[^0-9]/ig, "")
 
                                 if (!item.last || item.last != last) {
 
                                     item.last = last
-
                                     script.printLog(`帖子 ${title} 已更新至 ${item.last} 层`)
-
                                     script.popMsg(`帖子 ${title} 已更新至 ${item.last} 层`)
-
                                     window.localStorage.setItem('hld__NGA_F5_List', JSON.stringify(this.f5List))
 
                                 } else {
@@ -3298,30 +3287,6 @@
                 )
             }
 
-        },
-        /**
-         * 列表去空
-         * @method removeBlank
-         * @param {Array} array 列表
-         * @return {Array} 处理后的列表
-         */
-        removeBlank: function (array) {
-            let r = []
-            array.map(function (val, index) {
-                if (val !== '' && val != undefined) {
-                    r.push(val)
-                }
-            });
-            return r
-        },
-        /**
-         * 列表去重
-         * @method uniq
-         * @param {Array} array 列表
-         * @return {Array} 处理后的列表
-         */
-        uniq: function (array) {
-            return [...new Set(array)]
         },
         style: `
         #hld__keywords_panel {width:182px;}
