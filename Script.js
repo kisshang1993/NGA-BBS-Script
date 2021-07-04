@@ -3114,6 +3114,213 @@
         `
     }
 
+
+
+
+    /**
+     * 跟踪帖子更新
+     * @name freeF5
+     * @description 定时确认帖子楼主是否更新
+     */
+
+     const freeF5 = {
+        name: 'freeF5',
+        settings: [{
+            type: 'normal',
+            key: 'freeF5',
+            default: true,
+            title: '跟踪帖子更新',
+            desc: 'NGA自带的界面色调会与此功能有一定冲突\n使用前请先将NGA的界面色调设置为默认',
+            menu: 'right',
+            extra: {
+                type: 'button',
+                label: '列表管理',
+                id: 'hld__F5_list'
+            },
+
+        }, {
+            type: 'advanced',
+            key: 'freeF5Dealy',
+            default: 60,
+            title: '跟踪帖子更新间隔时间',
+            desc: '单位为 秒 ',
+            menu: 'right'
+        }
+
+
+        ],
+        $window: $(window),
+        initFunc() {
+            script.printLog(`freeF5 initing`)
+
+            const _this = this
+
+            // 同步本地数据
+            this.f5List = JSON.parse(window.localStorage.getItem('hld__NGA_F5_List'))
+
+            // 添加到导入导出配置
+            script.getModule('backupModule').addItem({
+                title: '关键字列表',
+                writeKey: 'f5_list',
+                valueKey: 'f5List',
+                module: this
+            })
+            /**
+             * Bind:Click
+             * 管理弹窗面板
+             */
+            $('body').on('click', '#hld__F5_list', function () {
+
+                $('#hld__setting_cover').append(`<div id="hld__keywords_panel" class="hld__list-panel animated fadeInUp">
+                <a href="javascript:void(0)" class="hld__setting-close">×</a>
+                <div>
+                <div class="hld__list-c"><p>帖子首页链接</p><textarea row="20" id="hld__F5_list_textarea"></textarea><p class="hld__list-desc">两条帖子间隔一行</p></div>
+                </div>
+                <div class="hld__btn-groups"><button class="hld__btn" id="hld__save_F5_list">保存列表</button></div>
+                </div>`)
+                $('#hld__F5_list_textarea').val(JSON.stringify(_this.f5List))
+            })
+            /**
+             * Bind:Click
+             * 保存关键字
+             */
+            $('body').on('click', '#hld__save_F5_list', function () {
+                let f5List;
+                try {
+                    f5List = JSON.parse($('#hld__F5_list_textarea').val())
+                } catch(err) {
+                    //样例数据
+                    f5List = [{ url: 'https://nga.178.com/read.php?tid=27363657&authorid=62395645', last: 0 }]
+                    script.popMsg('格式错误')
+                    console.error(err)
+                }
+
+
+                f5List = _this.removeBlank(f5List)
+                f5List = _this.uniq(f5List)
+                _this.f5List = f5List
+                window.localStorage.setItem('hld__NGA_F5_List', JSON.stringify(_this.f5List))
+                $('.hld__list-panel').remove()
+                script.popMsg('保存成功，刷新页面生效')
+            })
+
+
+
+        },
+        renderAlwaysFunc() {
+            const _this = this
+
+            if (!script.setting.normal.freeF5) {
+                return;
+            }
+
+            if (!this.lastRun || this.lastRun.getTime() + script.setting.advanced.freeF5Dealy * 1000 < new Date().getTime()) {
+
+                script.printLog(`freeF5 设置时间 并 刷新帖子状态 ` + new Date())
+
+                this.Work()
+
+                this.lastRun = new Date()
+
+            }
+
+        },
+        async Work() {
+            const _this = this
+
+            this.f5List = JSON.parse(window.localStorage.getItem('hld__NGA_F5_List'))
+
+            function sleep(time) {
+                return new Promise((resolve) => setTimeout(resolve, time));
+            }
+
+            script.printLog(`freeF5 Working`)
+
+
+            for (let i = 0; i < this.f5List.length; i++) {
+                let item = this.f5List[i]
+
+                await sleep(1000)
+
+                //获取请求参数
+                let url = new URL(item.url)
+                let searchParams = new URLSearchParams(url.search);
+
+                //请求首页
+                $.get(`${url.origin}/read.php?tid=${searchParams.get('tid')}&authorid=${searchParams.get('authorid')}`
+                    , (data, status) => {
+                        let dom = $(data);
+                        lettitle = dom.find('h1.x').text()
+
+                        let dataStr = data.match('__PAGE = ([^\n]+);')[1]
+
+                        let lastPage = dataStr.split(/,|:/)[3]
+
+                        $.get(`${url.origin}/read.php?tid=${searchParams.get('tid')}&authorid=${searchParams.get('authorid')}&page=${lastPage}`
+                            , (data, status) => {
+
+                                let arr = data.match(/<div id='postsign\d+' class='x'><\/div>/g);
+
+                                let last = arr[arr.length - 1].replace(/[^0-9]/ig, "")
+
+                                if (!item.last || item.last != last) {
+
+                                    item.last = last
+
+                                    script.printLog(`帖子 ${title} 已更新至 ${item.last} 层`)
+
+                                    script.popMsg(`帖子 ${title} 已更新至 ${item.last} 层`)
+
+                                    window.localStorage.setItem('hld__NGA_F5_List', JSON.stringify(this.f5List))
+
+                                }else{
+                                    script.printLog(`帖子 ${title} 最新层数不变 ------- ${item.last} 层`)
+                                }
+
+
+                            }
+                        )
+                    }
+                )
+            }
+
+        },
+        /**
+         * 列表去空
+         * @method removeBlank
+         * @param {Array} array 列表
+         * @return {Array} 处理后的列表
+         */
+        removeBlank: function (array) {
+            let r = []
+            array.map(function (val, index) {
+                if (val !== '' && val != undefined) {
+                    r.push(val)
+                }
+            });
+            return r
+        },
+        /**
+         * 列表去重
+         * @method uniq
+         * @param {Array} array 列表
+         * @return {Array} 处理后的列表
+         */
+        uniq: function (array) {
+            return [...new Set(array)]
+        },
+        style: `
+        #hld__keywords_panel {width:182px;}
+        #hld__keywords_panel .hld__list-c {width:100%;}
+        `
+
+    }
+
+
+
+
+
+
     /**
      * 初始化脚本
      */
