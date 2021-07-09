@@ -1726,6 +1726,18 @@
                     $(this).attr('hld__imglist', 'ready').removeAttr('onload')
                 }
             })
+
+            $el.find('button[name="collapseSwitchButton"]').each((index,element)=>{
+                element.addEventListener("click",()=>{
+                     $el.find('img').each((index,element)=>{
+                         const classs = $(element).attr('class')
+                         if (!classs || (classs && !classs.includes('smile'))) {
+                             $(element).attr('hld__imglist', 'ready').removeAttr('onload')
+                         }
+                     })
+                });
+            });
+            
             //图片增强
             if (script.setting.normal.imgEnhance) {
                 const _this = this
