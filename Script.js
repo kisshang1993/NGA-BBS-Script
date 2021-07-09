@@ -1794,6 +1794,7 @@
                 <div class="hld__if_control">
                 <div class="change prev-img" title="本楼内上一张"><div></div></div>
                 <div class="change rotate-right" title="逆时针旋转90°"><div></div></div>
+                <div class="change mflip" title="翻转°"><div></div></div>
                 <div class="change rotate-left" title="顺时针旋转90°"><div></div></div>
                 <div class="change next-img" title="本楼内下一张"><div></div></div>
                 </div>
@@ -1811,10 +1812,28 @@
 
                 if ($(this).hasClass('rotate-right') || $(this).hasClass('rotate-left')) {
                     let deg = ($img.data('rotate-deg') || 0) - ($(this).hasClass('rotate-right') ? 90 : -90)
+
+                    let flip = ($img.data('flip') || 1)
+
                     if (deg >= 360 || deg <= -360) deg = 0
-                    $img.css('transform', `rotate(${deg}deg)`)
+
+                    $img.css('transform', `rotate(${deg}deg) scaleX(${flip})`)
+
                     $img.data('rotate-deg', deg)
-                } else {
+                    $img.data('flip', flip)
+
+                }else if( $(this).hasClass('mflip') ){
+
+                    let deg = ($img.data('rotate-deg') || 0)
+
+                    let flip = ($img.data('flip') || 1) * -1
+
+                    $img.css('transform', `rotate(${deg}deg) scaleX(${flip})`)
+
+                    $img.data('rotate-deg', deg)
+                    $img.data('flip', flip)
+
+                }else {
                     $img.css('transform', '')
                     $img.data('rotate-deg', 0)
                 }
@@ -1890,9 +1909,12 @@
         #hld__img_full .hld__imgcenter {top:50%;left:50%;transform:translate(-50%,-50%);}
         #hld__img_full .change {width:40px;height:40px;cursor:pointer;}
         #hld__img_full .rotate-right,#hld__img_full .rotate-left {background:url(${IMG_ICON_REFRESH}) center no-repeat;background-size:25px;}
+        #hld__img_full .mflip {background:url(${IMG_ICON_REFRESH}) center no-repeat;background-size:25px;}
+        #hld__img_full .mflip {transform:rotateY(180deg);}
         #hld__img_full .rotate-right {transform:rotateY(180deg);}
         #hld__img_full .rotate-left:hover {transform:scale(1.2);}
         #hld__img_full .rotate-right:hover {transform:scale(1.2) rotateY(180deg);}
+        #hld__img_full .mflip:hover {transform:scale(1.2) rotateY(180deg);}
         #hld__img_full .next-img:hover {transform:scale(1.2) rotate(180deg);}
         #hld__img_full .prev-img,#hld__img_full .next-img {background:url(${IMG_ICON_LEFT}) center no-repeat;}
         #hld__img_full .next-img {transform:rotate(180deg);}
