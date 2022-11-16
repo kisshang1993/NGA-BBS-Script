@@ -1523,7 +1523,7 @@
         .hld__excel-body #m_posts .c0:before {content:counter(num);counter-increment:num;}
         .hld__excel-body #m_posts .vertmod {background:#fff !important;color:#ccc;}
         .hld__excel-body #m_posts a[name="uid"]:before {content:"UID:"}
-        .hld__excel-body #m_posts .white,.hld__excel-body #m_posts .block_txt_c2,.hld__excel-body #m_posts .block_txt_c0 {background:#fff !important;color:#777777;}
+        .hld__excel-body #m_posts .white,.hld__excel-body #m_posts .block_txt_c2,.hld__excel-body #m_posts .block_txt_c0 {color:#777777;}
         .hld__excel-body #m_posts .quote {background:#fff;border-color:#bbbbbb;}
         .hld__excel-body #m_posts button {background:#eee;}
         .hld__excel-body #m_posts .postbox {border:none !important;}
