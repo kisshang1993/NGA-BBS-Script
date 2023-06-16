@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      3.9.5
+// @version      4.0.0
 // @author       HLD
 // @description  NGA论坛显示优化，功能增强，防止突然蹦出一对??而导致的突然性的社会死亡
 // @license      MIT
@@ -660,7 +660,7 @@
         },
         style: `
         #hld__setting {color:#6666CC;cursor:pointer;}
-        #hld__setting_cover {display:none;justify-content:center;align-items:center;position:fixed;top:0;left:0;right:0;bottom:0;z-index:999;}
+        #hld__setting_cover {display:none;justify-content:center;align-items:center;position:absolute;top:0;left:0;right:0;bottom:0;z-index:999;}
         #hld__setting_panel {position:relative;background:#fff8e7;width:526px;padding:15px 20px;border-radius:10px;box-shadow:0 0 10px #666;border:1px solid #591804;}
         #hld__setting_panel > div.hld__field {float:left;width:50%;}
         #hld__setting_panel p {margin-bottom:10px;}
@@ -1110,7 +1110,10 @@
             menu: 'left'
         },
         renderFormsFunc: function ($el) {
-            script.setting.normal.hideAvatar && $el.find('.avatar, .avatar+img').css('display', 'none')
+            if (script.setting.normal.hideAvatar) {
+                $el.find('.avatar, .avatar+img').css('display', 'none')
+                $el.find('.c1').css('background-image', 'none')
+            }
         },
         shortcutFunc: {
             hideAvatar: function () {
@@ -1197,7 +1200,7 @@
         },
         asyncStyle: () => {
             return `
-            .hld__img-resize {outline:none !important;outline-offset:'';cursor:alias;min-width:auto !important;min-height:auto !important;max-width:${script.setting.advanced.imgResizeWidth || 200}px !important;margin:5px;}
+            .hld__img-resize {outline:none !important;outline-offset:'';cursor:alias;min-width:auto !important;min-height:auto !important;max-width:${script.setting.advanced.imgResizeWidth || 200}px !important;max-height:none !important;margin:5px;}
             `
         }
     }
@@ -1437,6 +1440,7 @@
         switchExcelMode: () => {
             $('body').toggleClass('hld__excel-body')
             !script.setting.advanced.excelNoMode && $('body').addClass('hld__excel-original-no')
+            script.setting.normal.darkMode && script.popMsg('Excel模式与暗黑模式不兼容, 请勿重合使用', 'warn')
         },
         style: `
         /* 默认风格(WPS) */
@@ -1484,7 +1488,7 @@
         .hld__excel-body .hld__excel-header, .hld__excel-body .hld__excel-footer {width: 100%;text-align: center;font-size: 16px;font-weight: bold;background:#e8e8e8;color:#337ab7;line-height: 45px;}
         .hld__excel-body .hld__excel-header>img, .hld__excel-body .hld__excel-footer>img{position:absolute;top:0;left:0}
         .hld__excel-body #m_nav {position:fixed;top:136px;left:261px;margin:0;padding:0;z-index:99;width: 9999px;}
-        .hld__excel-body #m_nav .nav_spr {display:block;border:0;border-radius:0;padding:0;box-shadow:none;background:none;}
+        .hld__excel-body #m_nav .nav_spr {display:block;border:0;border-radius:0;padding:0;box-shadow:none;background:none;margin-top: 20px;margin-left: 10px;}
         .hld__excel-body #m_nav .nav_spr span {color:#000;font-size:16px;vertical-align:unset;font-weight:normal;}
         .hld__excel-body #m_nav .nav_root,.hld__excel-body #m_nav .nav_link {background:none;border:none;box-shadow:none;padding:0;color:#000;border-radius:0;font-weight:normal;}
         .hld__excel-body .nav {font-size:14px !important;}
@@ -1518,13 +1522,16 @@
         .hld__excel-body #m_posts .comment_c .comment_c_1 {border-top-color:#bbbbbb;}
         .hld__excel-body #m_posts .comment_c .comment_c_2 {border-color:#bbbbbb;}
         .hld__excel-body #m_posts {border:0;box-shadow:none;padding-bottom:0;margin:0;counter-reset:num;}
-        .hld__excel-body #m_posts td {background:#fff;border-right:1px solid #bbbbbb;border-bottom:1px solid #bbbbbb;}
+        .hld__excel-body #m_posts td {background:#fff;border-right:1px solid #bbbbbb;border-bottom:1px solid #bbbbbb;border-top:1px solid #bbbbbb;}
         .hld__excel-body #m_posts .c0 {width:32px;color:#777;font-size:16px;background:#e8e8e8;text-align:center;}
         .hld__excel-body #m_posts .c0:before {content:counter(num);counter-increment:num;}
         .hld__excel-body #m_posts .vertmod {background:#fff !important;color:#ccc;}
         .hld__excel-body #m_posts a[name="uid"]:before {content:"UID:"}
         .hld__excel-body #m_posts .white,.hld__excel-body #m_posts .block_txt_c2,.hld__excel-body #m_posts .block_txt_c0 {background:#fff !important;color:#777777;}
         .hld__excel-body #m_posts .quote {background:#fff;border-color:#bbbbbb;}
+        .hld__excel-body #m_posts .postrow .postinfob .iconfont,.hld__excel-body #m_posts .ogoodbtn a:hover .iconfont {fill: #10273f;}
+        .hld__excel-body #m_posts .postInfo svg {fill:#10273f !important;}
+        .hld__excel-body #m_posts .recommendvalue {color:#10273f !important;}
         .hld__excel-body #m_posts button {background:#eee;}
         .hld__excel-body #m_posts .postbox {border:none !important;}
         .hld__excel-body .posterInfoLine {background: #FFF !important;border-bottom-color: #FFF !important;}
@@ -1922,7 +1929,7 @@
         renderFormsFunc: function ($el) {
             const _this = this
             if (script.setting.normal.authorMark) {
-                const author = $('#postauthor0').text().replace('[楼主]', '')
+                const author = $('#postauthor0').text().replace('楼主', '')
                 const tid = this.getQueryString('tid')
                 const authorStr = `${tid}:${author}`
                 if (author && !this.postAuthor.includes(authorStr)) {
@@ -1932,7 +1939,7 @@
                 $el.find('a.b').each(function () {
                     const name = $(this).attr('hld-mark-before-name') || $(this).text().replace('[', '').replace(']', '')
                     if (name && _this.postAuthor.includes(`${tid}:${name}`)) {
-                        $(this).append('<span class="hld__post-author">[楼主]</span>')
+                        $(this).append('<span class="hld__post-author">楼主</span>')
                     }
                 })
             }
@@ -1952,7 +1959,7 @@
         },
         asyncStyle: () => {
             return `
-            .hld__post-author {color:${script.setting.advanced.authorMarkColor || '#F00'};font-weight:bold;}
+            .hld__post-author {background:${script.setting.advanced.authorMarkColor || '#F00'};color: #FFF;display: inline-block;padding:0 5px;margin-left: 5px;border-radius: 5px;font-weight:bold;    line-height: 1.4em;padding-top: 0.1em;padding-bottom: 0;}
             `
         }
     }
@@ -1970,7 +1977,7 @@
             key: 'authorMarkColor',
             default: '#F00',
             title: '标记楼主颜色',
-            desc: '标记楼主中的[楼主]的颜色，单位为16进制颜色代码',
+            desc: '标记楼主中的[楼主]的背景颜色，单位为16进制颜色代码',
             menu: 'left'
         },
         // spectrum配置对象
@@ -2598,7 +2605,7 @@
                         currentName = $(this).parents('td').prev('td').find('.author').text()
                     }
                     currentName.endsWith('[楼主]') && (currentName = currentName.substr(0, currentName.length - 4))
-                    const mbDom = `<a class="hld__extra-icon" data-type="mark" title="标签此用户" data-name="${currentName}" data-uid="${currentUid}"><svg t="1578453291663" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="15334" width="32" height="32"><path d="M978.488889 494.933333l-335.644445 477.866667-415.288888 45.511111c-45.511111 5.688889-91.022222-28.444444-102.4-73.955555L22.755556 540.444444 358.4 56.888889C398.222222 0 477.866667-11.377778 529.066667 28.444444l420.977777 295.822223c56.888889 39.822222 68.266667 113.777778 28.444445 170.666666zM187.733333 927.288889c5.688889 11.377778 17.066667 22.755556 28.444445 22.755555l386.844444-39.822222 318.577778-455.111111c22.755556-22.755556 17.066667-56.888889-11.377778-73.955555L489.244444 85.333333c-22.755556-17.066667-56.888889-11.377778-79.644444 11.377778l-318.577778 455.111111 96.711111 375.466667z" fill="#3970fe" p-id="15335" data-spm-anchor-id="a313x.7781069.0.i43" class="selected"></path><path d="M574.577778 745.244444c-56.888889 85.333333-176.355556 108.088889-261.688889 45.511112-85.333333-56.888889-108.088889-176.355556-45.511111-261.688889s176.355556-108.088889 261.688889-45.511111c85.333333 56.888889 102.4 176.355556 45.511111 261.688888z m-56.888889-39.822222c39.822222-56.888889 22.755556-130.844444-28.444445-170.666666s-130.844444-22.755556-170.666666 28.444444c-39.822222 56.888889-22.755556 130.844444 28.444444 170.666667s130.844444 22.755556 170.666667-28.444445z" fill="#3970fe" p-id="15336" data-spm-anchor-id="a313x.7781069.0.i44" class="selected"></path></svg></a><a class="hld__extra-icon" title="拉黑此用户(屏蔽所有言论)" data-type="ban"  data-name="${currentName}" data-uid="${currentUid}"><svg t="1578452808565" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="9668" data-spm-anchor-id="a313x.7781069.0.i27" width="32" height="32"><path d="M512 1024A512 512 0 1 1 512 0a512 512 0 0 1 0 1024z m0-146.285714A365.714286 365.714286 0 1 0 512 146.285714a365.714286 365.714286 0 0 0 0 731.428572z" fill="#a20106" p-id="9669" data-spm-anchor-id="a313x.7781069.0.i28" class="selected"></path><path d="M828.708571 329.142857l-633.417142 365.714286 633.417142-365.714286z m63.341715-36.571428a73.142857 73.142857 0 0 1-26.770286 99.913142l-633.417143 365.714286a73.142857 73.142857 0 0 1-73.142857-126.683428l633.417143-365.714286A73.142857 73.142857 0 0 1 892.050286 292.571429z" fill="#a20106" p-id="9670" data-spm-anchor-id="a313x.7781069.0.i31" class="selected"></path></svg></a>`
+                    const mbDom = `<a class="hld__extra-icon" data-type="mark" title="标签此用户" data-name="${currentName}" data-uid="${currentUid}"><svg t="1686732786072" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2385" width="200" height="200"><path d="M900.64 379.808l-263.072-256.032c-36.448-35.328-105.76-35.392-142.304 0.096l-327.04 319.904c-56.416 54.72-70.72 76.704-70.72 150.976l0 143.936c0 132.768 26.976 192 186.912 192l131.872 0c81.12 0 128.448-46.656 193.952-111.264l290.016-297.696c18.592-17.984 29.248-43.968 29.248-71.264C929.504 423.36 918.976 397.6 900.64 379.808zM323.008 786.752c-52.928 0-96-43.072-96-96s43.072-96 96-96 96 43.072 96 96S375.936 786.752 323.008 786.752z" fill="#3970fe" p-id="2386" data-spm-anchor-id="a313x.7781069.0.i0" class="selected"></path></svg></a><a class="hld__extra-icon" title="拉黑此用户(屏蔽所有言论)" data-type="ban"  data-name="${currentName}" data-uid="${currentUid}"><svg t="1686733137783" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="12682" width="200" height="200"><path d="M512 0a512 512 0 1 0 0 1024 512 512 0 0 0 0-1024zM204.8 409.6h614.4v204.8H204.8V409.6z" fill="#d00309" p-id="12683" data-spm-anchor-id="a313x.7781069.0.i10" class="selected"></path></svg></a>`
                     script.setting.advanced.autoHideBanIcon ? $(this).after(`<span class="hld__extra-icon-box">${mbDom}</span>`) : $(this).append(mbDom)
                 })
                 // 标记DOm
@@ -2738,7 +2745,17 @@
         reloadBanlist: function () {
             const _this = this
             $('#hld__banlist').empty()
-            _this.banList.forEach((item, index) => $('#hld__banlist').append(`<tr><td title="${item.name}">${item.name}</td><td title="${item.uid}">${item.uid}</td><td><span class="hld__us-action hld__us-del hld__bl-del" title="删除" data-index="${index}" data-name="${item.name}" data-uid="${item.uid}"></span></td></tr>`))
+            _this.banList.forEach((item, index) => $('#hld__banlist').append(`
+                <tr>
+                    <td title="${item.name}">${item.name}</td>
+                    <td title="${item.uid}">${item.uid}</td>
+                    <td>
+                        <span class="hld__us-action hld__us-del hld__bl-del" title="删除" data-index="${index}" data-name="${item.name}" data-uid="${item.uid}">
+                            <svg t="1686881304570" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2976" width="48" height="48"><path d="M341.312 85.312l64-85.312h213.376l64 85.312H960v85.376H64V85.312h277.312zM170.688 256h682.624v768H170.688V256zM256 341.312v597.376h512V341.312H256z m213.312 85.376v426.624H384V426.688h85.312z m170.688 0v426.624H554.688V426.688H640z" fill="#111111" p-id="2977"></path></svg>
+                        </span>
+                    </td>
+                </tr>
+            `))
             $('#hld__ban_list_textarea').val(JSON.stringify(_this.banList))
         },
         /**
@@ -2749,7 +2766,21 @@
             const _this = this
             $('#hld__marklist').empty()
             _this.markList.forEach((user_mark, index) => {
-                $('#hld__marklist').append(`<tr><td title="${user_mark.name}">${user_mark.name}</td><td title="${user_mark.uid}">${user_mark.uid}</td><td title="${user_mark.marks.length}">${user_mark.marks.length}</td><td><span class="hld__us-action hld__us-edit hld__ml-edit" title="编辑" data-index="${index}" data-name="${user_mark.name}" data-uid="${user_mark.uid}"></span><span class="hld__us-action hld__us-del hld__ml-del" title="删除" data-index="${index}" data-name="${user_mark.name}" data-uid="${user_mark.uid}"></span></td></tr>`)
+                $('#hld__marklist').append(`
+                    <tr>
+                        <td title="${user_mark.name}">${user_mark.name}</td>
+                        <td title="${user_mark.uid}">${user_mark.uid}</td>
+                        <td title="${user_mark.marks.length}">${user_mark.marks.length}</td>
+                        <td>
+                            <span class="hld__us-action hld__us-edit hld__ml-edit" title="编辑" data-index="${index}" data-name="${user_mark.name}" data-uid="${user_mark.uid}">
+                                <svg t="1686881523486" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="4234" width="48" height="48"><path d="M652.4 156.6125a112.5 112.5 0 1 1 155.925 161.15625L731.375 394.71875 572.3 235.5875l79.5375-79.5375 0.5625 0.5625zM333.63125 792.40625v0.1125H174.5v-159.1875l358.03125-357.975 159.075 159.13125-357.975 357.91875zM62 849.5h900v112.5H62v-112.5z" fill="#111111" p-id="4235"></path></svg>
+                            </span>
+                            <span class="hld__us-action hld__us-del hld__ml-del" title="删除" data-index="${index}" data-name="${user_mark.name}" data-uid="${user_mark.uid}">
+                                <svg t="1686881304570" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2976" width="48" height="48"><path d="M341.312 85.312l64-85.312h213.376l64 85.312H960v85.376H64V85.312h277.312zM170.688 256h682.624v768H170.688V256zM256 341.312v597.376h512V341.312H256z m213.312 85.376v426.624H384V426.688h85.312z m170.688 0v426.624H554.688V426.688H640z" fill="#111111" p-id="2977"></path></svg>
+                            </span>
+                        </td>
+                    </tr>
+                `)
             })
             $('#hld__mark_list_textarea').val(JSON.stringify(_this.markList))
         },
@@ -2888,8 +2919,8 @@
         #hld__keywords_panel {width:182px;}
         .hld__extra-icon-box {padding: 5px 5px 5px 0;opacity: 0;transition: all ease .2s;}
         .hld__extra-icon-box:hover {opacity: 1;}
-        .hld__extra-icon {position: relative;padding:0 2px;background-repeat:no-repeat;background-position:center;}
-        .hld__extra-icon svg {width:10px;height:10px;vertical-align:-0.15em;fill:currentColor;overflow:hidden;cursor:pointer;}
+        .hld__extra-icon {position: relative;padding:0 4px;background-repeat:no-repeat;background-position:center;}
+        .hld__extra-icon svg {width:1em;height:1em;vertical-align:-0.15em;fill:currentColor;overflow:hidden;cursor:pointer;}
         .hld__extra-icon:hover {text-decoration:none;}
         span.hld__remark {color:#666;font-size:0.8em;}
         span.hld__banned {color:#ba2026;}
@@ -2924,9 +2955,8 @@
         .hld__scroll-area::-webkit-scrollbar-track{box-shadow:inset 0 0 5px rgba(0,0,0,.2);border-radius:10px;background:#ededed}
         .hld__table td,.hld__table th{padding:3px 5px;border-bottom:1px solid #ead5bc;border-right:1px solid #ead5bc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
         .hld__us-action{display: inline-block;width:18px;height:18px;margin:0 3px;}
+        .hld__us-action svg{width:100%;height:100%;}
         .hld__us-action:hover{opacity:.8}
-        .hld__us-edit{background-size:20px;background-image:url("${SVG_ICON_EDIT}")}
-        .hld__us-del{background-image:url("${SVG_ICON_DEL}")}
         `
     }
     /**
@@ -2992,6 +3022,86 @@
         }
     }
     /**
+     * 暗黑模式
+     * @name darkMode
+     * @description 此模块提供了暗黑主题(仿Github Dark efault Theme)
+     */
+    const darkMode = {
+        name: 'darkMode',
+        setting: {
+            type: 'normal',
+            key: 'darkMode',
+            default: false,
+            title: '暗黑模式',
+            desc: 'NGA自带的界面色调会与此功能有一定冲突\n使用前请先将NGA的界面色调设置为默认',
+            menu: 'left'
+        },
+        mainColor: '#0c1117', // 主背景颜色
+        minorColor: '#141b22', // 次要背景颜色
+        textColor: '#e6edf3', // 文字颜色
+        muteColor: '#7d8590', // 次要文字颜色
+        linkColor: '#2f81f7', // 主链接颜色
+        buttonColor: '#1f262d', // 按钮颜色
+        buttonHoverColor: '#2e363d', // 按钮停留颜色
+        borderColor: '#21262d', // 边框颜色
+        initFunc: function () {
+            script.setting.normal.darkMode && $('body').removeClass('hld__eye-care').addClass('hld__dark-mode')
+        },
+        asyncStyle: function () {
+            return `
+            body.hld__dark-mode, .hld__dark-mode #msg_block_c .menu a, #msg_block_c .pager a, .hld__dark-mode .nav_link, .hld__dark-mode button.hld__btn:hover {color: ${this.textColor} !important;}
+            .hld__dark-mode #m_threads a, .hld__dark-mode .forumbox h2, .hld__dark-mode .forumbox h1, .hld__dark-mode textarea, .hld__dark-mode select, .hld__dark-mode input,
+            .hld__dark-mode .catetitle {color:${this.textColor} !important;}
+            .hld__dark-mode #m_threads a:hover {background-color:${this.buttonHoverColor} !important;}
+            .hld__dark-mode svg, .hld__dark-mode svg path {fill:${this.textColor} !important;}
+            .hld__dark-mode a, .hld__dark-mode .uitxt1, .hld__dark-mode #hld__setting_panel .hld__sp-title a, .hld__dark-mode .author, .hld__dark-mode #m_post .author .block_txt, .hld__dark-mode #m_posts .urlincontent,
+            .hld__dark-mode .cell.rep, .hld__dark-mode .uitxt1 {color:${this.linkColor} !important;}
+            .hld__dark-mode #hld__setting_panel, .hld__dark-mode .hld__list-panel, .hld__dark-mode .single_ttip2 {border-color:${this.borderColor};box-shadow:0 8px 24px #010409;}
+            .hld__dark-mode #mainmenu .stdbtn a:hover {border-bottom:4px solid ${this.linkColor} !important;}
+            .hld__dark-mode #m_threads .block_txt_c0, .hld__dark-mode .block_txt_c0 .iconfont, .hld__dark-mode .nav_root {background-color:${this.buttonColor} !important;}
+            .hld__dark-mode .invert {color:${this.linkColor} !important;background-color:${this.minorColor} !important;}
+            .hld__dark-mode .hld__scroll-area::-webkit-scrollbar-thumb {background:#9f9f9f !important;}
+            .hld__dark-mode .innerbg, .hld__dark-mode .innerbg .mmdefault, .hld__dark-mode #usernamebg,
+            .hld__dark-mode .hld__table thead {background-color:${this.minorColor} !important;color:${this.textColor} !important;}
+            .hld__dark-mode .hld__tab-header > span.hld__table-active, .hld__dark-mode .hld__tab-header > span:hover {color:${this.linkColor} !important;border-color:${this.linkColor} !important;}
+            .hld__dark-mode .hld__dialog-sub-top:before, .hld__dark-mode .nav_root_c {background-color:${this.mainColor} !important;border-color:${this.borderColor} !important;}
+            .hld__dark-mode body, .hld__dark-mode .stdbtn, .hld__dark-mode .forumbox .topicrow .c3 > div:first-child, .hld__dark-mode .forumbox .topicrow .c4  > div:first-child,
+            .hld__dark-mode .nav_link, .hld__dark-mode .nav_spr, .hld__dark-mode .row2c1, .hld__dark-mode .row1c1, .hld__dark-mode .uitxt1, .hld__dark-mode .nav_link,
+            .hld__dark-mode .c1, .hld__dark-mode .c2, .hld__dark-mode .c3, .hld__dark-mode .c4, .hld__dark-mode .catenew, .hld__dark-mode .stdbtn a, .hld__dark-mode .block_txt,
+            .hld__dark-mode .cateblock, .hld__dark-mode .forumbox, .hld__dark-mode .quote, .hld__dark-mode textarea, .hld__dark-mode select, .hld__dark-mode input,
+            .hld__dark-mode #m_posts .white, .hld__dark-mode #m_posts .block_txt_c2, .hld__dark-mode .block_txt_c3, .hld__dark-mode .hld__docker-sidebar,
+            .hld__dark-mode .hld__docker-btns > div, .hld__dark-mode .forumbox th, .hld__dark-mode .contentBlock, .hld__dark-mode .catenew .b2, .hld__dark-mode .catenew .b3,
+            .hld__dark-mode .catenew h2, .hld__dark-mode .catenew div, .hld__dark-mode .topicrow .c2 > span:first-child, .hld__dark-mode .urltip.nobr, .hld__dark-mode #m_posts .small_colored_text_btn,
+            .hld__dark-mode #hld__setting_panel, .hld__dark-mode .hld__list-panel, .hld__dark-mode .single_ttip2 .tip_title, .hld__dark-mode .single_ttip2 .div2, .hld__dark-mode #startmenu .recent,
+            .hld__dark-mode .postBtnPos > div, .hld__dark-mode .postBtnPos .stdbtn a, .hld__dark-mode .postbtnsc td, .hld__dark-mode #mc > div:not(.module_wrap):not(#mainmenu), .hld__dark-mode #m_nav > div:not(.nav),
+            .hld__dark-mode {background-color: ${this.mainColor} !important;}
+            .hld__dark-mode .nav_root, .hld__dark-mode .nav_link, .hld__dark-mode .nav_spr, .hld__dark-mode .stdbtn, .hld__dark-mode .quote, .hld__dark-mode textarea,
+            .hld__dark-mode select, .hld__dark-mode input, .hld__dark-mode .block_txt_c2, .hld__dark-mode .block_txt_c3, .hld__dark-mode .hld__docker-btns>div,
+            .hld__dark-mode .r_container, .hld__dark-mode .forumbox .postrow .stat {border:1px solid ${this.borderColor} !important;}
+            .hld__dark-mode .b .block_txt, .hld__dark-mode .block_txt.block_txt_c0 {color: ${this.linkColor} !important;padding:0 !important;}
+            .hld__dark-mode .forumbox.postbox {border-bottom: 2px solid  ${this.borderColor} !important;border: none !important;}
+            .hld__dark-mode .r_bar {background-color:  ${this.borderColor};}
+            .hld__dark-mode .nav_root, .hld__dark-mode .invert, .hld__dark-mode #mainmenu .stdbtn .half, .hld__dark-mode .catenew .invert .uitxt1, .hld__dark-mode .catenew .invert .uitxt3,
+            .hld__dark-mode .single_ttip2 .tip_title, .hld__dark-mode #startmenu .item > a {color:${this.textColor} !important;}
+            .hld__dark-mode:not(.hld__excel-body) #mainmenu {border-bottom: 1px solid  ${this.borderColor} !important;}
+            .hld__dark-mode #m_posts, .hld__dark-mode #toptopics, .hld__dark-mode #topicrows, .hld__dark-mode #mc > div:not(.module_wrap):not(#mainmenu),
+            .hld__dark-mode #msg_block_c .subblock {box-shadow:none;border-color:  ${this.borderColor} !important;}
+            .hld__dark-mode .stdbtn a, .hld__dark-mode .hld__advanced-setting, .hld__dark-mode .hld__docker-sidebar {border-color:  ${this.borderColor};}
+            .hld__dark-mode .block_txt.block_txt_c3 {border:none !important;}
+            .hld__dark-mode button, .hld__dark-mode .hld__setting-close, .hld__dark-mode .colored_text_btn, .hld__dark-mode .rep.block_txt_big,
+            .hld__dark-mode #main a {border: 1px solid ${this.borderColor} !important;background: ${this.buttonColor} !important;color:#c9d1d9 !important;box-shadow:none !important;}
+            .hld__dark-mode button:hover {background:${this.buttonHoverColor} !important;}
+            .hld__dark-mode button:active {outline:none !important;}
+            .hld__dark-mode #toppedtopic table, .hld__dark-mode .single_ttip2 .tip_title, .hld__dark-mode .collapse_btn {border-color:  ${this.borderColor} !important;}
+            .hld__dark-mode .apd {color: ${this.borderColor} !important;}
+            .hld__dark-mode .forumbox td:not(.c0) {border-color:  ${this.borderColor} !important;border-bottom: 1px solid  ${this.borderColor};border-right: 1px solid  ${this.borderColor};}
+            .hld__dark-mode .c4 {border-right:none !important;}
+            .hld__dark-mode #m_threads .replyer, .hld__dark-mode #m_threads .replyer > b, .hld__dark-mode .small_colored_text_btn, .hld__dark-mode .forumbox .postrow .stat,
+            .hld__dark-mode #m_posts .postrow .userval, .hld__dark-mode #m_nav .bbsinfo, .hld__dark-mode .catenew p {color:${this.muteColor} !important;}
+            `
+        }
+    }
+    /**
      * 字体大小调整
      * @name fontResize
      * @description 此模块提供了调整字体大小的功能
@@ -3003,7 +3113,7 @@
             key: 'fontResize',
             default: 12,
             title: '字体大小调整',
-            desc: '字体大小调整，单位为像素(px)，初始值是12',
+            desc: '字体大小调整，单位为像素(px)，初始值是12，注意：此值调整过大会导致页面混乱',
             menu: 'left'
         },
         initFunc: function () {
@@ -3145,6 +3255,7 @@
     script.addModule(keywordsBlock)
     script.addModule(markAndBan)
     script.addModule(eyeCareMode)
+    script.addModule(darkMode)
     script.addModule(fontResize)
     script.addModule(extraDocker)
     /**
