@@ -3,11 +3,11 @@
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
 // @version      4.0.0
 // @author       HLD
-// @description  NGA论坛显示优化，功能增强，防止突然蹦出一对??而导致的突然性的社会死亡
+// @description  NGA论坛显示优化，全面功能增强，优雅的摸鱼
 // @license      MIT
 // @require      https://cdn.staticfile.org/jquery/3.4.0/jquery.min.js
 // @require      https://cdn.staticfile.org/spectrum/1.8.0/spectrum.js
-// @require      https://greasyfork.org/scripts/424901-nga-script-resource/code/NGA-Script-Resource.js?version=926265
+// @require https://greasyfork.org/scripts/424901-nga-script-resource/code/NGA-Script-Resource.js?version=1210513
 // @icon         https://i.loli.net/2021/04/07/8x3yFj2pWEKluSY.png
 // @match        *://bbs.nga.cn/*
 // @match        *://ngabbs.com/*
@@ -476,7 +476,7 @@
         .hld__btn-groups {display:flex;justify-content:center !important;margin-top:10px;}
         button.hld__btn {padding:3px 8px;border:1px solid #591804;background:#fff8e7;color:#591804;}
         button.hld__btn:hover {background:#591804;color:#fff0cd;}
-        #hld__updated {position:fixed;top:20px;right:20px;width:200px;padding:10px;border-radius:5px;box-shadow:0 0 15px #666;border:1px solid #591804;background:#fff8e7;z-index: 9999;}
+        #hld__updated {position:fixed;top:20px;right:20px;width:230px;padding:10px;border-radius:5px;box-shadow:0 0 15px #666;border:1px solid #591804;background:#fff8e7;z-index: 9999;}
         #hld__updated .hld__readme {text-decoration:underline;color:#591804;}
         .hld__script-info {margin-left:4px;font-size:70%;color:#666;}
         `
@@ -648,7 +648,7 @@
             if($('.hld__setting-box').length == 0) {
                 $('#startmenu > tbody > tr > td.last').append('<div><div class="item hld__setting-box"></div></div>')
                 let $entry = $('<a id="hld__setting" title="打开NGA优化摸鱼插件设置面板">NGA优化摸鱼插件设置</a>')
-                $entry.click(()=>$('#hld__setting_cover').css('display', 'flex'))
+                $entry.click(()=>$('#hld__setting_cover').css('display', 'block'))
                 $('#hld__setting_close').click(()=>$('#hld__setting_cover').fadeOut(200))
                 $('.hld__setting-box').append($entry)
             }
@@ -660,8 +660,8 @@
         },
         style: `
         #hld__setting {color:#6666CC;cursor:pointer;}
-        #hld__setting_cover {display:none;justify-content:center;align-items:center;position:absolute;top:0;left:0;right:0;bottom:0;z-index:999;}
-        #hld__setting_panel {position:relative;background:#fff8e7;width:526px;padding:15px 20px;border-radius:10px;box-shadow:0 0 10px #666;border:1px solid #591804;}
+        #hld__setting_cover {display:none;padding-top: 70px;position:absolute;top:0;left:0;right:0;bottom:0;z-index:999;}
+        #hld__setting_panel {position:relative;background:#fff8e7;width:526px;left: 50%;margin-left: -263px;padding:15px 20px;border-radius:10px;box-shadow:0 0 10px #666;border:1px solid #591804;}
         #hld__setting_panel > div.hld__field {float:left;width:50%;}
         #hld__setting_panel p {margin-bottom:10px;}
         #hld__setting_panel .hld__sp-title {font-size:15px;font-weight:bold;text-align:center;}
@@ -1335,6 +1335,9 @@
             key: 'excelTheme',
             default: 'wps',
             options: [{
+                label: '腾讯文档',
+                value: 'tencent'
+            }, {
                 label: 'WPS',
                 value: 'wps'
             }, {
@@ -1342,7 +1345,7 @@
                 value: 'office'
             }],
             title: 'Excel皮肤',
-            desc: 'Excel的皮肤',
+            desc: 'Excel的皮肤\n腾云文档是矢量图形绘制，适应各种分辨率，不会失真，推荐优先使用\nWPS与Office为图片拼接而成，分辨率为1080P，高于此分辨率可能会失真',
             menu: 'left'
         }, {
             type: 'advanced',
@@ -1362,42 +1365,143 @@
                 Array('', 'A', 'B', 'C').forEach(n => capital.forEach(c => columnLetters.push(`${n}${c}`)))
                 return columnLetters
             }
-            // 插入Excel头部
-            $('body').append(`
+            if (script.setting.advanced.excelTheme == 'tencent') {
+                // 腾讯文档元素
+                // 插入Excel头部
+                $('body').append(`
                 <div class="hld__excel-div hld__excel-header">
-                    <div class="hld__excel-h1">
-                        <div class="hld__excel-title">${script.setting.advanced.excelTitle || document.title} - Excel</div>
-                        <img class="hld__excel-img-h1-l1" src="${getExcelTheme(script.setting.advanced.excelTheme, 'H_L_1')}">
-                        <img class="hld__excel-img-h1-r1" src="${getExcelTheme(script.setting.advanced.excelTheme, 'H_R_1')}">
+                    <div class="hld__excel-titlebar">
+                        <div class="hld__excel-titlebar-content hld__excel-icon24" style="margin:2px 2px 2px 10px;background-image:url(${getExcelTheme(script.setting.advanced.excelTheme, 'icon_1')});"></div>
+                        <div class="hld__excel-titlebar-content hld__excel-icon12" style="background-image:url(${getExcelTheme(script.setting.advanced.excelTheme, 'icon_2')});"></div>
+                        <div style="height: 24px;border-right: 1px solid rgb(0, 0, 0);opacity: 0.06;margin: 0 12px;vertical-align: middle;"></div>
+                        <div class="hld__excel-titlebar-title"></div>
+                        <div class="hld__excel-titlebar-content hld__excel-icon16" style="margin-left: 10px;background-image:url(${getExcelTheme(script.setting.advanced.excelTheme, 'icon_3')});"></div>
+                        <div class="hld__excel-titlebar-content hld__excel-icon16" style="margin-left: 12px;background-image:url(${getExcelTheme(script.setting.advanced.excelTheme, 'icon_4')});"></div>
+                        <div class="hld__excel-titlebar-content hld__excel-icon16" style="margin-left: 10px;background-image:url(${getExcelTheme(script.setting.advanced.excelTheme, 'icon_5')});"></div>
+                        <div style="margin-left: 5px;font-size: 12px;line-height: 20px;height: 18px;;color: #000;opacity: 0.48;font-weight:400;">上次修改是在2小时前进行的</div>
+                        <div style="flex-grow: 1;"></div>
+                        ${Array.from({length: 4}, (_, i) => '<div class="hld__excel-titlebar-content hld__excel-icon24" style="margin:0 8px;background-image:url(' + getExcelTheme(script.setting.advanced.excelTheme, "icon_"+(6+i)) + ');"></div>').join('')}
+                        <div style="border-radius: 4px;background:#1e6fff;color:#fff;width: 56px;text-align: center;height: 28px;line-height: 28px;font-size: 12px;font-weight: 500;margin: 0 8px;">分享</div>
+                        <div style="height: 24px;border-right: 1px solid rgb(0, 0, 0);opacity: 0.06;margin: 0 12px;vertical-align: middle;"></div>
+                        <div style="width:28px;height:28px;border-radius: 4px;background: #e9e9e9;text-align: center;line-height: 32px;">🐟︎</div>
                     </div>
-                    <div class="hld__excel-h2">
-                        <img class="hld__excel-img-h2-l1" src="${getExcelTheme(script.setting.advanced.excelTheme, 'H_L_2')}">
-                        <img class="hld__excel-img-h2-r1" src="${getExcelTheme(script.setting.advanced.excelTheme, 'H_R_2')}">
+                    <div class="hld__excel-toolbar">
+                        ${Array.from({length: 4}, (_, i) => '<div class="hld__excel-titlebar-content hld__excel-icon20" style="margin:0 6px;background-image:url(' + getExcelTheme(script.setting.advanced.excelTheme, "icon_"+(10+i)) + ');"></div>').join('')}
+                        <div style="height: 16px;border-right: 1px solid rgb(0, 0, 0);opacity: 0.06;margin: 0 4px;vertical-align: middle;"></div>
+                        <div class="hld__excel-titlebar-content hld__excel-icon20" style="margin-left: 8px;background-image:url(${getExcelTheme(script.setting.advanced.excelTheme, 'icon_14')});"></div>
+                        <div style="padding: 0 2px;">插入</div>
+                        <div class="hld__excel-titlebar-content hld__excel-icon12" style="background-image:url(${getExcelTheme(script.setting.advanced.excelTheme, 'icon_2')});"></div>
+                        <div style="height: 16px;border-right: 1px solid rgb(0, 0, 0);opacity: 0.06;margin: 0 8px;vertical-align: middle;"></div>
+                        <div style="padding: 0 30px 0 4px;">常规</div>
+                        <div class="hld__excel-titlebar-content hld__excel-icon12" style="background-image:url(${getExcelTheme(script.setting.advanced.excelTheme, 'icon_2')});"></div>
+                        <div class="hld__excel-titlebar-content hld__excel-icon20" style="margin-left: 12px;background-image:url(${getExcelTheme(script.setting.advanced.excelTheme, 'icon_15')});"></div>
+                        <div style="margin-left: 1px;">
+                            <div class="hld__excel-titlebar-content hld__excel-icon12" style="transform: rotate(180deg);background-image:url(${getExcelTheme(script.setting.advanced.excelTheme, 'icon_2')});"></div>
+                            <div class="hld__excel-titlebar-content hld__excel-icon12" style="background-image:url(${getExcelTheme(script.setting.advanced.excelTheme, 'icon_2')});"></div>
+                        </div>
+                        <div style="height: 16px;border-right: 1px solid #000;opacity: 0.06;margin: 0 4px;vertical-align: middle;"></div>
+                        <div style="padding: 0 4px 0 16px;">默认字体</div>
+                        <div class="hld__excel-titlebar-content hld__excel-icon12" style="background-image:url(${getExcelTheme(script.setting.advanced.excelTheme, 'icon_2')});"></div>
+                        <div style="padding: 0 4px 0 13px;">10</div>
+                        <div class="hld__excel-titlebar-content hld__excel-icon12" style="background-image:url(${getExcelTheme(script.setting.advanced.excelTheme, 'icon_2')});"></div>
+                        <div class="hld__excel-titlebar-content hld__excel-icon20" style="margin-left: 10px;background-image:url(${getExcelTheme(script.setting.advanced.excelTheme, 'icon_16')});"></div>
+                        <div class="hld__excel-titlebar-pick">
+                            <div class="hld__excel-titlebar-content hld__excel-icon20" style="background-image:url(${getExcelTheme(script.setting.advanced.excelTheme, 'icon_17')});"></div>
+                            <div class="hld__excel-titlebar-indication" style="background-color: #000;"></div>
+                        </div>
+                        <div class="hld__excel-titlebar-content hld__excel-icon12" style="margin-left: 4px;background-image:url(${getExcelTheme(script.setting.advanced.excelTheme, 'icon_2')});"></div>
+                        <div class="hld__excel-titlebar-pick">
+                            <div class="hld__excel-titlebar-content hld__excel-icon20" style="background-image:url(${getExcelTheme(script.setting.advanced.excelTheme, 'icon_18')});"></div>
+                            <div class="hld__excel-titlebar-indication" style="background-color: #8cddfa;"></div>
+                        </div>
+                        <div class="hld__excel-titlebar-content hld__excel-icon12" style="margin-left: 4px;background-image:url(${getExcelTheme(script.setting.advanced.excelTheme, 'icon_2')});"></div>
+                        <div class="hld__excel-titlebar-content hld__excel-icon20" style="margin-left: 10px;background-image:url(${getExcelTheme(script.setting.advanced.excelTheme, 'icon_19')});"></div>
+                        <div class="hld__excel-titlebar-content hld__excel-icon12" style="margin-left: 2px;background-image:url(${getExcelTheme(script.setting.advanced.excelTheme, 'icon_2')});"></div>
+                        <div class="hld__excel-titlebar-content hld__excel-icon20" style="margin-left: 10px;background-image:url(${getExcelTheme(script.setting.advanced.excelTheme, 'icon_20')});"></div>
+                        <div style="height: 16px;border-right: 1px solid #000;opacity: 0.06;margin: 0 10px;vertical-align: middle;"></div>
+                        ${Array.from({length: 4}, (_, i) => '<div class="hld__excel-titlebar-content hld__excel-icon20" style="background-image:url(' + getExcelTheme(script.setting.advanced.excelTheme, "icon_"+(21+i)) + ');"></div><div class="hld__excel-titlebar-content hld__excel-icon12" style="margin-left: 2px;margin-right: '+ (i==3?'0':'10') +'px;background-image:url(' + getExcelTheme(script.setting.advanced.excelTheme, "icon_2") + ');"></div>').join('')}
+                        <div style="height: 16px;border-right: 1px solid #000;opacity: 0.06;margin: 0 10px;vertical-align: middle;"></div>
+                        <div class="hld__excel-titlebar-content hld__excel-icon20" style="background-image:url(${getExcelTheme(script.setting.advanced.excelTheme, 'icon_25')});"></div>
+                        <div class="hld__excel-titlebar-content hld__excel-icon12" style="margin-left: 4px;background-image:url(${getExcelTheme(script.setting.advanced.excelTheme, 'icon_2')});"></div>
+                        <div style="height: 16px;border-right: 1px solid #000;opacity: 0.06;margin: 0 10px;vertical-align: middle;"></div>
+                        ${Array.from({length: 4}, (_, i) => '<div class="hld__excel-titlebar-content hld__excel-icon20" style="background-image:url(' + getExcelTheme(script.setting.advanced.excelTheme, "icon_"+(26+i)) + ');"></div><div class="hld__excel-titlebar-content hld__excel-icon12" style="margin-left: 2px;margin-right: '+ (i==3?'0':'10') +'px;background-image:url(' + getExcelTheme(script.setting.advanced.excelTheme, "icon_2") + ');"></div>').join('')}
+                        <div style="height: 16px;border-right: 1px solid #000;opacity: 0.06;margin: 0 10px;vertical-align: middle;"></div>
+                        <div class="hld__excel-titlebar-content hld__excel-icon20" style="margin-left: 10px;background-image:url(${getExcelTheme(script.setting.advanced.excelTheme, 'icon_20')});"></div>
+                        <div style="flex-grow: 1;"></div>
+                        ${Array.from({length: 3}, (_, i) => '<div class="hld__excel-titlebar-content hld__excel-icon20" style="'+ (i==2?'transform: rotate(180deg);':'') +'margin:0 6px;background-image:url(' + getExcelTheme(script.setting.advanced.excelTheme, "icon_"+(30+i)) + ');"></div>').join('')}
                     </div>
-                    <div class="hld__excel-h3">
-                        <img class="hld__excel-img-h3-l1" src="${getExcelTheme(script.setting.advanced.excelTheme, 'H_L_3')}">
-                        <img class="hld__excel-img-h3-r1" src="${getExcelTheme(script.setting.advanced.excelTheme, 'H_R_3')}">
-                        <div class="hld__excel-fx"></div>
+                    <div class="hld__excel-formulabar">
+                        <div style="border-right: 1px solid #e0e2e4;color: #777;text-align: center;width: 50px;font-size: 12px;height: 25px;line-height: 25px;font-weight:400;">A1</div>
                     </div>
                     <div class="hld__excel-h4">
                         <div class="hld__excel-sub"><div></div></div>
                         ${(columnLetters().map(c => '<div class="hld__excel-column">'+c+'</div>')).join('')}
                     </div>
                 </div>
-            `)
-            // 插入Excel尾部
-            $('body').append(`
-                <div class="hld__excel-div hld__excel-footer">
-                    <div class="hld__excel-f1">
-                        <img class="hld__excel-img-f1-l1" src="${getExcelTheme(script.setting.advanced.excelTheme, 'F_L_1')}">
-                        <img class="hld__excel-img-f1-r1" src="${getExcelTheme(script.setting.advanced.excelTheme, 'F_R_1')}">
+                `)
+                // 插入Excel尾部
+                $('body').append(`
+                    <div class="hld__excel-div hld__excel-footer">
+                        <div class="hld__excel-icon24" style="margin-left: 10px;background-image:url(${getExcelTheme(script.setting.advanced.excelTheme, 'icon_33')});"></div>
+                        <div class="hld__excel-icon24" style="margin-left: 10px;background-image:url(${getExcelTheme(script.setting.advanced.excelTheme, 'icon_34')});"></div>
+                        <div class="hld__excel-sheet-tab">
+                            <div class="hld__excel-sheet-name">
+                                <div>工作表1</div>
+                                <div class="hld__excel-icon12" style="margin-left: 4px;background-image:url(${getExcelTheme(script.setting.advanced.excelTheme, 'icon_2')});"></div>
+                            </div>
+                            <div class="hld__excel-sheet-underblock"></div>
+                        </div>
+                        <div style="flex-grow: 1;"></div>
+                        <div class="hld__excel-icon24" style="margin-left: 10px;background-image:url(${getExcelTheme(script.setting.advanced.excelTheme, 'icon_35')});"></div>
+                        <div class="hld__excel-icon12" style="margin-left: 2px;background-image:url(${getExcelTheme(script.setting.advanced.excelTheme, 'icon_2')});"></div>
+                        <div style="height: 16px;border-right: 1px solid #000;opacity: 0.12;margin: 0 10px;vertical-align: middle;"></div>
+                        <div class="hld__excel-icon24" style="background-image:url(${getExcelTheme(script.setting.advanced.excelTheme, 'icon_36')});"></div>
+                        <div class="hld__excel-footer-item" style="font-size: 20px;margin-left:20px;">-</div>
+                        <div class="hld__excel-footer-item" style="font-weight: 400">100%</div>
+                        <div class="hld__excel-footer-item" style="font-size: 20px;">+</div>
+                        <div style="width:10px;"></div>
                     </div>
-                    <div class="hld__excel-f2">
-                    <img class="hld__excel-img-fl2" src="${getExcelTheme(script.setting.advanced.excelTheme, 'F_L_2')}">
-                    <img class="hld__excel-img-fr2" src="${getExcelTheme(script.setting.advanced.excelTheme, 'F_R_2')}">
+                `)
+            } else {
+                // WPS与Office元素
+                // 插入Excel头部
+                $('body').append(`
+                    <div class="hld__excel-div hld__excel-header">
+                        <div class="hld__excel-h1">
+                            <div class="hld__excel-title">${script.setting.advanced.excelTitle || document.title} - Excel</div>
+                            <img class="hld__excel-img-h1-l1" src="${getExcelTheme(script.setting.advanced.excelTheme, 'H_L_1')}">
+                            <img class="hld__excel-img-h1-r1" src="${getExcelTheme(script.setting.advanced.excelTheme, 'H_R_1')}">
+                        </div>
+                        <div class="hld__excel-h2">
+                            <img class="hld__excel-img-h2-l1" src="${getExcelTheme(script.setting.advanced.excelTheme, 'H_L_2')}">
+                            <img class="hld__excel-img-h2-r1" src="${getExcelTheme(script.setting.advanced.excelTheme, 'H_R_2')}">
+                        </div>
+                        <div class="hld__excel-h3">
+                            <img class="hld__excel-img-h3-l1" src="${getExcelTheme(script.setting.advanced.excelTheme, 'H_L_3')}">
+                            <img class="hld__excel-img-h3-r1" src="${getExcelTheme(script.setting.advanced.excelTheme, 'H_R_3')}">
+                            <div class="hld__excel-fx"></div>
+                        </div>
+                        <div class="hld__excel-h4">
+                            <div class="hld__excel-sub"><div></div></div>
+                            ${(columnLetters().map(c => '<div class="hld__excel-column">'+c+'</div>')).join('')}
+                        </div>
                     </div>
-                </div>
-            `)
+                `)
+                // 插入Excel尾部
+                $('body').append(`
+                    <div class="hld__excel-div hld__excel-footer">
+                        <div class="hld__excel-f1">
+                            <img class="hld__excel-img-f1-l1" src="${getExcelTheme(script.setting.advanced.excelTheme, 'F_L_1')}">
+                            <img class="hld__excel-img-f1-r1" src="${getExcelTheme(script.setting.advanced.excelTheme, 'F_R_1')}">
+                        </div>
+                        <div class="hld__excel-f2">
+                        <img class="hld__excel-img-fl2" src="${getExcelTheme(script.setting.advanced.excelTheme, 'F_L_2')}">
+                        <img class="hld__excel-img-fr2" src="${getExcelTheme(script.setting.advanced.excelTheme, 'F_R_2')}">
+                        </div>
+                    </div>
+                `)
+            }
+
             $('#hld__excel_setting').click(()=>$('#hld__setting_cover').css('display', 'flex'))
             $('#mainmenu .half').parent().append($('#mainmenu .half').clone(true).addClass('hld__half-clone').text($('#mainmenu .half').text().replace('你好', '')))
             if(script.setting.normal.excelMode) {
@@ -1443,7 +1547,7 @@
             script.setting.normal.darkMode && script.popMsg('Excel模式与暗黑模式不兼容, 请勿重合使用', 'warn')
         },
         style: `
-        /* 默认风格(WPS) */
+        /* WPS风格 */
         .hld__excel-body-err {padding-top: 200px}
         .hld__excel-header, .hld__excel-footer, .hld__excel-setting, .hld__half-clone {display: none;}
         .hld__excel-header>div, .hld__excel-footer>div {position: relative;box-sizing: border-box;}
@@ -1458,8 +1562,8 @@
         .hld__excel-img-h3-l1 {top:12px;left:0;}
         .hld__excel-img-h3-r1 {toP:8px;right:0;}
         .hld__excel-fx {position: absolute;top:12px;left:253px;right:45px;height:24px;box-sizing: border-box;border:1px solid #cccccc;border-radius:4px;background:#ffffff;}
-        .hld__excel-h4 {height:21px;display:flex;flex-wrap: wrap;overflow: hidden;}
-        .hld__excel-h4 > div {height:21px;border-right:1px solid #c8c8c8;box-sizing:border-box;}
+        .hld__excel-h4 {height:21px;display:flex;overflow: hidden;}
+        .hld__excel-h4 > div {height:21px;border-right:1px solid #c8c8c8;box-sizing:border-box;flex-shrink: 0;}
         .hld__excel-sub {width:34px;position: relative;}
         .hld__excel-sub > div {position: absolute;right:4px;bottom:4px;width: 0px;height: 0px;border-top: 6px solid transparent;border-left: 6px solid transparent;border-right: 6px solid #b8b8b8;border-bottom: 6px solid #b8b8b8;}
         .hld__excel-column {width: 72px;line-height:21px;text-align:center;color:#444444;font-family: sans-serif;font-weight:100;font-size:14px;}
@@ -1488,7 +1592,7 @@
         .hld__excel-body .hld__excel-header, .hld__excel-body .hld__excel-footer {width: 100%;text-align: center;font-size: 16px;font-weight: bold;background:#e8e8e8;color:#337ab7;line-height: 45px;}
         .hld__excel-body .hld__excel-header>img, .hld__excel-body .hld__excel-footer>img{position:absolute;top:0;left:0}
         .hld__excel-body #m_nav {position:fixed;top:136px;left:261px;margin:0;padding:0;z-index:99;width: 9999px;}
-        .hld__excel-body #m_nav .nav_spr {display:block;border:0;border-radius:0;padding:0;box-shadow:none;background:none;margin-top: 20px;margin-left: 10px;}
+        .hld__excel-body #m_nav .nav_spr {display:block;border:0;border-radius:0;padding:0;box-shadow:none;background:none;margin-top: 18px;margin-left: 10px;}
         .hld__excel-body #m_nav .nav_spr span {color:#000;font-size:16px;vertical-align:unset;font-weight:normal;}
         .hld__excel-body #m_nav .nav_root,.hld__excel-body #m_nav .nav_link {background:none;border:none;box-shadow:none;padding:0;color:#000;border-radius:0;font-weight:normal;}
         .hld__excel-body .nav {font-size:14px !important;}
@@ -1522,7 +1626,7 @@
         .hld__excel-body #m_posts .comment_c .comment_c_1 {border-top-color:#bbbbbb;}
         .hld__excel-body #m_posts .comment_c .comment_c_2 {border-color:#bbbbbb;}
         .hld__excel-body #m_posts {border:0;box-shadow:none;padding-bottom:0;margin:0;counter-reset:num;}
-        .hld__excel-body #m_posts td {background:#fff;border-right:1px solid #bbbbbb;border-bottom:1px solid #bbbbbb;border-top:1px solid #bbbbbb;}
+        .hld__excel-body #m_posts td {background:#fff;border-right:1px solid #bbbbbb;border-bottom:1px solid #bbbbbb;}
         .hld__excel-body #m_posts .c0 {width:32px;color:#777;font-size:16px;background:#e8e8e8;text-align:center;}
         .hld__excel-body #m_posts .c0:before {content:counter(num);counter-increment:num;}
         .hld__excel-body #m_posts .vertmod {background:#fff !important;color:#ccc;}
@@ -1564,6 +1668,32 @@
         .hld__excel-body.hld__excel-theme-office #mainmenu .mmdefault.cell input {border-radius:0;}
         .hld__excel-body.hld__excel-theme-office #mainmenu .stdbtn a, .hld__excel-body.hld__excel-theme-office #mainmenu .hld__half-clone {color:#FFF !important;}
         .hld__excel-body.hld__excel-theme-office .single_ttip2 {top:59px !important;}
+        /* 腾讯文档风格 */
+        .hld__excel-body.hld__excel-theme-tencent {font-family: -apple-system, Helvetica Neue, Helvetica, PingFang SC, Microsoft YaHei, Source Han Sans SC, Noto Sans CJK SC, WenQuanYi Micro Hei, sans-serif !important;}
+        .hld__excel-body.hld__excel-theme-tencent .hld__excel-header {height:125px;background:#FFF;}
+        .hld__excel-body.hld__excel-theme-tencent .hld__excel-titlebar-title {height: 36px;line-height: 36px;font-size: 18px;font-weight: 500;color: #000;opacity: 0.88;margin: 0 9px;max-width: 30%;overflow: hidden;text-overflow: ellipsis;white-space: nowrap;}
+        .hld__excel-body.hld__excel-theme-tencent #mmc {margin-top: 145px;}
+        .hld__excel-body.hld__excel-theme-tencent #m_nav {top: 94px;left: 65px;}
+        .hld__excel-body.hld__excel-theme-tencent .hld__excel-sub {width: 51px;}
+        .hld__excel-body.hld__excel-theme-tencent .hld__excel-titlebar {height:56px;display: flex;align-items: center;flex-shrink: 0;padding: 0 4px;border-bottom:1px solid #ebebeb;}
+        .hld__excel-body.hld__excel-theme-tencent .hld__excel-toolbar {height:44px;display: flex;align-items: center;flex-shrink: 0;padding: 0 12px;border-bottom:1px solid #ebebeb;line-height: 24px;font-size: 12px;color:rgba(0, 0, 0, 0.88);font-weight:400;}
+        .hld__excel-body.hld__excel-theme-tencent .hld__excel-toolbar > div {flex-shrink: 0;}
+        .hld__excel-body.hld__excel-theme-tencent .hld__excel-titlebar-pick {margin-left: 12px;margin-top: -2px;}
+        .hld__excel-body.hld__excel-theme-tencent .hld__excel-titlebar-pick .hld__excel-titlebar-content {width:17px;height:17px}
+        .hld__excel-body.hld__excel-theme-tencent .hld__excel-titlebar-pick .hld__excel-titlebar-indication {height: 3px;width: 14px;margin-left: 2px;margin-top: -2px;}
+        .hld__excel-body.hld__excel-theme-tencent .hld__excel-formulabar {height:25px;}
+        .hld__excel-body.hld__excel-theme-tencent .hld__excel-icon24 {width:24px;height:24px;background-size: 100% 100%;}
+        .hld__excel-body.hld__excel-theme-tencent .hld__excel-icon20 {width:20px;height:20px;background-size: 100% 100%;}
+        .hld__excel-body.hld__excel-theme-tencent .hld__excel-icon16 {width:16px;height:16px;background-size: 100% 100%;}
+        .hld__excel-body.hld__excel-theme-tencent .hld__excel-icon12 {width:12px;height:12px;background-size: 100% 100%;}
+        .hld__excel-body.hld__excel-theme-tencent .hld__excel-h4 > div {background-color:#f9fafb;border-bottom: 1px solid #ebebeb;border-top: 1px solid #ebebeb;border-color:#ebebeb;}
+        .hld__excel-body.hld__excel-theme-tencent #m_posts .c0, .hld__excel-body.hld__excel-theme-tencent .topicrow .c1, .hld__excel-body.hld__excel-theme-tencent #pagebbtm:before {width:50px;background-color:#f9fafb !important;}
+        .hld__excel-body.hld__excel-theme-tencent #topicrows td, .hld__excel-body.hld__excel-theme-tencent #m_posts td {border-color:#ebebeb;}
+        .hld__excel-body.hld__excel-theme-tencent .hld__excel-footer {height:32px;background:#FFF;display:flex;align-items: center;border-top: 1px solid #e0e0e0;padding: 0 10px;}
+        .hld__excel-body.hld__excel-theme-tencent .hld__excel-sheet-tab {margin-left: 8px;width:104px;border: 1px solid #e0e0e0;border-top: 1px solid #fff;text-align:center;height: 30px;}
+        .hld__excel-body.hld__excel-theme-tencent .hld__excel-sheet-tab .hld__excel-sheet-name {font-size: 14px;color: rgba(0,0,0,.88);font-weight: 400;height: 26px;line-height: 26px;border-bottom:2px solid #1e6fff;display:flex;justify-content: center;align-items: center;}
+        .hld__excel-body.hld__excel-theme-tencent .hld__excel-footer-item {color:#464d5a;font-size:14px;margin:0 4px;height: 32px;line-height: 32px;}
+        .hld__excel-body.hld__excel-theme-tencent #postbbtm, .hld__excel-body.hld__excel-theme-tencent #mainmenu {display:none;}
         `
     }
     /**
@@ -1588,6 +1718,7 @@
                 if (excelTitle) {
                     $(document).attr('title') != excelTitle && $(document).attr('title', excelTitle)
                 }
+                $('.hld__excel-titlebar-title').html(excelTitle || $(document).attr('title'))
                 $('#hld__excel_icon').length == 0 && $('head').append(`<link id= "hld__excel_icon" rel="shortcut icon" type="image/png" href="${IMG_EXCEL_ICON}" />`)
             }
         }
@@ -3033,7 +3164,7 @@
             key: 'darkMode',
             default: false,
             title: '暗黑模式',
-            desc: 'NGA自带的界面色调会与此功能有一定冲突\n使用前请先将NGA的界面色调设置为默认',
+            desc: 'NGA自带的界面色调会与此功能有一定冲突\n使用前请先将NGA的界面色调设置为默认\n与Excel模式不兼容，请勿混用',
             menu: 'left'
         },
         mainColor: '#0c1117', // 主背景颜色
@@ -3069,7 +3200,7 @@
             .hld__dark-mode .nav_link, .hld__dark-mode .nav_spr, .hld__dark-mode .row2c1, .hld__dark-mode .row1c1, .hld__dark-mode .uitxt1, .hld__dark-mode .nav_link,
             .hld__dark-mode .c1, .hld__dark-mode .c2, .hld__dark-mode .c3, .hld__dark-mode .c4, .hld__dark-mode .catenew, .hld__dark-mode .stdbtn a, .hld__dark-mode .block_txt,
             .hld__dark-mode .cateblock, .hld__dark-mode .forumbox, .hld__dark-mode .quote, .hld__dark-mode textarea, .hld__dark-mode select, .hld__dark-mode input,
-            .hld__dark-mode #m_posts .white, .hld__dark-mode #m_posts .block_txt_c2, .hld__dark-mode .block_txt_c3, .hld__dark-mode .hld__docker-sidebar,
+            .hld__dark-mode #m_posts .white, .hld__dark-mode #m_posts .block_txt_c2, .hld__dark-mode .block_txt_c3, .hld__dark-mode .hld__docker-sidebar, #hld__updated,
             .hld__dark-mode .hld__docker-btns > div, .hld__dark-mode .forumbox th, .hld__dark-mode .contentBlock, .hld__dark-mode .catenew .b2, .hld__dark-mode .catenew .b3,
             .hld__dark-mode .catenew h2, .hld__dark-mode .catenew div, .hld__dark-mode .topicrow .c2 > span:first-child, .hld__dark-mode .urltip.nobr, .hld__dark-mode #m_posts .small_colored_text_btn,
             .hld__dark-mode #hld__setting_panel, .hld__dark-mode .hld__list-panel, .hld__dark-mode .single_ttip2 .tip_title, .hld__dark-mode .single_ttip2 .div2, .hld__dark-mode #startmenu .recent,
@@ -3085,7 +3216,7 @@
             .hld__dark-mode .single_ttip2 .tip_title, .hld__dark-mode #startmenu .item > a {color:${this.textColor} !important;}
             .hld__dark-mode:not(.hld__excel-body) #mainmenu {border-bottom: 1px solid  ${this.borderColor} !important;}
             .hld__dark-mode #m_posts, .hld__dark-mode #toptopics, .hld__dark-mode #topicrows, .hld__dark-mode #mc > div:not(.module_wrap):not(#mainmenu),
-            .hld__dark-mode #msg_block_c .subblock {box-shadow:none;border-color:  ${this.borderColor} !important;}
+            .hld__dark-mode #msg_block_c .subblock, #hld__updated {box-shadow:none;border-color:  ${this.borderColor} !important;}
             .hld__dark-mode .stdbtn a, .hld__dark-mode .hld__advanced-setting, .hld__dark-mode .hld__docker-sidebar {border-color:  ${this.borderColor};}
             .hld__dark-mode .block_txt.block_txt_c3 {border:none !important;}
             .hld__dark-mode button, .hld__dark-mode .hld__setting-close, .hld__dark-mode .colored_text_btn, .hld__dark-mode .rep.block_txt_big,
@@ -3134,6 +3265,9 @@
      * @description 此模块提供了一个悬浮的扩展坞，来添加某些功能
      *              目前添加的功能有：
      *                  返回顶部：无跳转返回当前页面的第一页/刷新当页
+     *                  打开菜单：打开个人主菜单
+     *                  收藏：收藏主题
+     *                  回复：回复主题
      *                  跳转尾页：跳转到当前帖子的尾页
      */
     const extraDocker = {
@@ -3149,21 +3283,51 @@
         }],
         initFunc: function () {
             const _this = this
-            const $dockerDom = $(`<div class="hld__docker"><div class="hld__docker-sidebar"><svg t="1603961015993" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="3634" width="64" height="64"><path d="M518.344359 824.050365c-7.879285 0-15.758569-2.967523-21.693614-9.004897l-281.403018-281.403018c-5.730389-5.730389-9.004897-13.609673-9.004897-21.693614s3.274508-15.963226 9.004897-21.693614l281.403018-281.403018c11.972419-11.972419 31.41481-11.972419 43.387229 0 11.972419 11.972419 11.972419 31.41481 0 43.387229L280.32857 511.948836l259.709403 259.709403c11.972419 11.972419 11.972419 31.41481 0 43.387229C534.0006 821.082842 526.223643 824.050365 518.344359 824.050365z" p-id="3635" fill="#888888"></path><path d="M787.160987 772.88618c-7.879285 0-15.758569-2.967523-21.693614-9.004897l-230.238833-230.238833c-11.972419-11.972419-11.972419-31.41481 0-43.387229l230.238833-230.238833c11.972419-11.972419 31.41481-11.972419 43.387229 0 11.972419 11.972419 11.972419 31.41481 0 43.387229L600.309383 511.948836l208.545218 208.545218c11.972419 11.972419 11.972419 31.41481 0 43.387229C802.817228 769.918657 794.937943 772.88618 787.160987 772.88618z" p-id="3636" fill="#888888"></path></svg></div>
-            <div class="hld__docker-btns">
-            <div data-type="TOP" id="hld__jump_top"><svg t="1603962702679" title="返回顶部" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="9013" width="64" height="64"><path d="M528.73 161.5c-9.39-9.38-24.6-9.38-33.99 0L319.65 336.59a24.028 24.028 0 0 0-7.05 23.59A24.04 24.04 0 0 0 330 377.6c8.56 2.17 17.62-0.52 23.6-7.02l158.14-158.14 158.1 158.14a23.901 23.901 0 0 0 17 7.09c6.39 0 12.5-2.55 17-7.09 9.38-9.39 9.38-24.61 0-34L528.73 161.5zM63.89 607.09h102.79V869.5h48.04V607.09h102.79v-48.04H63.89v48.04z m518.69-48.05h-127.3c-15.37 0-30.75 5.85-42.49 17.59a59.846 59.846 0 0 0-17.59 42.49v190.3c0 15.37 5.89 30.75 17.59 42.49 11.74 11.74 27.12 17.59 42.49 17.59h127.3c15.37 0 30.75-5.85 42.49-17.59 11.7-11.74 17.59-27.12 17.59-42.49V619.17a59.903 59.903 0 0 0-17.53-42.55 59.912 59.912 0 0 0-42.55-17.54v-0.04z m12 250.38c0 2.31-0.6 5.59-3.5 8.54a11.785 11.785 0 0 1-8.5 3.5h-127.3c-3.2 0.02-6.26-1.26-8.5-3.54a11.785 11.785 0 0 1-3.5-8.5V619.17c0-2.31 0.6-5.59 3.5-8.54 2.24-2.27 5.31-3.53 8.5-3.5h127.3c2.27 0 5.55 0.64 8.5 3.55 2.27 2.24 3.53 5.31 3.5 8.5v190.29-0.05z m347.4-232.78a59.846 59.846 0 0 0-42.49-17.59H734.74V869.5h48.04V733.32h116.71a59.94 59.94 0 0 0 42.54-17.55 59.923 59.923 0 0 0 17.55-42.54v-54.07c0-15.37-5.85-30.74-17.59-42.49v-0.03z m-30.44 96.64c0 2.26-0.64 5.55-3.55 8.5a11.785 11.785 0 0 1-8.5 3.5H782.78v-78.15h116.71c2.27 0 5.59 0.6 8.54 3.5 2.27 2.24 3.53 5.31 3.5 8.5v54.15z m0 0" p-id="9014" fill="#591804"></path></svg></div>
-            <div data-type="BOTTOM" id="hld__jump_bottom"><svg t="1603962680160" title="跳转至最后一页" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="7501" width="64" height="64"><path d="M792.855 465.806c-6.24-6.208-14.369-9.312-22.56-9.312s-16.447 3.169-22.688 9.44l-207.91 207.74v-565.28c0-17.697-14.336-32-32-32s-32.002 14.303-32.002 32v563.712l-206.24-206.164c-6.271-6.209-14.432-9.344-22.624-9.344-8.224 0-16.417 3.135-22.656 9.407-12.511 12.513-12.48 32.768 0.032 45.248L483.536 770.38c3.265 3.263 7.104 5.6 11.136 7.135 4 1.793 8.352 2.88 13.024 2.88 1.12 0 2.08-0.544 3.2-0.64 8.288 0.064 16.608-3.009 22.976-9.408l259.11-259.292c12.48-12.511 12.448-32.8-0.127-45.248z m99.706 409.725c0 17.665-14.303 32.001-31.999 32.001h-704c-17.665 0-32-14.334-32-31.999s14.335-32 32-32h704c17.696 0 32 14.334 32 31.998z" p-id="7502" fill="#591804"></path></svg></div></div></div>`)
+            const $dockerDom = $(`
+                <div class="hld__docker">
+                    <div class="hld__docker-sidebar">
+                        <svg t="1603961015993" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="3634" width="64" height="64"><path d="M518.344359 824.050365c-7.879285 0-15.758569-2.967523-21.693614-9.004897l-281.403018-281.403018c-5.730389-5.730389-9.004897-13.609673-9.004897-21.693614s3.274508-15.963226 9.004897-21.693614l281.403018-281.403018c11.972419-11.972419 31.41481-11.972419 43.387229 0 11.972419 11.972419 11.972419 31.41481 0 43.387229L280.32857 511.948836l259.709403 259.709403c11.972419 11.972419 11.972419 31.41481 0 43.387229C534.0006 821.082842 526.223643 824.050365 518.344359 824.050365z" p-id="3635" fill="#888888"></path><path d="M787.160987 772.88618c-7.879285 0-15.758569-2.967523-21.693614-9.004897l-230.238833-230.238833c-11.972419-11.972419-11.972419-31.41481 0-43.387229l230.238833-230.238833c11.972419-11.972419 31.41481-11.972419 43.387229 0 11.972419 11.972419 11.972419 31.41481 0 43.387229L600.309383 511.948836l208.545218 208.545218c11.972419 11.972419 11.972419 31.41481 0 43.387229C802.817228 769.918657 794.937943 772.88618 787.160987 772.88618z" p-id="3636" fill="#888888"></path></svg>
+                    </div>
+                    <div class="hld__docker-btns">
+                        <div data-type="TOP" id="hld__jump_top"><svg t="1603962702679" title="返回顶部" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="9013" width="64" height="64"><path d="M528.73 161.5c-9.39-9.38-24.6-9.38-33.99 0L319.65 336.59a24.028 24.028 0 0 0-7.05 23.59A24.04 24.04 0 0 0 330 377.6c8.56 2.17 17.62-0.52 23.6-7.02l158.14-158.14 158.1 158.14a23.901 23.901 0 0 0 17 7.09c6.39 0 12.5-2.55 17-7.09 9.38-9.39 9.38-24.61 0-34L528.73 161.5zM63.89 607.09h102.79V869.5h48.04V607.09h102.79v-48.04H63.89v48.04z m518.69-48.05h-127.3c-15.37 0-30.75 5.85-42.49 17.59a59.846 59.846 0 0 0-17.59 42.49v190.3c0 15.37 5.89 30.75 17.59 42.49 11.74 11.74 27.12 17.59 42.49 17.59h127.3c15.37 0 30.75-5.85 42.49-17.59 11.7-11.74 17.59-27.12 17.59-42.49V619.17a59.903 59.903 0 0 0-17.53-42.55 59.912 59.912 0 0 0-42.55-17.54v-0.04z m12 250.38c0 2.31-0.6 5.59-3.5 8.54a11.785 11.785 0 0 1-8.5 3.5h-127.3c-3.2 0.02-6.26-1.26-8.5-3.54a11.785 11.785 0 0 1-3.5-8.5V619.17c0-2.31 0.6-5.59 3.5-8.54 2.24-2.27 5.31-3.53 8.5-3.5h127.3c2.27 0 5.55 0.64 8.5 3.55 2.27 2.24 3.53 5.31 3.5 8.5v190.29-0.05z m347.4-232.78a59.846 59.846 0 0 0-42.49-17.59H734.74V869.5h48.04V733.32h116.71a59.94 59.94 0 0 0 42.54-17.55 59.923 59.923 0 0 0 17.55-42.54v-54.07c0-15.37-5.85-30.74-17.59-42.49v-0.03z m-30.44 96.64c0 2.26-0.64 5.55-3.55 8.5a11.785 11.785 0 0 1-8.5 3.5H782.78v-78.15h116.71c2.27 0 5.59 0.6 8.54 3.5 2.27 2.24 3.53 5.31 3.5 8.5v54.15z m0 0" p-id="9014" fill="#591804"></path></svg></div>
+                        <div data-type="MENU" id="hld__jump_menu"><svg t="1687167394269" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="5137" width="48" height="48"><path d="M708.367 353.656c0-56.745-22.729-110.092-63.996-150.218s-96.132-62.224-154.494-62.224-113.229 22.099-154.498 62.224-63.996 93.473-63.996 150.218c0 43.987 13.713 86.196 39.651 122.064 7.273 10.060 21.559 12.479 31.904 5.406 10.343-7.073 12.834-20.963 5.561-31.019-20.486-28.329-31.315-61.684-31.315-96.451 0-92.585 77.471-167.911 172.694-167.911s172.689 75.325 172.689 167.911-77.471 167.906-172.694 167.906c-47.055 0-92.711 8.965-135.702 26.646-41.516 17.076-78.796 41.509-110.806 72.632-32.007 31.123-57.142 67.371-74.705 107.736-18.181 41.808-27.401 86.199-27.401 131.948 0 12.298 10.252 22.266 22.898 22.266s22.898-9.968 22.898-22.266c0-162.35 135.843-294.425 302.816-294.425 58.361 0 113.229-22.099 154.497-62.22s63.996-93.477 63.996-150.221zM530.991 631.551c0 12.298 10.252 22.266 22.898 22.266h304.337c12.647 0 22.898-9.968 22.898-22.266s-10.252-22.266-22.898-22.266h-304.337c-12.647 0-22.898 9.968-22.898 22.266zM858.229 722.671h-304.337c-12.65 0-22.898 9.968-22.898 22.266s10.252 22.266 22.898 22.266h304.337c12.647 0 22.898-9.968 22.898-22.266 0-12.294-10.252-22.266-22.898-22.266zM858.229 836.056h-304.337c-12.65 0-22.898 9.967-22.898 22.266s10.252 22.266 22.898 22.266h304.337c12.647 0 22.898-9.968 22.898-22.266 0-12.294-10.252-22.266-22.898-22.266z" fill="#591804" p-id="5138"></path></svg></div>
+                        <div data-type="FAVOR" id="hld__jump_favor"><svg t="1687168828546" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="6134" width="48" height="48"><path d="M512 776.533333l-238.933333 85.333334 8.533333-251.733334L128 405.333333l243.2-72.533333L512 128l140.8 209.066667L896 405.333333l-153.6 200.533334 8.533333 251.733333-238.933333-81.066667z m0-93.866666l149.333333 51.2-4.266666-157.866667 98.133333-123.733333-153.6-42.666667L512 277.333333 422.4 409.6l-153.6 42.666667 98.133333 123.733333-4.266666 157.866667L512 682.666667z" fill="#591804" p-id="6135"></path></svg></div>
+                        <div data-type="REPLY" id="hld__jump_reply"><svg t="1687169791224" class="icon" viewBox="0 0 1025 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="8570" width="48" height="48"><path d="M415.937331 320 415.937331 96 20.001331 438.176C-6.718669 461.28-6.622669 498.784 20.033331 521.824L415.937331 864 415.937331 640C639.937331 640 847.937331 688 1023.937331 928 943.937331 480 607.937331 320 415.937331 320" p-id="8571" fill="#591804"></path></svg></div>
+                        <div data-type="BOTTOM" id="hld__jump_bottom"><svg t="1603962680160" title="跳转至最后一页" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="7501" width="64" height="64"><path d="M792.855 465.806c-6.24-6.208-14.369-9.312-22.56-9.312s-16.447 3.169-22.688 9.44l-207.91 207.74v-565.28c0-17.697-14.336-32-32-32s-32.002 14.303-32.002 32v563.712l-206.24-206.164c-6.271-6.209-14.432-9.344-22.624-9.344-8.224 0-16.417 3.135-22.656 9.407-12.511 12.513-12.48 32.768 0.032 45.248L483.536 770.38c3.265 3.263 7.104 5.6 11.136 7.135 4 1.793 8.352 2.88 13.024 2.88 1.12 0 2.08-0.544 3.2-0.64 8.288 0.064 16.608-3.009 22.976-9.408l259.11-259.292c12.48-12.511 12.448-32.8-0.127-45.248z m99.706 409.725c0 17.665-14.303 32.001-31.999 32.001h-704c-17.665 0-32-14.334-32-31.999s14.335-32 32-32h704c17.696 0 32 14.334 32 31.998z" p-id="7502" fill="#591804"></path></svg></div>
+                    </div>
+                </div>
+            `)
             $('body').append($dockerDom)
             /**
              * Bind:Click
              * 按钮点击事件
              */
-            $('body').on('click', '.hld__docker-btns>div', function () {
+            $('body').on('click', '.hld__docker-btns>div', function (e) {
                 const type = $(this).data('type')
                 if (type == 'TOP') {
                     const $nav_link = $('#m_nav a.nav_link')
                     if ($nav_link.length > 0) {
                         $nav_link[$nav_link.length-1].click()
+                    }
+                }
+                if (type == 'MENU') {
+                    commonui.mainMenu.menuOpen()
+                    commonui.mainMenu.menuOpenAct({
+                        clientX: window.screen.width - 30,
+                        clientY: 30,
+                        pageX: window.screen.width - 30,
+                        pageY: 30
+                    }, null, 8)
+                }
+                if (type == 'FAVOR') {
+                    const tid = script.getModule('authorMark').getQueryString('tid')
+                    if (script.isForms() && tid) {
+                        commonui.favor(e, null, tid)
+                    }
+                }
+                if (type == 'REPLY') {
+                    if (script.isForms()) {
+                        window.location.href = $('#postbbtm a.rep.uitxt1').attr('href')
                     }
                 }
                 if (type == 'BOTTOM') {
@@ -3179,6 +3343,8 @@
         },
         renderAlwaysFunc: function (script) {
             (script.isThreads() || script.isForms()) ? $('.hld__docker').show() : $('.hld__docker').hide()
+            $('#hld__jump_favor').toggle(script.isForms())
+            $('#hld__jump_reply').toggle(script.isForms())
         },
         shortcutFunc: {
             backTop: function () {
@@ -3208,12 +3374,12 @@
             return queryList
         },
         style: `
-        .hld__docker{position:fixed;height:80px;width:30px;bottom:135px;right:0;transition:all ease .2s}
-        .hld__docker:hover{width:150px;height:200px;bottom:80px}
-        .hld__docker-sidebar{background:#0f0;position:fixed;height:50px;width:20px;bottom:150px;right:0;display:flex;justify-content:center;align-items:center;background:#fff6df;border:1px solid #591804;box-shadow:0 0 5px #444;border-right:none;border-radius:5px 0 0 5px}
+        .hld__docker{position:fixed;height:80px;width:30px;bottom:180px;right:0;transition:all ease .2s}
+        .hld__docker:hover{width:150px;height:300px;bottom:75px}
+        .hld__docker-sidebar{background:#0f0;position:fixed;height:50px;width:20px;bottom:195px;right:0;display:flex;justify-content:center;align-items:center;background:#fff6df;border:1px solid #591804;box-shadow:0 0 1px #333;border-right:none;border-radius:5px 0 0 5px}
         .hld__excel-body .hld__docker-sidebar{background:#fff;border:1px solid #bbb}
         .hld__docker-btns{position:absolute;top:0;left:50px;bottom:0;right:50px;display:flex;justify-content:center;align-items:center;flex-direction:column}
-        .hld__docker .hld__docker-btns>div{opacity:0}
+        .hld__docker .hld__docker-btns>div{opacity:0;flex-shrink: 0;}
         .hld__docker:hover .hld__docker-btns>div{opacity:1}
         .hld__docker-btns>div{background:#fff6df;border:1px solid #591804;box-shadow:0 0 5px #444;width:50px;height:50px;border-radius:50%;margin:10px 0;cursor:pointer;display:flex;justify-content:center;align-items:center}
         .hld__excel-body .hld__docker-btns>div{background:#fff;border:1px solid #bbb}
