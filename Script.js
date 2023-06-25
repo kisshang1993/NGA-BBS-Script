@@ -3200,7 +3200,7 @@
             .hld__dark-mode .nav_link, .hld__dark-mode .nav_spr, .hld__dark-mode .row2c1, .hld__dark-mode .row1c1, .hld__dark-mode .uitxt1, .hld__dark-mode .nav_link,
             .hld__dark-mode .c1, .hld__dark-mode .c2, .hld__dark-mode .c3, .hld__dark-mode .c4, .hld__dark-mode .catenew, .hld__dark-mode .stdbtn a, .hld__dark-mode .block_txt,
             .hld__dark-mode .cateblock, .hld__dark-mode .forumbox, .hld__dark-mode .quote, .hld__dark-mode textarea, .hld__dark-mode select, .hld__dark-mode input,
-            .hld__dark-mode #m_posts .white, .hld__dark-mode #m_posts .block_txt_c2, .hld__dark-mode .block_txt_c3, .hld__dark-mode .hld__docker-sidebar, #hld__updated,
+            .hld__dark-mode #m_posts .white, .hld__dark-mode #m_posts .block_txt_c2, .hld__dark-mode .block_txt_c3, .hld__dark-mode .hld__docker-sidebar, .hld__dark-mode #hld__updated,
             .hld__dark-mode .hld__docker-btns > div, .hld__dark-mode .forumbox th, .hld__dark-mode .contentBlock, .hld__dark-mode .catenew .b2, .hld__dark-mode .catenew .b3,
             .hld__dark-mode .catenew h2, .hld__dark-mode .catenew div, .hld__dark-mode .topicrow .c2 > span:first-child, .hld__dark-mode .urltip.nobr, .hld__dark-mode #m_posts .small_colored_text_btn,
             .hld__dark-mode #hld__setting_panel, .hld__dark-mode .hld__list-panel, .hld__dark-mode .single_ttip2 .tip_title, .hld__dark-mode .single_ttip2 .div2, .hld__dark-mode #startmenu .recent,
@@ -3216,7 +3216,7 @@
             .hld__dark-mode .single_ttip2 .tip_title, .hld__dark-mode #startmenu .item > a {color:${this.textColor} !important;}
             .hld__dark-mode:not(.hld__excel-body) #mainmenu {border-bottom: 1px solid  ${this.borderColor} !important;}
             .hld__dark-mode #m_posts, .hld__dark-mode #toptopics, .hld__dark-mode #topicrows, .hld__dark-mode #mc > div:not(.module_wrap):not(#mainmenu),
-            .hld__dark-mode #msg_block_c .subblock, #hld__updated {box-shadow:none;border-color:  ${this.borderColor} !important;}
+            .hld__dark-mode #msg_block_c .subblock, .hld__dark-mode #hld__updated {box-shadow:none;border-color:  ${this.borderColor} !important;}
             .hld__dark-mode .stdbtn a, .hld__dark-mode .hld__advanced-setting, .hld__dark-mode .hld__docker-sidebar {border-color:  ${this.borderColor};}
             .hld__dark-mode .block_txt.block_txt_c3 {border:none !important;}
             .hld__dark-mode button, .hld__dark-mode .hld__setting-close, .hld__dark-mode .colored_text_btn, .hld__dark-mode .rep.block_txt_big,
