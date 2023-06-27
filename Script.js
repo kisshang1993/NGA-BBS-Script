@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      4.0.1
+// @version      4.1.0
 // @author       HLD
 // @description  NGA论坛显示优化，全面功能增强，优雅的摸鱼
 // @license      MIT
@@ -2502,6 +2502,7 @@
         }],
         banList: [],
         markList: [],
+        markedTags: [],
         initFunc: function () {
             const _this = this
             // 读取本地数据
@@ -2515,7 +2516,26 @@
             }
             const localMarkList = window.localStorage.getItem('hld__NGA_mark_list')
             try {
-                localMarkList && (_this.markList = JSON.parse(localMarkList))
+                if (localMarkList) {
+                    _this.markList = JSON.parse(localMarkList)
+                    // 统计已添加过的标签
+                    _this.markList.forEach(item => {
+                        item.marks.forEach(mark => {
+                            const exist_tag = _this.markedTags.find(t => t.mark == mark.mark)
+                            if (exist_tag) {
+                                exist_tag.count += 1
+                            } else {
+                                _this.markedTags.push({
+                                    mark: mark.mark,
+                                    text_color: mark.text_color,
+                                    bg_color: mark.bg_color,
+                                    count: 1
+                                })
+                            }
+                        })
+                    })
+                    _this.markedTags.sort((a, b) => {return b.count - a.count})
+                }
             } catch {
                 window.localStorage.setItem('hld__NGA_mark_list_bak', localMarkList)
                 window.localStorage.removeItem('hld__NGA_mark_list')
@@ -2735,7 +2755,7 @@
                     } else {
                         currentName = $(this).parents('td').prev('td').find('.author').text()
                     }
-                    currentName.endsWith('[楼主]') && (currentName = currentName.substr(0, currentName.length - 4))
+                    currentName.endsWith('楼主') && (currentName = currentName.substr(0, currentName.length - 4))
                     const mbDom = `<a class="hld__extra-icon" data-type="mark" title="标签此用户" data-name="${currentName}" data-uid="${currentUid}"><svg t="1686732786072" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2385" width="200" height="200"><path d="M900.64 379.808l-263.072-256.032c-36.448-35.328-105.76-35.392-142.304 0.096l-327.04 319.904c-56.416 54.72-70.72 76.704-70.72 150.976l0 143.936c0 132.768 26.976 192 186.912 192l131.872 0c81.12 0 128.448-46.656 193.952-111.264l290.016-297.696c18.592-17.984 29.248-43.968 29.248-71.264C929.504 423.36 918.976 397.6 900.64 379.808zM323.008 786.752c-52.928 0-96-43.072-96-96s43.072-96 96-96 96 43.072 96 96S375.936 786.752 323.008 786.752z" fill="#3970fe" p-id="2386" data-spm-anchor-id="a313x.7781069.0.i0" class="selected"></path></svg></a><a class="hld__extra-icon" title="拉黑此用户(屏蔽所有言论)" data-type="ban"  data-name="${currentName}" data-uid="${currentUid}"><svg t="1686733137783" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="12682" width="200" height="200"><path d="M512 0a512 512 0 1 0 0 1024 512 512 0 0 0 0-1024zM204.8 409.6h614.4v204.8H204.8V409.6z" fill="#d00309" p-id="12683" data-spm-anchor-id="a313x.7781069.0.i10" class="selected"></path></svg></a>`
                     script.setting.advanced.autoHideBanIcon ? $(this).after(`<span class="hld__extra-icon-box">${mbDom}</span>`) : $(this).append(mbDom)
                 })
@@ -2941,7 +2961,9 @@
             </thead>
             <tbody id="hld__mark_body"></tbody>
             </table>
-            <div class="hld__dialog-buttons" style="justify-content: space-between !important;"></div>
+            <div class="hld__dialog-buttons hld__button-insert" style="justify-content: left !important;"></div>
+            <div class="hld__mark_history"><div class="hld__mark_history-title">选择已添加过的标签</div><div class="hld__mark_history-content"><div class="hld__mark_history-scrollarea">暂无</div></div></div>
+            <div class="hld__dialog-buttons hld__button-save" style="justify-content: right !important;"></div>
             </div>`)
             const insertRemarkRow = (r='', t='#ffffff', b='#1f72f1', n=true) => {
                 let $tr = $(`<tr>
@@ -2956,13 +2978,23 @@
                 n && $tr.find('.hld__mark-mark').focus()
             }
 
+            _this.markedTags.length > 0 && $markDialog.find('.hld__mark_history-scrollarea').empty()
+            _this.markedTags.forEach(tag => {
+                $markDialog.find('.hld__mark_history-scrollarea').append(`
+                    <span title="${tag.mark}" textcolor="${tag.text_color}" bgcolor="${tag.bg_color}" style="color: ${tag.text_color};background-color: ${tag.bg_color};">${tag.mark} (${tag.count})</span>
+                `)
+            })
+            $markDialog.on('click', '.hld__mark_history-scrollarea > span', function (e) {
+                insertRemarkRow($(this).attr('title'), $(this).attr('textcolor'), $(this).attr('bgcolor'), false)
+            })
+
             //恢复标签
             const existMark = _this.getUserMarks({name: setting.name, uid: setting.uid})
             existMark !== null && existMark.marks.forEach(item => insertRemarkRow(item.mark, item.text_color, item.bg_color, false))
 
-            let $addBtn = $('<button class="hld__btn">+添加标签</button>')
+            let $addBtn = $('<button class="hld__btn">+添加新标签</button>')
             $addBtn.click(() => insertRemarkRow())
-            $markDialog.find('.hld__dialog-buttons').append($addBtn)
+            $markDialog.find('.hld__button-insert').append($addBtn)
             let $okBtn = $('<button class="hld__btn">保存</button>')
 
             $okBtn.click(function(){
@@ -2995,7 +3027,7 @@
                 $('.hld__dialog').remove()
                 setting.callback()
             })
-            $markDialog.find('.hld__dialog-buttons').append($okBtn)
+            $markDialog.find('.hld__button-save').append($okBtn)
             $('body').append($markDialog)
             $('.hld__dialog-color-picker').spectrum(script.getModule('authorMarkColor').colorPickerConfig)
         },
@@ -3067,6 +3099,11 @@
         .hld__dialog input[type=text]{width:100px;margin-right:15px}
         .hld__dialog-mark-table td{padding-bottom:3px}
         .hld__dialog-mark-table button{padding:0 6px;margin:0;height:20px;line-height:20px;width:20px;text-align:center;cursor:pointer}
+        .hld__mark_history {margin-top: 10px;}
+        .hld__mark_history .hld__mark_history-title {font-weight: bold;}
+        .hld__mark_history .hld__mark_history-content {max-height: 200px;overflow: hidden;overflow-y: scroll;}
+        .hld__mark_history .hld__mark_history-scrollarea  {display: flex;flex-wrap: wrap;width:250px;}
+        .hld__mark_history .hld__mark_history-content span {display: inline-block;padding: 2px 5px;border-radius: 3px;margin-right: 5px;margin-top: 5px;line-height: 20px;cursor: pointer;}
         .hld__tab-content {display:flex;justify-content:space-between;flex-wrap: wrap;}
         .hld__table-keyword {margin-top:10px;width:200px;}
         .hld__table-keyword tr td:last-child {text-align:center;}
@@ -3076,7 +3113,7 @@
         .hld__tab-header .hld__table-active,.hld__tab-header>span:hover{color:#591804;font-weight:700;border-bottom:3px solid #591804}
         .hld__tab-content{display:none}
         .hld__tab-content.hld__table-active{display:flex}
-        .hld__marks-container>span{padding:1px 5px;border-radius:3px;margin-right:5px;color:#fff;background-color:#1f72f1}
+        .hld__marks-container>span{display: inline-block;padding:1px 5px;border-radius:3px;margin-right:5px;margin-top:5px;color:#fff;background-color:#1f72f1}
         .hld__table{table-layout:fixed;border-top:1px solid #ead5bc;border-left:1px solid #ead5bc}
         .hld__table-banlist-buttons{margin-top:10px}
         .hld__table thead{background:#591804;border:1px solid #591804;color:#fff}
