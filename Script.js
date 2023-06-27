@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      4.0.0
+// @version      4.0.1
 // @author       HLD
 // @description  NGA论坛显示优化，全面功能增强，优雅的摸鱼
 // @license      MIT
 // @require      https://cdn.staticfile.org/jquery/3.4.0/jquery.min.js
 // @require      https://cdn.staticfile.org/spectrum/1.8.0/spectrum.js
-// @require https://greasyfork.org/scripts/424901-nga-script-resource/code/NGA-Script-Resource.js?version=1210513
+// @require      https://greasyfork.org/scripts/424901-nga-script-resource/code/NGA-Script-Resource.js?version=1210513
 // @icon         https://i.loli.net/2021/04/07/8x3yFj2pWEKluSY.png
 // @match        *://bbs.nga.cn/*
 // @match        *://ngabbs.com/*
@@ -376,15 +376,13 @@
                 if (current_version > local_version) {
                     const lv_mid = +vstr2mid(window.localStorage.getItem('hld__NGA_version'))
                     const cv_mid = +vstr2mid(GM_info.script.version)
+                    window.localStorage.setItem('hld__NGA_version', GM_info.script.version)
                     if (cv_mid > lv_mid) {
                         const focus = ''
                         $('body').append(`<div id="hld__updated" class="animated-1s bounce"><p><a href="javascript:void(0)" class="hld__setting-close">×</a><b>NGA-Script已更新至v${GM_info.script.version}</b></p>${focus}<p><a class="hld__readme" href="https://greasyfork.org/zh-CN/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C" target="_blank">查看更新内容</a></p></div>`)
                         $('body').on('click', '#hld__updated a', function () {
                             $(this).parents('#hld__updated').remove()
-                            window.localStorage.setItem('hld__NGA_version', GM_info.script.version)
                         })
-                    } else {
-                        window.localStorage.setItem('hld__NGA_version', GM_info.script.version)
                     }
                 }
             } else window.localStorage.setItem('hld__NGA_version', GM_info.script.version)
@@ -1380,8 +1378,6 @@
                         <div class="hld__excel-titlebar-content hld__excel-icon16" style="margin-left: 10px;background-image:url(${getExcelTheme(script.setting.advanced.excelTheme, 'icon_5')});"></div>
                         <div style="margin-left: 5px;font-size: 12px;line-height: 20px;height: 18px;;color: #000;opacity: 0.48;font-weight:400;">上次修改是在2小时前进行的</div>
                         <div style="flex-grow: 1;"></div>
-                        ${Array.from({length: 4}, (_, i) => '<div class="hld__excel-titlebar-content hld__excel-icon24" style="margin:0 8px;background-image:url(' + getExcelTheme(script.setting.advanced.excelTheme, "icon_"+(6+i)) + ');"></div>').join('')}
-                        <div style="border-radius: 4px;background:#1e6fff;color:#fff;width: 56px;text-align: center;height: 28px;line-height: 28px;font-size: 12px;font-weight: 500;margin: 0 8px;">分享</div>
                         <div style="height: 24px;border-right: 1px solid rgb(0, 0, 0);opacity: 0.06;margin: 0 12px;vertical-align: middle;"></div>
                         <div style="width:28px;height:28px;border-radius: 4px;background: #e9e9e9;text-align: center;line-height: 32px;">🐟︎</div>
                     </div>
@@ -1428,7 +1424,6 @@
                         <div style="height: 16px;border-right: 1px solid #000;opacity: 0.06;margin: 0 10px;vertical-align: middle;"></div>
                         <div class="hld__excel-titlebar-content hld__excel-icon20" style="margin-left: 10px;background-image:url(${getExcelTheme(script.setting.advanced.excelTheme, 'icon_20')});"></div>
                         <div style="flex-grow: 1;"></div>
-                        ${Array.from({length: 3}, (_, i) => '<div class="hld__excel-titlebar-content hld__excel-icon20" style="'+ (i==2?'transform: rotate(180deg);':'') +'margin:0 6px;background-image:url(' + getExcelTheme(script.setting.advanced.excelTheme, "icon_"+(30+i)) + ');"></div>').join('')}
                     </div>
                     <div class="hld__excel-formulabar">
                         <div style="border-right: 1px solid #e0e2e4;color: #777;text-align: center;width: 50px;font-size: 12px;height: 25px;line-height: 25px;font-weight:400;">A1</div>
@@ -1598,6 +1593,7 @@
         .hld__excel-body .nav {font-size:14px !important;}
         .hld__excel-body #mainmenu .stdbtn a {font-size:13px !important;}
         .hld__excel-body #m_threads {margin:0;}
+        .hld__excel-body .postBtnPos > div {z-index:9991;}
         .hld__excel-body #topicrows {border:none;box-shadow:none;border-radius:0;margin:0;background-color:#fff;counter-reset:num;border-spacing:0;}
         .hld__excel-body #topicrows tbody {border-spacing:0;}
         .hld__excel-body .topicrow {border-spacing:0;}
@@ -1693,7 +1689,11 @@
         .hld__excel-body.hld__excel-theme-tencent .hld__excel-sheet-tab {margin-left: 8px;width:104px;border: 1px solid #e0e0e0;border-top: 1px solid #fff;text-align:center;height: 30px;}
         .hld__excel-body.hld__excel-theme-tencent .hld__excel-sheet-tab .hld__excel-sheet-name {font-size: 14px;color: rgba(0,0,0,.88);font-weight: 400;height: 26px;line-height: 26px;border-bottom:2px solid #1e6fff;display:flex;justify-content: center;align-items: center;}
         .hld__excel-body.hld__excel-theme-tencent .hld__excel-footer-item {color:#464d5a;font-size:14px;margin:0 4px;height: 32px;line-height: 32px;}
-        .hld__excel-body.hld__excel-theme-tencent #postbbtm, .hld__excel-body.hld__excel-theme-tencent #mainmenu {display:none;}
+        .hld__excel-body.hld__excel-theme-tencent #mainmenu {top: 18px;right: 20px;}
+        .hld__excel-body.hld__excel-theme-tencent #postbbtm {top: 60px;right: 5px;}
+        .hld__excel-body.hld__excel-theme-tencent #m_pbtnbtm .stdbtn, .hld__excel-body.hld__excel-theme-tencent #m_pbtnbtm .stdbtn a {background: none;font-weight:400;}
+        .hld__excel-body.hld__excel-theme-tencent #m_pbtnbtm .uitxt1 span {font-size: 1em !important;color: #10273f;}
+        .hld__excel-body.hld__excel-theme-tencent #mainmenu .mmdefault.cell input {background: #ffffff;}
         `
     }
     /**

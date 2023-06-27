@@ -359,7 +359,9 @@ A：存放于图床的图片失效了，请及时联系我重新上传图片
 
 ---
 
-### 有问题或建议可以在脚本更新地址提交【反馈】，或者在Github上提交一个【Issues】，或者论坛私信
+### 有问题或建议可以在Github上提交一个【Issues】，其次可以在脚本更新地址提交【反馈】
+
+> Github上的Issues会被优先处理
 
 #### *反馈BUG时请带上浏览器名称版本+油猴插件名称版本，最好配上图文信息，方便定位与调试BUG，正确的反馈问题可以事半功倍，参考 [提问的智慧](https://github.com/kisshang1993/How-To-Ask-Questions-The-Smart-Way/blob/main/README-zh_CN.md)
 
