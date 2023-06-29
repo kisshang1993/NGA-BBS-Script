@@ -646,7 +646,10 @@
             if($('.hld__setting-box').length == 0) {
                 $('#startmenu > tbody > tr > td.last').append('<div><div class="item hld__setting-box"></div></div>')
                 let $entry = $('<a id="hld__setting" title="打开NGA优化摸鱼插件设置面板">NGA优化摸鱼插件设置</a>')
-                $entry.click(()=>$('#hld__setting_cover').css('display', 'block'))
+                $entry.click(()=>{
+                    $('#hld__setting_cover').css('display', 'block')
+                    $('html, body').animate({scrollTop: 0}, 500)
+                })
                 $('#hld__setting_close').click(()=>$('#hld__setting_cover').fadeOut(200))
                 $('.hld__setting-box').append($entry)
             }
@@ -1514,6 +1517,7 @@
                 }else {
                     $('.hld__excel-body').length > 0 && $('body').removeClass('hld__excel-body')
                 }
+                $('body').toggleClass('hld__excel-original-no', !script.setting.advanced.excelNoMode)
             }
             if(script.setting.normal.excelMode && $('.hld__excel-body').length > 0 && $('#mmc').length == 0) {
                 $('body').addClass('hld__excel-body-err')
@@ -1622,7 +1626,7 @@
         .hld__excel-body #m_posts .comment_c .comment_c_1 {border-top-color:#bbbbbb;}
         .hld__excel-body #m_posts .comment_c .comment_c_2 {border-color:#bbbbbb;}
         .hld__excel-body #m_posts {border:0;box-shadow:none;padding-bottom:0;margin:0;counter-reset:num;}
-        .hld__excel-body #m_posts td {background:#fff;border-right:1px solid #bbbbbb;border-bottom:1px solid #bbbbbb;}
+        .hld__excel-body #m_posts td {background:#fff;border-top:1px solid #bbbbbb;border-right:1px solid #bbbbbb;border-bottom:1px solid #bbbbbb;}
         .hld__excel-body #m_posts .c0 {width:32px;color:#777;font-size:16px;background:#e8e8e8;text-align:center;}
         .hld__excel-body #m_posts .c0:before {content:counter(num);counter-increment:num;}
         .hld__excel-body #m_posts .vertmod {background:#fff !important;color:#ccc;}
@@ -1636,6 +1640,8 @@
         .hld__excel-body #m_posts .postbox {border:none !important;}
         .hld__excel-body .posterInfoLine {background: #FFF !important;border-bottom-color: #FFF !important;}
         .hld__excel-body.hld__reply-fixed #postbbtm {position:fixed;right:30px;top:75px;z-index:999;border-radius: 10px;overflow: hidden;}
+        .hld__excel-body .row2 .comment_c .comment_c_1_1 {border-top-color: #FFF;}
+        .hld__excel-body #m_posts .comment_c .comment_c_1 {border-color: #FFF;border-top-color: #BBB;}
         /* Office风格 */
         .hld__excel-body.hld__excel-theme-office .hld__excel-header {height:221px;}
         .hld__excel-body.hld__excel-theme-office .hld__excel-h1 {height:59px;background:#227447;display:flex;justify-content: center;}
@@ -1693,7 +1699,7 @@
         .hld__excel-body.hld__excel-theme-tencent #postbbtm {top: 60px;right: 5px;}
         .hld__excel-body.hld__excel-theme-tencent #m_pbtnbtm .stdbtn, .hld__excel-body.hld__excel-theme-tencent #m_pbtnbtm .stdbtn a {background: none;font-weight:400;}
         .hld__excel-body.hld__excel-theme-tencent #m_pbtnbtm .uitxt1 span {font-size: 1em !important;color: #10273f;}
-        .hld__excel-body.hld__excel-theme-tencent #mainmenu .mmdefault.cell input {background: #ffffff;}
+        .hld__excel-body.hld__excel-theme-tencent #mainmenu .mmdefault.cell input {background: #FFF;}
         `
     }
     /**
@@ -3426,6 +3432,42 @@
         .hld__excel-body .hld__docker-btns>div{background:#fff;border:1px solid #bbb}
         `
     }
+    /**
+     * 域名重定向
+     * @name domainRedirect
+     * @description 此模块提供了将不同域名重定向到一个指定的目标域名
+     */
+    const domainRedirect = {
+        name: 'domainRedirect',
+        setting: {
+            type: 'advanced',
+            key: 'domainRedirectTarget',
+            default: '',
+            options: [{
+                label: '未配置',
+                value: ''
+            }, {
+                label: 'bbs.nga.cn',
+                value: 'bbs.nga.cn'
+            }, {
+                label: 'ngabbs.com',
+                value: 'ngabbs.com'
+            }, {
+                label: 'nga.178.com',
+                value: 'nga.178.com'
+            }],
+            title: '域名重定向目标',
+            desc: '此配置设置将域名重定向到的目标域名\n警告:不同域名的配置文件中的此配置应该保持一致，如不一致将会反复重定向陷入死循环!',
+            menu: 'left'
+        },
+        initFunc: function () {
+            const domainRedirectTarget = script.setting.advanced.domainRedirectTarget
+            if (domainRedirectTarget && window.location.host != domainRedirectTarget) {
+                const newRedirectUrl = window.location.href.replace(window.location.host, domainRedirectTarget)
+                window.location.replace(newRedirectUrl)
+            }
+        }
+    }
 
     /**
      * 初始化脚本
@@ -3461,6 +3503,7 @@
     script.addModule(darkMode)
     script.addModule(fontResize)
     script.addModule(extraDocker)
+    script.addModule(domainRedirect)
     /**
      * 运行脚本
      */
