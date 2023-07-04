@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      4.1.0
+// @version      4.2.0
 // @author       HLD
 // @description  NGA论坛显示优化，全面功能增强，优雅的摸鱼
 // @license      MIT
 // @require      https://cdn.staticfile.org/jquery/3.4.0/jquery.min.js
 // @require      https://cdn.staticfile.org/spectrum/1.8.0/spectrum.js
+// @require      https://cdn.staticfile.org/localforage/1.10.0/localforage.min.js
 // @require      https://greasyfork.org/scripts/424901-nga-script-resource/code/NGA-Script-Resource.js?version=1210513
 // @icon         https://i.loli.net/2021/04/07/8x3yFj2pWEKluSY.png
 // @match        *://bbs.nga.cn/*
@@ -173,6 +174,7 @@
         init () {
             // 开始初始化
             this.printLog('初始化...')
+            localforage.config({name: 'NGA BBS Script DB'})
             const startInitTime = new Date().getTime()
             const modulesTable = []
             //同步配置
@@ -418,7 +420,15 @@
     try {
         // 设置面板
         GM_registerMenuCommand('设置面板', function () {
-            $('#hld__setting_cover').css('display', 'flex')
+            $('#hld__setting_cover').css('display', 'block')
+        })
+        // 清理缓存
+        GM_registerMenuCommand('清理缓存', function () {
+            if (window.confirm('此操作为清理Local Storage与IndexedDB部分缓存内容，不会清理配置\n\n继续请点击【确定】')) {
+                localStorage.removeItem('hld__NGA_post_author')
+                localforage.clear()
+                alert('操作成功，请刷新页面重试')
+            }
         })
         // 修复脚本
         GM_registerMenuCommand('修复脚本', function () {
@@ -432,7 +442,7 @@
         })
         // 反馈问题
         GM_registerMenuCommand('反馈问题', function () {
-            if (window.confirm('如脚本运行失败而且修复后也无法运行，请反馈问题报告\n* 问题报告请包含使用的：[浏览器]，[脚本管理器]，[脚本版本]\n* 描述问题最好以图文并茂的形式\n* 如脚本运行失败，建议提供F12控制台的红色错误输出以辅助排查\n\n即将打开反馈页面，继续请点击【确定】')) {
+            if (window.confirm('如脚本运行失败而且修复后也无法运行，请反馈问题报告\n* 问题报告请包含使用的：[浏览器]，[脚本管理器]，[脚本版本]\n* 描述问题最好以图文并茂的形式\n* 如脚本运行失败，建议提供F12控制台的红色错误输出以辅助排查\n\n默认打开的为Greasy Fork的反馈页面，有能力最好去Github Issue反馈问题，可以获得优先处理\n\n即将打开反馈页面，继续请点击【确定】')) {
                 window.open('https://greasyfork.org/zh-CN/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C/feedback')
             }
         })
@@ -662,7 +672,7 @@
         style: `
         #hld__setting {color:#6666CC;cursor:pointer;}
         #hld__setting_cover {display:none;padding-top: 70px;position:absolute;top:0;left:0;right:0;bottom:0;z-index:999;}
-        #hld__setting_panel {position:relative;background:#fff8e7;width:526px;left: 50%;transform: translateX(-50%);padding:15px 20px;border-radius:10px;box-shadow:0 0 10px #666;border:1px solid #591804;}
+        #hld__setting_panel {position:relative;background:#fff8e7;width:600px;left: 50%;transform: translateX(-50%);padding:15px 20px;border-radius:10px;box-shadow:0 0 10px #666;border:1px solid #591804;}
         #hld__setting_panel > div.hld__field {float:left;width:50%;}
         #hld__setting_panel p {margin-bottom:10px;}
         #hld__setting_panel .hld__sp-title {font-size:15px;font-weight:bold;text-align:center;}
@@ -686,7 +696,7 @@
         button.hld__btn:hover {background:#591804;color:#fff0cd;}
         .hld__sp-fold {padding-left:23px;}
         .hld__sp-fold .hld__f-title {font-weight:bold;}
-        .hld__help-tips {position: absolute;padding: 5px 10px;background: rgba(0,0,0,.6);color: #FFF;border-radius: 5px;z-index: 9999;}
+        .hld__help-tips {position: absolute;padding: 5px 10px;background: rgba(0,0,0,.8);color: #FFF;border-radius: 5px;z-index: 9999;}
         `
     }
     /**
@@ -1294,8 +1304,8 @@
             type: 'advanced',
             key: 'hideCustomBg',
             default: true,
-            title: '隐藏版头同时隐藏背景图片',
-            desc: '选中时：隐藏版头顶部背景图片\n取消时：无操作',
+            title: '隐藏背景图片',
+            desc: '选中时：隐藏版头的同时顶部背景图片\n取消时：无操作',
             menu: 'right'
         }],
         renderAlwaysFunc: function ($el) {
@@ -1617,6 +1627,7 @@
         .hld__excel-body #m_posts .block_txt {font-weight:bold;}
         .hld__excel-body .topicrow .postdate,.hld__excel-body .topicrow .replydate {display:inline;margin:10px;}
         .hld__excel-body #m_pbtnbtm {margin:0;border-bottom:1px solid #bbbbbb;}
+        .hld__excel-body .hld__country-flag {border:.5px solid rgba(0,0,0,.2);}
         .hld__excel-body #pagebbtm,.hld__excel-body #m_pbtnbtm .right_ {margin:0;}
         .hld__excel-body #pagebbtm:before {display:block;line-height:35px;width:33px;float:left;content:"#";border-right:1px solid #bbbbbb;color:#777;font-size:16px;background:#e8e8e8;}
         .hld__excel-body #m_pbtnbtm td {line-height:35px;padding:0 5px;}
@@ -3468,6 +3479,139 @@
             }
         }
     }
+    /**
+     * 用户增强
+     * @name userEnhance
+     * @description 此模块提供了用户功能类的增强，如显示注册天数，IP所属地等
+     */
+    const userEnhance = {
+        name: 'userEnhance',
+        settings: [{
+            type: 'normal',
+            key: 'userEnhance',
+            default: true,
+            title: '用户增强',
+            menu: 'right'
+        }, {
+            type: 'advanced',
+            key: 'locationFlagMode',
+            default: 'FLAG_AND_TEXT',
+            options: [{
+                label: '全部国旗',
+                value: 'FLAG'
+            }, {
+                label: '全部文字',
+                value: 'TEXT'
+            }, {
+                label: '国旗加文字',
+                value: 'FLAG_AND_TEXT'
+            }],
+            title: '属地显示模式',
+            desc: '调整属地显示模式：\n全部国旗：显示国旗不显示文字\n全部文字：显示文字不显示国旗\n国旗加文字：前面显示国旗后面显示文字',
+            menu: 'right'
+        }],
+        initFunc: async function() {
+            // 初始化的时候清理超过一定时间的数据，避免无限增长数据
+            // 出于性能考虑，每日只执行一次
+            const currentDate = new Date()
+            const lastClear = await localforage.getItem('USERENHANCE_CLEAR_DAY')
+            if (lastClear != currentDate.getDate()) {
+                const exprieSeconds = 7 * 24 * 3600  // 7天
+                const currentTime = Math.ceil(currentDate.getTime() / 1000)
+                let removedCount = 0
+                localforage.iterate(function(value, key, iterationNumber) {
+                    if (key.startsWith('USERINFO_')) {
+                        if (!value._queryTime || currentTime - value._queryTime >= exprieSeconds) {
+                            localforage.removeItem(key)
+                            removedCount += 1
+                        }
+                    }
+                }).then(function() {
+                    localforage.setItem('USERENHANCE_CLEAR_DAY', currentDate.getDate())
+                    script.printLog(`用户增强: 已清除${removedCount}条用户超期数据`)
+                }).catch(function(err) {
+                    console.error('用户增强清除超期数据失败，错误原因:', err);
+                })
+            }
+        },
+        renderFormsFunc: function($el) {
+            if (!script.setting.normal.userEnhance) return
+            const uid = $el.find('a[name="uid"]').text()
+            this.getUserInfo(uid)
+            .then(userInfo => {
+                if (!userInfo.regdate) return
+                const regSeconds = Math.ceil(new Date().getTime() / 1000) - userInfo.regdate
+                const regDays = Math.round(regSeconds / 3600 / 24)
+                const regYear = (regSeconds / 3600 / 24 / 365).toFixed(1)
+                const $node = $el.find('.posterinfo div.stat .clickextend').siblings('div:first-child')
+                if ($node) {
+                    let $userEnhanceContainer = $(`<div class="hld__user-enhance"></div>`)
+                    if ($node.next().attr('class') == 'hld__user-enhance') {
+                        $userEnhanceContainer = $node.next()
+                        $userEnhanceContainer.empty()
+                    } else {
+                        $node.after($userEnhanceContainer)
+                    }
+                    $userEnhanceContainer.append(`<div><span title="注册天数: ${regDays}天\n注册年数: ${regYear}年">吧龄: <span class="numeric userval" name="regday">${regDays}天</span></span></div>`)
+                    $userEnhanceContainer.append(`<div><span style="display: inline-flex;align-items: center;" title="IP属地: ${userInfo.ipLoc}">属地: ${this.getCountryFlag(userInfo.ipLoc)}</span></div>`)
+                }
+            })
+        },
+        getUserInfo(uid) {
+            const storageKey = `USERINFO_${uid}`
+            return new Promise((resolve, reject) => {
+                localforage.getItem(storageKey)
+                .then(value => {
+                    if (value) {
+                        resolve(value)
+                    } else {
+                        $.ajax({url: 'https://bbs.nga.cn/nuke.php?__output=11&__act=get&__lib=ucp&uid=' + uid})
+                        .then(res => {
+                            if (res.data && Array.isArray(res.data) && res.data.length > 0) {
+                                const userInfo = res.data[0]
+                                userInfo['_queryTime'] = res.time
+                                localforage.setItem(storageKey, userInfo)
+                            }
+                            resolve(res.data[0])
+                        })
+                        .catch(err => reject(err))
+                    }
+                })
+            })
+        },
+        getCountryFlag(chsName) {
+            let textElement = `<span class="numeric userval" name="location">${chsName}</span>`
+            let flagElement = ''
+            if (script.setting.advanced.locationFlagMode != 'TEXT_ALWAYS') {
+                const flagUrl = `https://www.huuua.com/zi/scss/icons/flag-icon-css/flags`
+                if (CHINESE_CONVERT_ISO3166_1[chsName]) {
+                    flagElement = `<img class="hld__country-flag" onerror="this.style.width='auto'" alt="${chsName}" src="${flagUrl}/${CHINESE_CONVERT_ISO3166_1[chsName].toLowerCase()}.svg"/>`
+                } else if (CHINA_PROVINCE.includes(chsName)) {
+                    flagElement = `<img class="hld__country-flag" onerror="this.style.width='auto'" alt="中国" src="${flagUrl}/cn.svg"/> `
+                    const specialArea = ['香港', '澳门', '台湾'].find(name => chsName.endsWith(name))
+                    if (specialArea) {
+                        flagElement += `<img class="hld__country-flag" onerror="this.style.width='auto'" alt="中国${chsName}" src="${flagUrl}/${CHINESE_CONVERT_ISO3166_1['中国'+chsName].toLowerCase()}.svg"/> `
+                    }
+                }
+            }
+            switch (script.setting.advanced.locationFlagMode) {
+                case 'FLAG_ALWAYS':
+                    return flagElement
+                case 'TEXT_ALWAYS':
+                    return textElement
+                case 'FLAG_AND_TEXT':
+                    return flagElement + textElement
+                default:
+                    return textElement
+            }
+        },
+        style: `
+        .hld__user-enhance {display:flex;}
+        .hld__user-enhance > div {box-sizing:boder-box;width:50%;padding-right:3px;}
+        .hld__user-enhance span[name=location] {margin-left:5px;}
+        .hld__country-flag {width:20px;height:auto;margin-left:5px;}
+        `
+    }
 
     /**
      * 初始化脚本
@@ -3491,6 +3635,7 @@
     script.addModule(excelMode)
     script.addModule(excelTitle)
     script.addModule(foldQuote)
+    script.addModule(userEnhance)
     script.addModule(linkTargetBlank)
     script.addModule(directLinkJump)
     script.addModule(imgEnhance)
