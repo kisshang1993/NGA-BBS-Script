@@ -2,7 +2,7 @@
     <div align="center">
         <h2>
             <br>
-            <a href="https://frappeframework.com">
+            <a href="https://github.com/kisshang1993/NGA-BBS-Script">
                 <img style="border-radius:20px;" src="https://i.loli.net/2021/04/02/iyUhwTpYXm8SKN6.png" height="100">
             </a>
         </h2>
@@ -20,7 +20,10 @@
             <img src="https://img.shields.io/github/stars/kisshang1993/NGA-BBS-Script?label=Star&style=social">
         </a>
         <a target="_blank" href="https://greasyfork.org/zh-CN/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C/" title="NGA-BBS-Script">
-            <img src="https://img.shields.io/badge/Greasy%20Fork-NGA优化摸鱼体验-brightgreen">
+            <img alt="Greasy Fork" src="https://img.shields.io/greasyfork/v/393991">
+        </a>
+        <a target="_blank"  href="https://greasyfork.org/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C/code/NGA%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C.user.js">
+            <img alt="Greasy Fork Total Installed" src="https://img.shields.io/greasyfork/dt/393991">
         </a>
         <a target="_blank" href="#LICENSE" title="License: MIT">
             <img src="https://img.shields.io/badge/License-MIT-success.svg">
@@ -48,15 +51,28 @@ NGA论坛显示优化，功能增强，具体功能见下面【[功能列表](#�
 
 ---
 
-## v4.1更新 *
+## v4.2更新 *
 
-- 标记功能现在支持选择**已添加过的标签**
+- 新增功能[用户增强](#用户增强)
 
-- 新增功能[域名重定向](#域名重定向)
+  回复的用户信息处添加展示**吧龄**、**发帖数**、**IP属地**
 
-  在**⚙️高级设置**中可以设置要重定向的域名，当脚本监测到域名地址与设置的不匹配时，将会进行重定向
+  ![用户增强案例](https://img1.imgtp.com/2023/07/07/CjO7FkiI.png)
 
-  > ⚠︎警告：错误的配置将会导致重定向死循环，正确使用方式查看下面的[功能说明](#域名重定向)
+  用户信息出添加按钮**查看用户活动记录**
+
+  调用NGA数据接口进行查询此用户的发帖回帖版面信息，使用图表整合进行展示
+
+  查询案例
+
+  ![用户活动记录案例预览](https://img1.imgtp.com/2023/07/07/eId5muyD.png)
+
+  *由于性能原因，需要手动点击按钮进行查询*
+
+  在**⚙️高级设置**中可以设置属地展示模式
+  - 全部国旗：展示国旗
+  - 全部文字：展示文字
+  - 国旗加文字：国旗后面加文字
 
 - 修复部分问题
 
@@ -80,6 +96,7 @@ NGA论坛显示优化，功能增强，具体功能见下面【[功能列表](#�
 - ✅ [高亮楼主](#高亮楼主)
 - ✅ [拉黑名单与备注功能](#拉黑名单与备注功能)
 - ✅ [关键字屏蔽](#关键字屏蔽)
+- ✅ [用户增强](#用户增强)
 - ✅ [图片增强（增强原版图片展示能力）](#图片增强)
 - ✅ [楼内图像尺寸优化，每张图最大宽200px](#图片增强)
 - ✅ [独立预览图片时可以切换楼内图片（默认快捷键为左右箭头按键）](#图片增强)
@@ -93,7 +110,7 @@ NGA论坛显示优化，功能增强，具体功能见下面【[功能列表](#�
 - ✅ [连接直接跳转](#连接直接跳转)
 - ✅ [自动翻页](#自动翻页)
 - ✅ [折叠引用](#折叠引用)
-- ✅ [导出/导入配置](#导出/导入配置)
+- ✅ [导出/导入配置](#导出导入配置)
 
 **注意：以上功能不是默认全部开启的，初次使用请先在【插件设置面板】根据个人喜好选择开关功能，关于【插件设置面板】请继续阅读*
 
@@ -203,6 +220,27 @@ WPS风格：
 含有屏蔽内容的标题，回复，贴条等全部都会被删除
 *可以在控制台中看到删除的内容*
 
+### 用户增强
+
+回复的用户信息处添加展示**吧龄**、**发帖数**、**IP属地**
+
+![用户增强案例](https://img1.imgtp.com/2023/07/07/CjO7FkiI.png)
+
+用户信息出添加按钮**查看用户活动记录**
+
+调用NGA数据接口进行查询此用户的发帖回帖版面信息，使用图表整合进行展示
+
+查询案例
+
+![用户活动记录案例预览](https://img1.imgtp.com/2023/07/07/eId5muyD.png)
+
+*由于性能原因，需要手动点击按钮进行查询*
+
+在**⚙️高级设置**中可以设置属地展示模式
+- 全部国旗：展示国旗
+- 全部文字：展示文字
+- 国旗加文字：国旗后面加文字
+
 ### 图片增强
 
 #### 图片缩放功能，默认将贴内图片宽度调整到200px，更易于浏览
@@ -305,7 +343,7 @@ WPS风格：
 ![配置快捷键预览](https://i.loli.net/2020/10/29/f54OGDgeBqnLrbu.jpg
 )
 
-#### 导出/导入配置
+#### 导出导入配置
 
 可以选择导出配置，迁移数据到新浏览器，或者分享配置
 
