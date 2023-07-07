@@ -3639,70 +3639,72 @@
             const activeCount = []
             const requestTasks = []
             // 查询发帖记录
-            requestTasks.push(new Promise((resolve, reject) => {
-                $.ajax({url: 'https://bbs.nga.cn/thread.php?__output=11&authorid=' + userInfo.uid})
-                .then(postRes => {
-                    const err = postRes.error
-                    if (postRes.data && postRes.data.__T) {
-                        const postList = postRes.data.__T
-                        const validList = postList.filter(p => p.authorid == userInfo.uid)
-                        validList.forEach(item => {
-                            if (item.parent && item.parent['2']) {
-                                const pName = item.parent['2']
-                                let existRecord = activeCount.find(p => p.name == pName)
-                                if (!existRecord) {
-                                    existRecord = {name: pName, value: 0, post: 0, reply: 0}
-                                    activeCount.push(existRecord)
+            for (let i=0;i<3;i++) {
+                requestTasks.push(new Promise((resolve, reject) => {
+                    $.ajax({url: `https://bbs.nga.cn/thread.php?__output=11&authorid=${userInfo.uid}&page=${i+1}`})
+                    .then(postRes => {
+                        const err = postRes.error
+                        if (postRes.data && postRes.data.__T) {
+                            const postList = postRes.data.__T
+                            const validList = postList.filter(p => p.authorid == userInfo.uid)
+                            validList.forEach(item => {
+                                if (item.parent && item.parent['2']) {
+                                    const pName = item.parent['2']
+                                    let existRecord = activeCount.find(p => p.name == pName)
+                                    if (!existRecord) {
+                                        existRecord = {name: pName, value: 0, post: 0, reply: 0}
+                                        activeCount.push(existRecord)
+                                    }
+                                    existRecord['name'] = pName
+                                    existRecord['value'] += 1
+                                    existRecord['post'] += 1
                                 }
-                                existRecord['name'] = pName
-                                existRecord['value'] += 1
-                                existRecord['post'] += 1
-                            }
-                        })
-                    }
-                    if (err) {
-                        const errMsg = (err && Array.isArray(err)) ? err.join(' ') : err
-                        if (!errMsg.includes('没有符合条件的结果')) {
-                            reject(errMsg)
-                            return
+                            })
                         }
-                    }
-                    resolve()
-                })
-            }))
-            // 查询回复记录
-            requestTasks.push(new Promise((resolve, reject) => {
-                $.ajax({url: 'https://bbs.nga.cn/thread.php?__output=11&searchpost=1&authorid=' + userInfo.uid})
-                .then(replyRes => {
-                    const err = replyRes.error
-                    if (replyRes.data && replyRes.data.__T) {
-                        const replyList = replyRes.data.__T
-                        const validList = replyList
-                        validList.forEach(item => {
-                            if (item.parent && item.parent['2']) {
-                                const pName = item.parent['2']
-                                let existRecord = activeCount.find(p => p.name == pName)
-                                if (!existRecord) {
-                                    existRecord = {name: pName, value: 0, post: 0, reply: 0}
-                                    activeCount.push(existRecord)
-                                }
-                                existRecord['name'] = pName
-                                existRecord['value'] += 1
-                                existRecord['reply'] += 1
+                        if (err) {
+                            const errMsg = (err && Array.isArray(err)) ? err.join(' ') : err
+                            if (!errMsg.includes('没有符合条件的结果')) {
+                                reject(errMsg)
+                                return
                             }
-                        })
+                        }
                         resolve()
-                    }
-                    if (err) {
-                        const errMsg = (err && Array.isArray(err)) ? err.join(' ') : err
-                        if (!errMsg.includes('没有符合条件的结果')) {
-                            reject(errMsg)
-                            return
+                    })
+                }))
+                // 查询回复记录
+                requestTasks.push(new Promise((resolve, reject) => {
+                    $.ajax({url: `https://bbs.nga.cn/thread.php?__output=11&searchpost=1&authorid=${userInfo.uid}&page=${i+1}`})
+                    .then(replyRes => {
+                        const err = replyRes.error
+                        if (replyRes.data && replyRes.data.__T) {
+                            const replyList = replyRes.data.__T
+                            const validList = replyList
+                            validList.forEach(item => {
+                                if (item.parent && item.parent['2']) {
+                                    const pName = item.parent['2']
+                                    let existRecord = activeCount.find(p => p.name == pName)
+                                    if (!existRecord) {
+                                        existRecord = {name: pName, value: 0, post: 0, reply: 0}
+                                        activeCount.push(existRecord)
+                                    }
+                                    existRecord['name'] = pName
+                                    existRecord['value'] += 1
+                                    existRecord['reply'] += 1
+                                }
+                            })
+                            resolve()
                         }
-                    }
-                    resolve()
-                })
-            }))
+                        if (err) {
+                            const errMsg = (err && Array.isArray(err)) ? err.join(' ') : err
+                            if (!errMsg.includes('没有符合条件的结果')) {
+                                reject(errMsg)
+                                return
+                            }
+                        }
+                        resolve()
+                    })
+                }))
+            }
             Promise.all(requestTasks)
             .then(() => {
                 // 渲染chart
