@@ -8,7 +8,7 @@
 // @require      https://cdn.staticfile.org/jquery/3.4.0/jquery.min.js
 // @require      https://cdn.staticfile.org/spectrum/1.8.0/spectrum.js
 // @require      https://cdn.staticfile.org/localforage/1.10.0/localforage.min.js
-// @require      https://greasyfork.org/scripts/424901-nga-script-resource/code/NGA-Script-Resource.js?version=1210513
+// @require      https://greasyfork.org/scripts/424901-nga-script-resource/code/NGA-Script-Resource.js?version=1216641
 // @icon         https://i.loli.net/2021/04/07/8x3yFj2pWEKluSY.png
 // @match        *://bbs.nga.cn/*
 // @match        *://ngabbs.com/*
@@ -230,7 +230,7 @@
          * 通知弹框
          * @method popNotification
          * @param {String} msg 消息内容
-         * @param {Number} duration 显示市场(ms)
+         * @param {Number} duration 显示时长(ms)
          */
         popNotification (msg, duration=1000) {
             $('#hld__noti_container').length == 0 && $('body').append('<div id="hld__noti_container"></div>')
@@ -677,7 +677,7 @@
         #hld__setting_panel p {margin-bottom:10px;}
         #hld__setting_panel .hld__sp-title {font-size:15px;font-weight:bold;text-align:center;}
         #hld__setting_panel .hld__sp-section {font-weight:bold;margin-top:20px;}
-        .hld__setting-close {position:absolute;top:5px;right:5px;padding:3px 6px;background:#fff0cd;color:#591804;transition:all .2s ease;cursor:pointer;border-radius:4px;text-decoration:none;}
+        .hld__setting-close {position:absolute;top:5px;right:5px;padding:3px 6px;background:#fff0cd;color:#591804;transition:all .2s ease;cursor:pointer;border-radius:4px;text-decoration:none;z-index:9999;}
         .hld__setting-close:hover {background:#591804;color:#fff0cd;text-decoration:none;}
         #hld__setting_panel button {transition:all .2s ease;cursor:pointer;}
         .hld__advanced-setting {border-top: 1px solid #e0c19e;border-bottom: 1px solid #e0c19e;padding: 3px 0;margin-top:25px;}
@@ -1061,9 +1061,9 @@
                 <div class="hld__list-panel hld__reward-panel animated fadeInUp">
                     <a href="javascript:void(0)" class="hld__setting-close">×</a>
                     <div class="hld__reward-info">
-                        <p><b>本脚本完全开源，并且长期维护，您喜欢请可以去Github点个Star！</p>
-                        <p>您若有好的功能需求或者建议，欢迎反馈</p>
-                        <p>如果您觉得脚本好用<span class="hld__delete-line">帮助到更好的摸鱼</span>，也可以请作者喝杯咖啡~<img src="${IMG_ICON_HECHA}"></p>
+                        <p><b>喜欢此脚本请可以去作者<a href="${script.getInfo().github}" target="_blank"><b>Github</b></a>点个⭐️</p>
+                        <p>如果觉得脚本好用<span class="hld__delete-line">摸到鱼了</span>，也可以请作者喝杯☕意思意思，打多少零看缘分😎</p>
+                        <p>如若有功能需求或者建议，欢迎在社区进行反馈</p>
                     </div>
                     <div class="hld__flex">
                         <div class="hld__list-c"><img src="${IMG_REWARD_ALIPAY}"></div>
@@ -1588,6 +1588,7 @@
         .hld__excel-body #mainmenu .stdbtn a:hover {background:none;text-decoration:underline;color:#2c5787 !important;}
         .hld__excel-body #mainmenu .mmdefault.cell input {padding:0;margin:0;background:#ededed;border:1px solid #c9d0dc;border-radius:10px;box-shadow:none;font-size:13px !important;}
         .hld__excel-body #mainmenu, .hld__excel-body #mainmenu .half, .hld__excel-body #mainmenu td a, .hld__excel-body #mainmenu .stdbtn .innerbg, .hld__excel-body #mainmenu, .hld__excel-body #mainmenu .stdbtn a, .hld__excel-body #mainmenu .stdbtn .td {height: 20px !important;line-height: 20px !important;padding: 0 5px !important;background:none;color:#424242 !important;}
+        .hld__excel-body #mainmenu .innerbg > div:nth-child(2) > div:first-child {display:none;}
         .hld__excel-body .single_ttip2 {position: fixed !important;z-index:999 !important;top:30px !important;border-color:#888;}
         .hld__excel-body .hld__excel-body #mainmenu, .hld__excel-body .catenew,.hld__excel-body #toptopics,.hld__excel-body #m_pbtntop,.hld__excel-body #m_fopts,.hld__excel-body #b_nav,.hld__excel-body #fast_post_c,.hld__excel-body #custombg,.hld__excel-body #m_threads th,.hld__excel-body #m_posts th,.hld__excel-body .r_container,.hld__excel-body #footer,.hld__excel-body .clickextend {display:none !important;}
         .hld__excel-body #mmc {margin-top:195px;margin-bottom:35px;}
@@ -1648,6 +1649,7 @@
         .hld__excel-body #m_posts .postInfo svg {fill:#10273f !important;}
         .hld__excel-body #m_posts .recommendvalue {color:#10273f !important;}
         .hld__excel-body #m_posts button {background:#eee;}
+        .hld__excel-body #m_posts button:active {outline-color:#bbbbbb;}
         .hld__excel-body #m_posts .postbox {border:none !important;}
         .hld__excel-body .posterInfoLine {background: #FFF !important;border-bottom-color: #FFF !important;}
         .hld__excel-body.hld__reply-fixed #postbbtm {position:fixed;right:30px;top:75px;z-index:999;border-radius: 10px;overflow: hidden;}
@@ -3533,31 +3535,43 @@
                     console.error('用户增强清除超期数据失败，错误原因:', err);
                 })
             }
+            // 添加ECharts库支持，因资源过大，异步加载提高性能
+            const echartsScript = document.createElement('script')
+            echartsScript.src = 'https://cdn.staticfile.org/echarts/5.4.2/echarts.min.js'
+            document.head.appendChild(echartsScript)
         },
         renderFormsFunc: function($el) {
             if (!script.setting.normal.userEnhance) return
+            const _this = this
             const uid = $el.find('a[name="uid"]').text()
-            this.getUserInfo(uid)
-            .then(userInfo => {
-                if (!userInfo.regdate) return
-                const regSeconds = Math.ceil(new Date().getTime() / 1000) - userInfo.regdate
-                const regDays = Math.round(regSeconds / 3600 / 24)
-                const regYear = (regSeconds / 3600 / 24 / 365).toFixed(1)
-                const $node = $el.find('.posterinfo div.stat .clickextend').siblings('div:first-child')
-                if ($node) {
-                    let $userEnhanceContainer = $(`<div class="hld__user-enhance"></div>`)
-                    if ($node.next().attr('class') == 'hld__user-enhance') {
-                        $userEnhanceContainer = $node.next()
-                        $userEnhanceContainer.empty()
-                    } else {
-                        $node.after($userEnhanceContainer)
-                    }
-                    $userEnhanceContainer.append(`<div><span title="注册天数: ${regDays}天\n注册年数: ${regYear}年">吧龄: <span class="numeric userval" name="regday">${regDays}天</span></span></div>`)
-                    $userEnhanceContainer.append(`<div><span style="display: inline-flex;align-items: center;" title="IP属地: ${userInfo.ipLoc}">属地: ${this.getCountryFlag(userInfo.ipLoc)}</span></div>`)
-                }
+            const userInfo = commonui.userInfo.users[uid]
+            if (!userInfo) return
+            const regSeconds = Math.ceil(new Date().getTime() / 1000) - userInfo.regdate
+            const regDays = Math.round(regSeconds / 3600 / 24)
+            const regYear = (regSeconds / 3600 / 24 / 365).toFixed(1)
+            // 插入UI
+            const $userEnhanceContainer = $(`<div class="hld__user-enhance"></div>`)
+            const $node = $el.find('.posterinfo div.stat .clickextend').siblings('div:first-child')
+            $node.after($userEnhanceContainer)
+            $userEnhanceContainer.append(`<div><span title="注册天数: ${regDays}天\n注册年数: ${regYear}年">吧龄: <span class="numeric userval" name="regday">${regDays}天</span></span></div>`)
+            $userEnhanceContainer.append(`<div><span title="发帖数量: ${userInfo.postnum}">发帖: <span class="numeric userval" name="regday">${userInfo.postnum}</span></span></div>`)
+            $userEnhanceContainer.append(`<div><span style="display: inline-flex;align-items: center;" class="hld__user-location">属地: <span class="userval numeric loading" style="margin-left:5px;"></span></span></div>`)
+            $userEnhanceContainer.append(`<div class="hld__qbc"><button>查看用户活动记录</button></div>`)
+            $el.find('.hld__qbc > button').click(() => _this.queryUserActivityRecords(userInfo))
+            // 调用数据接口获取属地
+            this.getRemoteUserInfo(uid)
+            .then(remoteUserInfo => {
+                // 异步设置属地
+                $userEnhanceContainer.find('.hld__user-location').attr('title', `IP属地: ${remoteUserInfo.ipLoc}`)
+                $userEnhanceContainer.find('.hld__user-location > span').replaceWith(this.getCountryFlag(remoteUserInfo.ipLoc))
             })
         },
-        getUserInfo(uid) {
+        /**
+         * 调用接口获取用户信息
+         * @param {String} uid 用户UID
+         * @returns Promise 用户信息对象
+         */
+        getRemoteUserInfo(uid) {
             const storageKey = `USERINFO_${uid}`
             return new Promise((resolve, reject) => {
                 localforage.getItem(storageKey)
@@ -3568,17 +3582,22 @@
                         $.ajax({url: 'https://bbs.nga.cn/nuke.php?__output=11&__act=get&__lib=ucp&uid=' + uid})
                         .then(res => {
                             if (res.data && Array.isArray(res.data) && res.data.length > 0) {
-                                const userInfo = res.data[0]
-                                userInfo['_queryTime'] = res.time
-                                localforage.setItem(storageKey, userInfo)
+                                const remoteUserInfo = res.data[0]
+                                remoteUserInfo['_queryTime'] = res.time
+                                localforage.setItem(storageKey, remoteUserInfo)
+                                resolve(res.data[0])
                             }
-                            resolve(res.data[0])
                         })
                         .catch(err => reject(err))
                     }
                 })
             })
         },
+        /**
+         * 获取属地标识代码
+         * @param {String} chsName 中文国家名称
+         * @returns HTML代码
+         */
         getCountryFlag(chsName) {
             let textElement = `<span class="numeric userval" name="location">${chsName}</span>`
             let flagElement = ''
@@ -3605,11 +3624,239 @@
                     return textElement
             }
         },
+        /**
+         * 查询用户活动记录
+         * @param {Object} userInfo 用户信息对象
+         */
+        queryUserActivityRecords(userInfo) {
+            $('#hld__chart_cover').remove()
+            if (typeof echarts === 'undefined') {
+                script.popMsg('该功能所需资源库正在加载，请稍后再试', 'warn')
+                return
+            }
+            $('body').append(`<div id="hld__chart_cover" class="animated zoomIn"><a href="javascript:void(0)" class="hld__setting-close">×</a><div id="hld__chart_container"><div class="loading"></div></div></div>`)
+            $('#hld__chart_cover .hld__setting-close').click(() => $('#hld__chart_cover').remove())
+            const activeCount = []
+            const requestTasks = []
+            // 查询发帖记录
+            requestTasks.push(new Promise((resolve, reject) => {
+                $.ajax({url: 'https://bbs.nga.cn/thread.php?__output=11&authorid=' + userInfo.uid})
+                .then(postRes => {
+                    const err = postRes.error
+                    if (postRes.data && postRes.data.__T) {
+                        const postList = postRes.data.__T
+                        const validList = postList.filter(p => p.authorid == userInfo.uid)
+                        validList.forEach(item => {
+                            if (item.parent && item.parent['2']) {
+                                const pName = item.parent['2']
+                                let existRecord = activeCount.find(p => p.name == pName)
+                                if (!existRecord) {
+                                    existRecord = {name: pName, value: 0, post: 0, reply: 0}
+                                    activeCount.push(existRecord)
+                                }
+                                existRecord['name'] = pName
+                                existRecord['value'] += 1
+                                existRecord['post'] += 1
+                            }
+                        })
+                    }
+                    if (err) {
+                        const errMsg = (err && Array.isArray(err)) ? err.join(' ') : err
+                        if (!errMsg.includes('没有符合条件的结果')) {
+                            reject(errMsg)
+                            return
+                        }
+                    }
+                    resolve()
+                })
+            }))
+            // 查询回复记录
+            requestTasks.push(new Promise((resolve, reject) => {
+                $.ajax({url: 'https://bbs.nga.cn/thread.php?__output=11&searchpost=1&authorid=' + userInfo.uid})
+                .then(replyRes => {
+                    const err = replyRes.error
+                    if (replyRes.data && replyRes.data.__T) {
+                        const replyList = replyRes.data.__T
+                        const validList = replyList
+                        validList.forEach(item => {
+                            if (item.parent && item.parent['2']) {
+                                const pName = item.parent['2']
+                                let existRecord = activeCount.find(p => p.name == pName)
+                                if (!existRecord) {
+                                    existRecord = {name: pName, value: 0, post: 0, reply: 0}
+                                    activeCount.push(existRecord)
+                                }
+                                existRecord['name'] = pName
+                                existRecord['value'] += 1
+                                existRecord['reply'] += 1
+                            }
+                        })
+                        resolve()
+                    }
+                    if (err) {
+                        const errMsg = (err && Array.isArray(err)) ? err.join(' ') : err
+                        if (!errMsg.includes('没有符合条件的结果')) {
+                            reject(errMsg)
+                            return
+                        }
+                    }
+                    resolve()
+                })
+            }))
+            Promise.all(requestTasks)
+            .then(() => {
+                // 渲染chart
+                const chartContainer = document.getElementById('hld__chart_container')
+                if (!chartContainer) return
+                const chart = echarts.init(chartContainer)
+                chart.setOption({
+                    title: {
+                        text: '用户活跃板块记录',
+                        subtext: userInfo.username ||`UID: ${userInfo.username}`,
+                        top: 10,
+                        left: 'center'
+                    },
+                    tooltip: {
+                        formatter: function(row) {
+                            return `${row.data.name}<br />总计: ${row.data.value}<br>发布: ${row.data.post}<br>回复: ${row.data.reply}`
+                        }
+                    },
+                    toolbox: {
+                        show: true,
+                        bottom: 10,
+                        left: 10,
+                        itemSize: 16,
+                        feature: {
+                            saveAsImage: {show: true},
+                        },
+                    },
+                    legend: {
+                        type: 'scroll',
+                        orient: 'vertical',
+                        left: 10,
+                        top: 'middle'
+                    },
+                    series: [{
+                        name: '板块',
+                        type: 'pie',
+                        radius: '50%',
+                        label: {
+                            formatter: function(row) {
+                                return `{name|${row.data.name}}\n{detail|发布: ${row.data.post}} {detail|回复: ${row.data.reply}}`
+                            },
+                            minMargin: 5,
+                            edgeDistance: 10,
+                            lineHeight: 15,
+                            rich: {detail: {
+                                fontSize: 10,
+                                color: '#999'
+                            }}
+                        },
+                        labelLine: {
+                            length: 15,
+                            length2: 0,
+                            maxSurfaceAngle: 80
+                        },
+                        labelLayout: function (params) {
+                            const isLeft = params.labelRect.x < chart.getWidth() / 2;
+                            const points = params.labelLinePoints;
+                            points[2][0] = isLeft ? params.labelRect.x : params.labelRect.x + params.labelRect.width;
+                            return {labelLinePoints: points}
+                        },
+                        data: activeCount,
+                        emphasis: {
+                            itemStyle: {shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.5)'}
+                        }
+                    }],
+                    graphic: [{
+                        type: 'group',
+                        right: 10,
+                        top: 'middle',
+                        children: [{
+                            type: 'text',
+                            left: 0,
+                            top: 0,
+                            style: {
+                                text: '发布主题: ' + activeCount.reduce((p, c) => p + c.post, 0),
+                                fill: '#333',
+                            }
+                        }, {
+                            type: 'text',
+                            left: 75,
+                            top: 0,
+                            style: {
+                                text: '查看',
+                                fill: '#00a0ff',
+                            },
+                            onclick: function() {
+                                window.open(`${window.location.origin}/thread.php?authorid=${userInfo.uid}`)
+                            }
+                        }, {
+                            type: 'text',
+                            left: 0,
+                            top: 20,
+                            style: {
+                                text: '回复主题: ' + activeCount.reduce((p, c) => p + c.reply, 0),
+                                fill: '#333',
+                            }
+                        }, {
+                            type: 'text',
+                            left: 75,
+                            top: 20,
+                            style: {
+                                text: '查看',
+                                fill: '#00a0ff',
+                            },
+                            onclick: function() {
+                                window.open(`${window.location.origin}/thread.php?searchpost=1&authorid=${userInfo.uid}`)
+                            }
+                        }, {
+                            type: 'text',
+                            left: 25,
+                            top: 40,
+                            style: {
+                                text: '总计: ' + activeCount.reduce((p, c) => p + c.value, 0),
+                                fill: '#333',
+                            }
+                        }]
+                    }, {
+                        type: 'text',
+                        right: 10,
+                        bottom: 33,
+                        style: {
+                            text: '*仅统计最近有效的公开数据',
+                            fill: '#666'
+                        }
+                    }, {
+                        type: 'image',
+                        right: 10,
+                        bottom: 30,
+                        style: {
+                            image: POWER_BY_NGASCRIPT,
+                            width: 150
+                        }
+                    }]
+                })
+            })
+            .catch(errMsg => {
+                $('#hld__chart_cover').remove()
+                script.popMsg(`查询数据接口失败! 原因: ${errMsg}`, 'err')
+            })
+        },
         style: `
-        .hld__user-enhance {display:flex;}
-        .hld__user-enhance > div {box-sizing:boder-box;width:50%;padding-right:3px;}
+        .hld__user-enhance {display:flex;flex-wrap:wrap;}
+        .hld__user-enhance > div {box-sizing:border-box;width:50%;padding-right:3px;}
         .hld__user-enhance span[name=location] {margin-left:5px;}
         .hld__country-flag {width:20px;height:auto;margin-left:5px;}
+        .hld__user-location .loading {width:8px;height:8px;border:1px solid #9c958b;border-top-color:transparent;border-radius:100%;animation:loading-circle infinite 0.75s linear;}
+        .hld__qbc {width:100% !important;padding:5px 0;}
+        .hld__qbc > button {margin:0;}
+        #hld__chart_cover {position:fixed;top:50%;left:50%;transform:translate(-50%, -50%);border-radius:10px;background:#FFF;border:1px solid #AAA;box-shadow:0 0 10px rgba(0,0,0,.3);z-index:9993;}
+        #hld__chart_cover > .hld__setting-close {background:#FFF;border:1px solid #AAA;color:#AAA;}
+        #hld__chart_cover > .hld__setting-close:hover {background:#AAA;border:1px solid #FFF;color:#FFF;}
+        #hld__chart_container {width:820px;height:480px;}
+        #hld__chart_container .loading {position:absolute;top: 50%;left:50%;margin-top:-20px;margin-left:-25px;width:40px;height:40px;border:2px solid #AAA;border-top-color:transparent;border-radius:100%;animation:loading-circle infinite 0.75s linear;}
+        @keyframes loading-circle {0% {transform:rotate(0);}100% {transform:rotate(360deg);}}
         `
     }
 

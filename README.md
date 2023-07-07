@@ -2,7 +2,7 @@
     <div align="center">
         <h2>
             <br>
-            <a href="https://frappeframework.com">
+            <a href="https://github.com/kisshang1993/NGA-BBS-Script">
                 <img style="border-radius:20px;" src="https://i.loli.net/2021/04/02/iyUhwTpYXm8SKN6.png" height="100">
             </a>
         </h2>
@@ -58,6 +58,18 @@ NGA论坛显示优化，功能增强，具体功能见下面【[功能列表](#�
   回复的用户信息处添加展示**吧龄**、**IP属地**
 
   ![用户增强案例1](https://img1.imgtp.com/2023/07/03/0QLB2Tpw.png) ![用户增强案例2](https://img1.imgtp.com/2023/07/03/jC1GybZ1.png)
+
+  用户信息出添加按钮**查看用户活动记录**
+
+  调用NGA数据接口进行查询此用户的发帖回帖版面信息，使用图表整合进行展示
+
+  ![查看用户活动记录按钮预览](https://img1.imgtp.com/2023/07/07/gcHFZjiZ.png)
+
+  查询案例
+
+  ![用户活动记录案例预览](https://img1.imgtp.com/2023/07/07/eId5muyD.png)
+
+  *由于性能原因，需要手动点击按钮进行查询*
 
   在**⚙️高级设置**中可以设置属地展示模式
   - 全部国旗：展示国旗
@@ -215,6 +227,18 @@ WPS风格：
 回复的用户信息处添加展示**吧龄**、**IP属地**
 
 ![用户增强案例1](https://img1.imgtp.com/2023/07/03/0QLB2Tpw.png) ![用户增强案例2](https://img1.imgtp.com/2023/07/03/jC1GybZ1.png)
+
+用户信息出添加按钮**查看用户活动记录**
+
+调用NGA数据接口进行查询此用户的发帖回帖版面信息，使用图表整合进行展示
+
+![查看用户活动记录按钮预览](https://img1.imgtp.com/2023/07/07/gcHFZjiZ.png)
+
+查询案例
+
+![用户活动记录案例预览](https://img1.imgtp.com/2023/07/07/eId5muyD.png)
+
+*由于性能原因，需要手动点击按钮进行查询*
 
 在**⚙️高级设置**中可以设置属地展示模式
 
