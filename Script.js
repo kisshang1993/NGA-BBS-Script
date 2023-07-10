@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      4.2.1
+// @version      4.2.2
 // @author       HLD
 // @description  NGA论坛显示优化，全面功能增强，优雅的摸鱼
 // @license      MIT
@@ -2084,7 +2084,7 @@
                 const author = $('#postauthor0').text().replace('楼主', '')
                 const tid = this.getQueryString('tid')
                 const authorStr = `${tid}:${author}`
-                if (author && !this.postAuthor.includes(authorStr)) {
+                if (author && !this.postAuthor.includes(authorStr) && !window.location.href.includes('authorid')) {
                     this.postAuthor.unshift(authorStr) > 10 && this.postAuthor.pop()
                     window.localStorage.setItem('hld__NGA_post_author', this.postAuthor.join(','))
                 }
@@ -3554,7 +3554,7 @@
             $userEnhanceContainer.append(`<div><span title="注册天数: ${regDays}天\n注册年数: ${regYear}年">吧龄: <span class="numeric userval" name="regday">${regDays}天</span></span></div>`)
             $userEnhanceContainer.append(`<div><span title="发帖数量: ${userInfo.postnum}">发帖: <span class="numeric userval" name="regday">${userInfo.postnum}</span></span></div>`)
             $userEnhanceContainer.append(`<div><span style="display: inline-flex;align-items: center;" class="hld__user-location">属地: <span class="userval numeric loading" style="margin-left:5px;"></span></span></div>`)
-            $userEnhanceContainer.append(`<div class="hld__qbc"><button>查看用户活动记录</button></div>`)
+            $userEnhanceContainer.append(`<div class="hld__qbc"><button>查看用户最近活动记录</button></div>`)
             $el.find('.hld__qbc > button').click(() => _this.queryUserActivityRecords(userInfo))
             // 调用数据接口获取属地
             this.getRemoteUserInfo(uid)
@@ -3636,6 +3636,20 @@
             $('#hld__chart_cover .hld__setting-close').click(() => $('#hld__chart_cover').remove())
             const activeCount = []
             const requestTasks = []
+            const statisticsCount = (validList, incrField) => {
+                validList.forEach(item => {
+                    const pName = item.parent && item.parent['2'] ? item.parent['2'] : ''
+                    let existRecord = activeCount.find(p => p.fid == item.fid)
+                    if (!existRecord) {
+                        existRecord = {fid: item.fid, name: pName, value: 0, post: 0, reply: 0}
+                        activeCount.push(existRecord)
+                    }
+                    existRecord['fid'] = item.fid
+                    existRecord['name'] ||= pName
+                    existRecord['value'] += 1
+                    existRecord[incrField] += 1
+                })
+            }
             // 查询发帖记录
             for (let i=0;i<3;i++) {
                 requestTasks.push(new Promise((resolve, reject) => {
@@ -3643,21 +3657,7 @@
                     .then(postRes => {
                         const err = postRes.error
                         if (postRes.data && postRes.data.__T) {
-                            const postList = postRes.data.__T
-                            const validList = postList.filter(p => p.authorid == userInfo.uid)
-                            validList.forEach(item => {
-                                if (item.parent && item.parent['2']) {
-                                    const pName = item.parent['2']
-                                    let existRecord = activeCount.find(p => p.name == pName)
-                                    if (!existRecord) {
-                                        existRecord = {name: pName, value: 0, post: 0, reply: 0}
-                                        activeCount.push(existRecord)
-                                    }
-                                    existRecord['name'] = pName
-                                    existRecord['value'] += 1
-                                    existRecord['post'] += 1
-                                }
-                            })
+                            statisticsCount(postRes.data.__T, 'post')
                         }
                         if (err) {
                             const errMsg = (err && Array.isArray(err)) ? err.join(' ') : err
@@ -3675,22 +3675,7 @@
                     .then(replyRes => {
                         const err = replyRes.error
                         if (replyRes.data && replyRes.data.__T) {
-                            const replyList = replyRes.data.__T
-                            const validList = replyList
-                            validList.forEach(item => {
-                                if (item.parent && item.parent['2']) {
-                                    const pName = item.parent['2']
-                                    let existRecord = activeCount.find(p => p.name == pName)
-                                    if (!existRecord) {
-                                        existRecord = {name: pName, value: 0, post: 0, reply: 0}
-                                        activeCount.push(existRecord)
-                                    }
-                                    existRecord['name'] = pName
-                                    existRecord['value'] += 1
-                                    existRecord['reply'] += 1
-                                }
-                            })
-                            resolve()
+                            statisticsCount(replyRes.data.__T, 'reply')
                         }
                         if (err) {
                             const errMsg = (err && Array.isArray(err)) ? err.join(' ') : err
@@ -3705,13 +3690,15 @@
             }
             Promise.all(requestTasks)
             .then(() => {
+                // 处理未命名板块
+                activeCount.forEach(item => item.name ||= `板块FID: ${item.fid}`)
                 // 渲染chart
                 const chartContainer = document.getElementById('hld__chart_container')
                 if (!chartContainer) return
                 const chart = echarts.init(chartContainer)
                 chart.setOption({
                     title: {
-                        text: '用户活跃板块记录',
+                        text: '用户最近活跃板块记录',
                         subtext: userInfo.username ||`UID: ${userInfo.username}`,
                         top: 10,
                         left: 'center'
@@ -3758,9 +3745,11 @@
                             maxSurfaceAngle: 80
                         },
                         labelLayout: function (params) {
-                            const isLeft = params.labelRect.x < chart.getWidth() / 2;
-                            const points = params.labelLinePoints;
-                            points[2][0] = isLeft ? params.labelRect.x : params.labelRect.x + params.labelRect.width;
+                            const isLeft = params.labelRect.x < chart.getWidth() / 2
+                            const points = params.labelLinePoints
+                            if (points) {
+                                points[2][0] = isLeft ? params.labelRect.x : params.labelRect.x + params.labelRect.width
+                            }
                             return {labelLinePoints: points}
                         },
                         data: activeCount,
@@ -3770,7 +3759,7 @@
                     }],
                     graphic: [{
                         type: 'group',
-                        right: 10,
+                        right: 15,
                         top: 'middle',
                         children: [{
                             type: 'text',
@@ -3782,7 +3771,7 @@
                             }
                         }, {
                             type: 'text',
-                            left: 75,
+                            left: 80,
                             top: 0,
                             style: {
                                 text: '查看',
@@ -3801,7 +3790,7 @@
                             }
                         }, {
                             type: 'text',
-                            left: 75,
+                            left: 80,
                             top: 20,
                             style: {
                                 text: '查看',
@@ -3854,7 +3843,7 @@
         #hld__chart_cover {position:fixed;top:50%;left:50%;transform:translate(-50%, -50%);border-radius:10px;background:#FFF;border:1px solid #AAA;box-shadow:0 0 10px rgba(0,0,0,.3);z-index:9993;}
         #hld__chart_cover > .hld__setting-close {background:#FFF;border:1px solid #AAA;color:#AAA;}
         #hld__chart_cover > .hld__setting-close:hover {background:#AAA;border:1px solid #FFF;color:#FFF;}
-        #hld__chart_container {width:820px;height:480px;}
+        #hld__chart_container {width:840px;height:500px;}
         #hld__chart_container .loading {position:absolute;top: 50%;left:50%;margin-top:-20px;margin-left:-25px;width:40px;height:40px;border:2px solid #AAA;border-top-color:transparent;border-radius:100%;animation:loading-circle infinite 0.75s linear;}
         @keyframes loading-circle {0% {transform:rotate(0);}100% {transform:rotate(360deg);}}
         `
