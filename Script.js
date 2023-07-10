@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      4.2.1
+// @version      4.2.2
 // @author       HLD
 // @description  NGA论坛显示优化，全面功能增强，优雅的摸鱼
 // @license      MIT
@@ -3559,9 +3559,14 @@
             // 调用数据接口获取属地
             this.getRemoteUserInfo(uid)
             .then(remoteUserInfo => {
-                // 异步设置属地
-                $userEnhanceContainer.find('.hld__user-location').attr('title', `IP属地: ${remoteUserInfo.ipLoc}`)
-                $userEnhanceContainer.find('.hld__user-location > span').replaceWith(this.getCountryFlag(remoteUserInfo.ipLoc))
+                if (remoteUserInfo){
+                    // 异步设置属地
+                    $userEnhanceContainer.find('.hld__user-location').attr('title', `IP属地: ${remoteUserInfo.ipLoc}`)
+                    $userEnhanceContainer.find('.hld__user-location > span').replaceWith(this.getCountryFlag(remoteUserInfo.ipLoc))
+                }else{
+                    $userEnhanceContainer.find('.hld__qbc').hide()
+                    $userEnhanceContainer.find('.hld__user-location').hide()
+                }
             })
         },
         /**
@@ -3584,6 +3589,8 @@
                                 remoteUserInfo['_queryTime'] = res.time
                                 localforage.setItem(storageKey, remoteUserInfo)
                                 resolve(res.data[0])
+                            }else{
+                                resolve(null);
                             }
                         })
                         .catch(err => reject(err))
