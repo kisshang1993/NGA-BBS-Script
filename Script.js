@@ -1,19 +1,21 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      4.2.0
+// @version      4.2.1
 // @author       HLD
 // @description  NGA论坛显示优化，全面功能增强，优雅的摸鱼
 // @license      MIT
 // @require      https://cdn.staticfile.org/jquery/3.4.0/jquery.min.js
 // @require      https://cdn.staticfile.org/spectrum/1.8.0/spectrum.js
 // @require      https://cdn.staticfile.org/localforage/1.10.0/localforage.min.js
+// @require      https://cdn.staticfile.org/echarts/5.4.2/echarts.min.js
 // @require      https://greasyfork.org/scripts/424901-nga-script-resource/code/NGA-Script-Resource.js?version=1216641
 // @icon         https://i.loli.net/2021/04/07/8x3yFj2pWEKluSY.png
 // @match        *://bbs.nga.cn/*
 // @match        *://ngabbs.com/*
 // @match        *://nga.178.com/*
 // @grant        GM_registerMenuCommand
+// @grant        unsafeWindow
 // @inject-into content
 // ==/UserScript==
 
@@ -471,7 +473,7 @@
         @keyframes zoomIn {from {opacity:0;-webkit-transform:scale3d(0.3,0.3,0.3);transform:scale3d(0.3,0.3,0.3);}50% {opacity:1;}}
         @keyframes bounce {from,20%,53%,80%,to {-webkit-animation-timing-function:cubic-bezier(0.215,0.61,0.355,1);animation-timing-function:cubic-bezier(0.215,0.61,0.355,1);-webkit-transform:translate3d(0,0,0);transform:translate3d(0,0,0);}40%,43% {-webkit-animation-timing-function:cubic-bezier(0.755,0.05,0.855,0.06);animation-timing-function:cubic-bezier(0.755,0.05,0.855,0.06);-webkit-transform:translate3d(0,-30px,0);transform:translate3d(0,-30px,0);}70% {-webkit-animation-timing-function:cubic-bezier(0.755,0.05,0.855,0.06);animation-timing-function:cubic-bezier(0.755,0.05,0.855,0.06);-webkit-transform:translate3d(0,-15px,0);transform:translate3d(0,-15px,0);}90% {-webkit-transform:translate3d(0,-4px,0);transform:translate3d(0,-4px,0);}}
         @keyframes fadeInUp {from {opacity:0;-webkit-transform:translate3d(-50%,100%,0);transform:translate3d(-50%,100%,0);}to {opacity:1;-webkit-transform:translate3d(-50%,0,0);transform:translate3d(-50%,0,0);}}
-        .hld__msg{display:none;position:fixed;top:10px;left:40%;color:#fff;text-align:center;z-index:99996;padding:10px 30px 10px 45px;font-size:16px;border-radius:10px;background-image:url("${SVG_ICON_MSG}");background-size:25px;background-repeat:no-repeat;background-position:15px}
+        .hld__msg{display:none;position:fixed;top:10px;left:50%;transform:translateX(-50%);color:#fff;text-align:center;z-index:99996;padding:10px 30px 10px 45px;font-size:16px;border-radius:10px;background-image:url("${SVG_ICON_MSG}");background-size:25px;background-repeat:no-repeat;background-position:15px}
         .hld__msg a{color:#fff;text-decoration: underline;}
         .hld__msg-ok{background:#4bcc4b}
         .hld__msg-err{background:#c33}
@@ -3367,8 +3369,8 @@
                     }
                 }
                 if (type == 'MENU') {
-                    commonui.mainMenu.menuOpen()
-                    commonui.mainMenu.menuOpenAct({
+                    unsafeWindow.commonui.mainMenu.menuOpen()
+                    unsafeWindow.commonui.mainMenu.menuOpenAct({
                         clientX: window.screen.width - 30,
                         clientY: 30,
                         pageX: window.screen.width - 30,
@@ -3378,7 +3380,7 @@
                 if (type == 'FAVOR') {
                     const tid = script.getModule('authorMark').getQueryString('tid')
                     if (script.isForms() && tid) {
-                        commonui.favor(e, null, tid)
+                        unsafeWindow.commonui.favor(e, null, tid)
                     }
                 }
                 if (type == 'REPLY') {
@@ -3535,16 +3537,12 @@
                     console.error('用户增强清除超期数据失败，错误原因:', err);
                 })
             }
-            // 添加ECharts库支持，因资源过大，异步加载提高性能
-            const echartsScript = document.createElement('script')
-            echartsScript.src = 'https://cdn.staticfile.org/echarts/5.4.2/echarts.min.js'
-            document.head.appendChild(echartsScript)
         },
         renderFormsFunc: function($el) {
             if (!script.setting.normal.userEnhance) return
             const _this = this
             const uid = $el.find('a[name="uid"]').text()
-            const userInfo = commonui.userInfo.users[uid]
+            const userInfo = unsafeWindow.commonui.userInfo.users[uid]
             if (!userInfo) return
             const regSeconds = Math.ceil(new Date().getTime() / 1000) - userInfo.regdate
             const regDays = Math.round(regSeconds / 3600 / 24)
@@ -3579,7 +3577,7 @@
                     if (value) {
                         resolve(value)
                     } else {
-                        $.ajax({url: 'https://bbs.nga.cn/nuke.php?__output=11&__act=get&__lib=ucp&uid=' + uid})
+                        $.ajax({url: `https://${window.location.host}/nuke.php?__output=11&__act=get&__lib=ucp&uid=${uid}`})
                         .then(res => {
                             if (res.data && Array.isArray(res.data) && res.data.length > 0) {
                                 const remoteUserInfo = res.data[0]
@@ -3641,7 +3639,7 @@
             // 查询发帖记录
             for (let i=0;i<3;i++) {
                 requestTasks.push(new Promise((resolve, reject) => {
-                    $.ajax({url: `https://bbs.nga.cn/thread.php?__output=11&authorid=${userInfo.uid}&page=${i+1}`})
+                    $.ajax({url: `https://${window.location.host}/thread.php?__output=11&authorid=${userInfo.uid}&page=${i+1}`})
                     .then(postRes => {
                         const err = postRes.error
                         if (postRes.data && postRes.data.__T) {
@@ -3673,7 +3671,7 @@
                 }))
                 // 查询回复记录
                 requestTasks.push(new Promise((resolve, reject) => {
-                    $.ajax({url: `https://bbs.nga.cn/thread.php?__output=11&searchpost=1&authorid=${userInfo.uid}&page=${i+1}`})
+                    $.ajax({url: `https://${window.location.host}/thread.php?__output=11&searchpost=1&authorid=${userInfo.uid}&page=${i+1}`})
                     .then(replyRes => {
                         const err = replyRes.error
                         if (replyRes.data && replyRes.data.__T) {
