@@ -3542,6 +3542,7 @@
             if (!script.setting.normal.userEnhance) return
             const _this = this
             const uid = $el.find('a[name="uid"]').text()
+            if(uid<=0)return;
             const userInfo = unsafeWindow.commonui.userInfo.users[uid]
             if (!userInfo) return
             const regSeconds = Math.ceil(new Date().getTime() / 1000) - userInfo.regdate
