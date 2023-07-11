@@ -1,8 +1,8 @@
 ---
 name: Bug report
-about: Create a report to help us improve
+about: BUG报告
 title: ''
-labels: ''
+labels: bug
 assignees: ''
 
 ---
