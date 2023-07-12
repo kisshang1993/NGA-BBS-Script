@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      4.2.2
+// @version      4.2.3
 // @author       HLD
 // @description  NGA论坛显示优化，全面功能增强，优雅的摸鱼
 // @license      MIT
@@ -16,7 +16,7 @@
 // @match        *://nga.178.com/*
 // @grant        GM_registerMenuCommand
 // @grant        unsafeWindow
-// @inject-into content
+// @inject-into  content
 // ==/UserScript==
 
 (function () {
@@ -505,7 +505,7 @@
             <div id="hld__setting_cover" class="animated zoomIn">
                 <div id="hld__setting_panel">
                     <a href="javascript:void(0)" id="hld__setting_close" class="hld__setting-close">×</a>
-                    <p class="hld__sp-title"><a title="更新地址" href="https://greasyfork.org/zh-CN/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C" target="_blank">NGA优化摸鱼插件<span class="hld__script-info">v${script.getInfo().version}</span></a></p>
+                    <p class="hld__sp-title"><a title="更新地址" href="https://greasyfork.org/zh-CN/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C" target="_blank">NGA优化摸鱼体验<span class="hld__script-info">v${script.getInfo().version}</span></a></p>
                     <div class="hld__field">
                         <p class="hld__sp-section">显示优化</p>
                         <div id="hld__normal_left"></div>
@@ -1015,10 +1015,10 @@
             let sizeStr = ['B','KB','MB','GB']
             let i = 0
             for(let l=0;l<8;l++){
-            　　if(num / Math.pow(k, l) < 1) break
-            　　i = l
+                if(num / Math.pow(k, l) < 1) break
+                i = l
             }
-        　　return (num / Math.pow(k, i)).toFixed(2) + ' ' + sizeStr[i]
+            return (num / Math.pow(k, i)).toFixed(2) + ' ' + sizeStr[i]
         },
         /**
          * Base64互转
@@ -1154,7 +1154,7 @@
             shortCutCode: 87, // W
             type: 'normal',
             key: 'hideSmile',
-            default: true,
+            default: false,
             title: '隐藏表情',
             menu: 'left'
         },
@@ -3514,29 +3514,9 @@
             desc: '调整属地显示模式：\n全部国旗：显示国旗不显示文字\n全部文字：显示文字不显示国旗\n国旗加文字：前面显示国旗后面显示文字',
             menu: 'right'
         }],
-        initFunc: async function() {
-            // 初始化的时候清理超过一定时间的数据，避免无限增长数据
-            // 出于性能考虑，每日只执行一次
-            const currentDate = new Date()
-            const lastClear = await localforage.getItem('USERENHANCE_CLEAR_DAY')
-            if (lastClear != currentDate.getDate()) {
-                const exprieSeconds = 7 * 24 * 3600  // 7天
-                const currentTime = Math.ceil(currentDate.getTime() / 1000)
-                let removedCount = 0
-                localforage.iterate(function(value, key, iterationNumber) {
-                    if (key.startsWith('USERINFO_')) {
-                        if (!value._queryTime || currentTime - value._queryTime >= exprieSeconds) {
-                            localforage.removeItem(key)
-                            removedCount += 1
-                        }
-                    }
-                }).then(function() {
-                    localforage.setItem('USERENHANCE_CLEAR_DAY', currentDate.getDate())
-                    script.printLog(`用户增强: 已清除${removedCount}条用户超期数据`)
-                }).catch(function(err) {
-                    console.error('用户增强清除超期数据失败，错误原因:', err);
-                })
-            }
+        forumData: {},
+        initFunc: function() {
+            this.preprocessing()
         },
         renderFormsFunc: function($el) {
             if (!script.setting.normal.userEnhance) return
@@ -3562,6 +3542,58 @@
                 // 异步设置属地
                 $userEnhanceContainer.find('.hld__user-location').attr('title', `IP属地: ${remoteUserInfo.ipLoc}`)
                 $userEnhanceContainer.find('.hld__user-location > span').replaceWith(this.getCountryFlag(remoteUserInfo.ipLoc))
+            })
+        },
+        /**
+         * 预处理
+         */
+        preprocessing() {
+            // 非实时性的任务使用异步处理
+            new Promise(async (resolve, reject) => {
+                // 初始化的时候清理超过一定时间的数据，避免无限增长数据
+                // 出于性能考虑，每日只执行一次
+                const currentDate = new Date()
+                const lastClear = await localforage.getItem('USERENHANCE_CLEAR_DAY')
+                if (lastClear != currentDate.getDate()) {
+                    const exprieSeconds = 7 * 24 * 3600  // 7天
+                    const currentTime = Math.ceil(currentDate.getTime() / 1000)
+                    let removedCount = 0
+                    localforage.iterate(function(value, key, iterationNumber) {
+                        if (key.startsWith('USERINFO_')) {
+                            if (!value._queryTime || currentTime - value._queryTime >= exprieSeconds) {
+                                localforage.removeItem(key)
+                                removedCount += 1
+                            }
+                        }
+                    }).then(function() {
+                        localforage.setItem('USERENHANCE_CLEAR_DAY', currentDate.getDate())
+                        script.printLog(`用户增强: 已清除${removedCount}条用户超期数据`)
+                    }).catch(function(err) {
+                        console.error('用户增强清除超期数据失败，错误原因:', err);
+                    })
+                }
+                // 获取所有版面字典，扁平化提纯fid:name
+                if (!window?.script_muti_get_var_store?.data) {
+                    await $.ajax({
+                        url: unsafeWindow.__API.indexForumList(),
+                        dataType: 'script',
+                        cache: true
+                    })
+                }
+                const _forumData = script_muti_get_var_store.data?.['0']?.all
+                if (_forumData && typeof _forumData == 'object') {
+                    for (const v1 of Object.values(_forumData)) {
+                        if (v1.content && typeof v1.content == 'object') {
+                            for (const v2 of Object.values(v1.content)) {
+                                if (v2.content && typeof v2.content == 'object') {
+                                    for (const v3 of Object.values(v2.content)) {
+                                        this.forumData[v3.fid] = v3.name
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             })
         },
         /**
@@ -3691,7 +3723,7 @@
             Promise.all(requestTasks)
             .then(() => {
                 // 处理未命名板块
-                activeCount.forEach(item => item.name ||= `板块FID: ${item.fid}`)
+                activeCount.forEach(item => item.name ||= (this.forumData[item.fid] || `板块FID: ${item.fid}`))
                 // 渲染chart
                 const chartContainer = document.getElementById('hld__chart_container')
                 if (!chartContainer) return
@@ -3699,7 +3731,7 @@
                 chart.setOption({
                     title: {
                         text: '用户最近活跃板块记录',
-                        subtext: userInfo.username ||`UID: ${userInfo.username}`,
+                        subtext: userInfo.username || `UID: ${userInfo.username}`,
                         top: 10,
                         left: 'center'
                     },
