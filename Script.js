@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      4.2.3
+// @version      4.2.4
 // @author       HLD
 // @description  NGA论坛显示优化，全面功能增强，优雅的摸鱼
 // @license      MIT
@@ -3501,10 +3501,10 @@
             key: 'locationFlagMode',
             default: 'FLAG_AND_TEXT',
             options: [{
-                label: '全部国旗',
+                label: '国旗',
                 value: 'FLAG'
             }, {
-                label: '全部文字',
+                label: '文字',
                 value: 'TEXT'
             }, {
                 label: '国旗加文字',
@@ -3514,7 +3514,9 @@
             desc: '调整属地显示模式：\n全部国旗：显示国旗不显示文字\n全部文字：显示文字不显示国旗\n国旗加文字：前面显示国旗后面显示文字',
             menu: 'right'
         }],
-        forumData: {},
+        forumData: {
+            '108': '垃圾处理'
+        },
         initFunc: function() {
             this.preprocessing()
         },
@@ -3631,7 +3633,7 @@
         getCountryFlag(chsName) {
             let textElement = `<span class="numeric userval" name="location">${chsName}</span>`
             let flagElement = ''
-            if (script.setting.advanced.locationFlagMode != 'TEXT_ALWAYS') {
+            if (script.setting.advanced.locationFlagMode != 'TEXT') {
                 const flagUrl = `https://www.huuua.com/zi/scss/icons/flag-icon-css/flags`
                 if (CHINESE_CONVERT_ISO3166_1[chsName]) {
                     flagElement = `<img class="hld__country-flag" onerror="this.style.width='auto'" alt="${chsName}" src="${flagUrl}/${CHINESE_CONVERT_ISO3166_1[chsName].toLowerCase()}.svg"/>`
@@ -3644,9 +3646,9 @@
                 }
             }
             switch (script.setting.advanced.locationFlagMode) {
-                case 'FLAG_ALWAYS':
+                case 'FLAG':
                     return flagElement
-                case 'TEXT_ALWAYS':
+                case 'TEXT':
                     return textElement
                 case 'FLAG_AND_TEXT':
                     return flagElement + textElement
