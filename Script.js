@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      4.2.4
+// @version      4.2.5
 // @author       HLD
 // @description  NGA论坛显示优化，全面功能增强，优雅的摸鱼
 // @license      MIT
@@ -1313,7 +1313,8 @@
         renderAlwaysFunc: function ($el) {
             //隐藏版头
             if (script.setting.normal.hideHeader && $('#hld__switch_header').length == 0) {
-                $('#toppedtopic, #sub_forums').hide()
+                $('#toppedtopic').hide()
+                window.location.href.indexOf('favor=') == -1 && $('#sub_forums').hide()
                 let $toggleHeaderBtn = $('<button style="position: absolute;right: 16px;" id="hld__switch_header">切换显示版头</button>')
                 $toggleHeaderBtn.click(() => $('#toppedtopic, #sub_forums').toggle())
                 $('#toptopics > div > h3').append($toggleHeaderBtn)
@@ -3533,7 +3534,7 @@
             const $userEnhanceContainer = $(`<div class="hld__user-enhance"></div>`)
             const $node = $el.find('.posterinfo div.stat .clickextend').siblings('div:first-child')
             $node.after($userEnhanceContainer)
-            $userEnhanceContainer.append(`<div><span title="注册天数: ${regDays}天\n注册年数: ${regYear}年">吧龄: <span class="numeric userval" name="regday">${regDays}天</span></span></div>`)
+            $userEnhanceContainer.append(`<div><span title="注册天数: ${regDays}天\n注册年数: ${regYear}年">坛龄: <span class="numeric userval" name="regday">${regDays}天</span></span></div>`)
             $userEnhanceContainer.append(`<div><span title="发帖数量: ${userInfo.postnum}">发帖: <span class="numeric userval" name="regday">${userInfo.postnum}</span></span></div>`)
             $userEnhanceContainer.append(`<div><span style="display: inline-flex;align-items: center;" class="hld__user-location">属地: <span class="userval numeric loading" style="margin-left:5px;"></span></span></div>`)
             $userEnhanceContainer.append(`<div class="hld__qbc"><button>查看用户最近活动记录</button></div>`)
