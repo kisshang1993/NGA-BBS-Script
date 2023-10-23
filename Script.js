@@ -9,7 +9,7 @@
 // @require      https://cdn.staticfile.org/spectrum/1.8.0/spectrum.js
 // @require      https://cdn.staticfile.org/localforage/1.10.0/localforage.min.js
 // @require      https://cdn.staticfile.org/echarts/5.4.2/echarts.min.js
-// @require      https://greasyfork.org/scripts/424901-nga-script-resource/code/NGA-Script-Resource.js?version=1216641
+// @require      https://greasyfork.org/scripts/424901-nga-script-resource/code/NGA-Script-Resource.js?version=1268947
 // @icon         https://i.loli.net/2021/04/07/8x3yFj2pWEKluSY.png
 // @match        *://bbs.nga.cn/*
 // @match        *://ngabbs.com/*
@@ -3606,7 +3606,7 @@
                     const exprieSeconds = 7 * 24 * 3600  // 7天
                     const currentTime = Math.ceil(currentDate.getTime() / 1000)
                     let removedCount = 0
-                    this.store.iterate(function(value, key, iterationNumber) {
+                    this.store.iterate((value, key, iterationNumber) => {
                         if (key.startsWith('USERINFO_')) {
                             if (!value._queryTime || currentTime - value._queryTime >= exprieSeconds) {
                                 this.store.removeItem(key)
