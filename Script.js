@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      4.2.5
+// @version      4.3.0
 // @author       HLD
 // @description  NGA论坛显示优化，全面功能增强，优雅的摸鱼
 // @license      MIT
@@ -28,7 +28,7 @@
      * @constructor
      */
     class NGABBSScript {
-        constructor () {
+        constructor() {
             // 配置
             this.setting = {
                 normal: {},
@@ -38,6 +38,10 @@
             this.modules = []
             // 样式
             this.style = ''
+            // 数据存储
+            this.store = {}
+            // 引用库
+            this.libs = {$, echarts, localforage}
         }
         /**
          * 获取模块对象
@@ -45,7 +49,7 @@
          * @param {String} name 模块name
          * @return {Object} 模块对象
          */
-        getModule (name) {
+        getModule(name) {
             for (const m of this.modules) {
                 if (m.name && m.name === name) {
                     return m
@@ -71,7 +75,7 @@
          * 列表页渲染函数
          * @method renderThreads
          */
-        renderThreads () {
+        renderThreads() {
             $('.topicrow[hld-threads-render!=ok]').each((index, dom) => {
                 const $el = $(dom)
                 for (const module of this.modules) {
@@ -89,7 +93,7 @@
          * 详情页渲染函数
          * @method renderForms
          */
-        renderForms () {
+        renderForms() {
             $('.forumbox.postbox[hld-forms-render!=ok]').each((index, dom) => {
                 const $el = $(dom)
                 // 等待NGA页面渲染完成
@@ -111,37 +115,39 @@
          * @param {Object} module 模块对象
          * @param {Boolean} plugin 是否为插件
          */
-        addModule (module, plugin=false) {
+        addModule(module) {
             // 组件预处理函数
-            if (module.beforeFunc) {
+            if (module.preProcFunc) {
                 try {
-                    module.beforeFunc(this)
+                    module.preProcFunc(this)
                 } catch (error) {
-                    this.printLog(`[${module.name}]模块在[beforeFunc()]中运行失败！`)
+                    this.printLog(`[${module.name}]模块在[preProcFunc()]中运行失败！`)
                     console.log(error)
                 }
             }
-            // 添加模块
-            const addModule = setting => {
-                if (setting.shortCutCode && this.setting.normal.shortcutKeys) this.setting.normal.shortcutKeys.push(setting.shortCutCode)
+            // 添加设置
+            const addSetting = setting => {
+                // 标准模块配置
+                if (setting.shortCutCode && this.setting.normal.shortcutKeys) {
+                    this.setting.normal.shortcutKeys.push(setting.shortCutCode)
+                }
                 if (setting.key) {
-                    this.setting[setting.type || 'normal'][setting.key] = setting.default
+                    this.setting[setting.type || 'normal'][setting.key] = setting.default || ''
                 }
             }
             // 功能板块
             if (module.setting && !Array.isArray(module.setting)) {
-                addModule(module.setting)
+                addSetting(module.setting)
             }
             if (module.settings && Array.isArray(module.settings)) {
                 for (const setting of module.settings) {
-                    addModule(setting)
+                    addSetting(setting)
                 }
             }
             // 添加样式
             if (module.style) {
                 this.style += module.style
             }
-            plugin && (module.type = 'plugin')
             this.modules.push(module)
         }
         /**
@@ -149,7 +155,7 @@
          * @method isThreads
          * @return {Boolean} 判断状态
          */
-        isThreads () {
+        isThreads() {
             return $('#m_threads').length > 0
         }
         /**
@@ -157,7 +163,7 @@
          * @method isForms
          * @return {Boolean} 判断状态
          */
-        isForms () {
+        isForms() {
             return $('#m_posts').length > 0
         }
         /**
@@ -165,7 +171,7 @@
          * @method throwError
          * @param {String} msg 异常信息
          */
-        throwError (msg) {
+        throwError(msg) {
             alert(msg)
             throw(msg)
         }
@@ -173,7 +179,7 @@
          * 初始化
          * @method init
          */
-        init () {
+        init() {
             // 开始初始化
             this.printLog('初始化...')
             localforage.config({name: 'NGA BBS Script DB'})
@@ -194,16 +200,16 @@
             }
             // 组件后处理函数
             for (const module of this.modules) {
-                if (module.afterFunc) {
+                if (module.postProcFunc) {
                     try {
-                        module.afterFunc(this)
+                        module.postProcFunc(this)
                     } catch (error) {
-                        this.printLog(`[${module.name}]模块在[afterFunc()]中运行失败！`)
+                        this.printLog(`[${module.name}]模块在[postProcFunc()]中运行失败！`)
                         console.log(error)
                     }
                 }
             }
-            // 异步样式
+            // 动态样式
             for (const module of this.modules) {
                 if (module.asyncStyle) {
                     try {
@@ -215,7 +221,7 @@
                 }
                 modulesTable.push({
                     name: module.title || module.name || 'UNKNOW',
-                    type: module.type == 'plugin' ? '插件' : '内置模块',
+                    type: module.type == 'plugin' ? '插件' : '标准模块',
                     version: module.version || '-'
                 })
             }
@@ -227,6 +233,7 @@
             const endInitTime = new Date().getTime()
             console.table(modulesTable)
             this.printLog(`[v${this.getInfo().version}] 初始化完成：共加载${this.modules.length}个模块，总耗时${endInitTime-startInitTime}ms`)
+            console.log('%c反馈问题请前往: https://github.com/kisshang1993/NGA-BBS-Script/issues', 'color:orangered;font-weight:bolder')
         }
         /**
          * 通知弹框
@@ -234,7 +241,7 @@
          * @param {String} msg 消息内容
          * @param {Number} duration 显示时长(ms)
          */
-        popNotification (msg, duration=1000) {
+        popNotification(msg, duration=1000) {
             $('#hld__noti_container').length == 0 && $('body').append('<div id="hld__noti_container"></div>')
             let $msgBox = $(`<div class="hld__noti-msg">${msg}</div>`)
             $('#hld__noti_container').append($msgBox)
@@ -261,7 +268,7 @@
          * @method printLog
          * @param {String} msg 消息内容
          */
-        printLog (msg) {
+        printLog(msg) {
             console.log(`%cNGA%cScript%c ${msg}`,
                 'background: #222;color: #fff;font-weight:bold;padding:2px 2px 2px 4px;border-radius:4px 0 0 4px;',
                 'background: #fe9a00;color: #000;font-weight:bold;padding:2px 4px 2px 2px;border-radius:0px 4px 4px 0px;',
@@ -273,11 +280,13 @@
          * @method saveSetting
          * @param {String} msg 自定义消息信息
          */
-        saveSetting (msg='保存配置成功，刷新页面生效') {
+        saveSetting(msg='保存配置成功，刷新页面生效') {
+            // 基础设置
             for (let k in this.setting.normal) {
                 $('input#hld__cb_' + k).length > 0 && (this.setting.normal[k] = $('input#hld__cb_' + k)[0].checked)
             }
             window.localStorage.setItem('hld__NGA_setting', JSON.stringify(this.setting.normal))
+            // 高级设置
             for (let k in this.setting.advanced) {
                 if ($('#hld__adv_' + k).length > 0) {
                     const valueType = typeof this.setting.advanced[k]
@@ -304,7 +313,7 @@
          * 从本地读取配置
          * @method loadSetting
          */
-        loadSetting () {
+        loadSetting() {
             // 基础设置
             try {
                 if (window.localStorage.getItem('hld__NGA_setting')) {
@@ -354,7 +363,11 @@
                     this.setting.advanced = localAdvancedSetting
                 }
             } catch {
-                this.throwError('【NGA-Script】配置文件出现错误，无法加载配置文件！\n遇到此问题请清空浏览器缓存并重新刷新页面\n如还有问题，请前往脚本发布页提出反馈')
+                if (window.confirm('【NGA-Script】读取插件配置文件出现错误，无法加载配置文件！\n可能是配置有误，清空本地配置即可恢复使用\n警告：清空配置会丢失所有设置\n\n点击【确认】清空本地配置，并自动刷新\n\n如还有问题，请提出反馈')) {
+                    localStorage.removeItem('hld__NGA_setting')
+                    localStorage.removeItem('hld__NGA_advanced_setting')
+                    window.location.reload()
+                }
             }
 
         }
@@ -392,6 +405,18 @@
             } else window.localStorage.setItem('hld__NGA_version', GM_info.script.version)
         }
         /**
+         * 创建储存对象实例
+         * @param {String} instanceName 实例名称
+         */
+        createStorageInstance(instanceName) {
+            if (!instanceName || Object.keys(this.store).includes(instanceName)) {
+                this.throwError('【NGA-Script】创建储存对象实例失败，实例名称不能为空或实例名称已存在')
+            }
+            const lfInstance = localforage.createInstance({name: instanceName})
+            this.store[instanceName] = lfInstance
+            return lfInstance
+        }
+        /**
          * 运行脚本
          * @method run
          */
@@ -423,6 +448,7 @@
         // 设置面板
         GM_registerMenuCommand('设置面板', function () {
             $('#hld__setting_cover').css('display', 'block')
+            $('html, body').animate({scrollTop: 0}, 500)
         })
         // 清理缓存
         GM_registerMenuCommand('清理缓存', function () {
@@ -456,55 +482,19 @@
 
     /* 标准模块 */
     /**
-     * 默认样式
-     * @name defaultStyle
-     * @description 脚本的初始样式
-     */
-    const defaultStyle = {
-        name: 'defaultStyle',
-        style: `
-        .animated {animation-duration:.3s;animation-fill-mode:both;}
-        .animated-1s {animation-duration:1s;animation-fill-mode:both;}
-        .zoomIn {animation-name:zoomIn;}
-        .bounce {-webkit-animation-name:bounce;animation-name:bounce;-webkit-transform-origin:center bottom;transform-origin:center bottom;}
-        .fadeInUp {-webkit-animation-name:fadeInUp;animation-name:fadeInUp;}
-        #loader {display:none;position:absolute;top:50%;left:50%;margin-top:-10px;margin-left:-10px;width:20px;height:20px;border:6px dotted #FFF;border-radius:50%;-webkit-animation:1s loader linear infinite;animation:1s loader linear infinite;}
-        @keyframes loader {0% {-webkit-transform:rotate(0deg);transform:rotate(0deg);}100% {-webkit-transform:rotate(360deg);transform:rotate(360deg);}}
-        @keyframes zoomIn {from {opacity:0;-webkit-transform:scale3d(0.3,0.3,0.3);transform:scale3d(0.3,0.3,0.3);}50% {opacity:1;}}
-        @keyframes bounce {from,20%,53%,80%,to {-webkit-animation-timing-function:cubic-bezier(0.215,0.61,0.355,1);animation-timing-function:cubic-bezier(0.215,0.61,0.355,1);-webkit-transform:translate3d(0,0,0);transform:translate3d(0,0,0);}40%,43% {-webkit-animation-timing-function:cubic-bezier(0.755,0.05,0.855,0.06);animation-timing-function:cubic-bezier(0.755,0.05,0.855,0.06);-webkit-transform:translate3d(0,-30px,0);transform:translate3d(0,-30px,0);}70% {-webkit-animation-timing-function:cubic-bezier(0.755,0.05,0.855,0.06);animation-timing-function:cubic-bezier(0.755,0.05,0.855,0.06);-webkit-transform:translate3d(0,-15px,0);transform:translate3d(0,-15px,0);}90% {-webkit-transform:translate3d(0,-4px,0);transform:translate3d(0,-4px,0);}}
-        @keyframes fadeInUp {from {opacity:0;-webkit-transform:translate3d(-50%,100%,0);transform:translate3d(-50%,100%,0);}to {opacity:1;-webkit-transform:translate3d(-50%,0,0);transform:translate3d(-50%,0,0);}}
-        .hld__msg{display:none;position:fixed;top:10px;left:50%;transform:translateX(-50%);color:#fff;text-align:center;z-index:99996;padding:10px 30px 10px 45px;font-size:16px;border-radius:10px;background-image:url("${SVG_ICON_MSG}");background-size:25px;background-repeat:no-repeat;background-position:15px}
-        .hld__msg a{color:#fff;text-decoration: underline;}
-        .hld__msg-ok{background:#4bcc4b}
-        .hld__msg-err{background:#c33}
-        .hld__msg-warn{background:#FF9900}
-        .hld__flex{display:flex;}
-        .hld__float-left{float: left;}
-        .clearfix {clear: both;}
-        #hld__noti_container {position:fixed;top:10px;left:10px;z-index:99;}
-        .hld__noti-msg {display:none;padding:10px 20px;font-size:14px;font-weight:bold;color:#fff;margin-bottom:10px;background:rgba(0,0,0,0.6);border-radius:10px;cursor:pointer;}
-        .hld__btn-groups {display:flex;justify-content:center !important;margin-top:10px;}
-        button.hld__btn {padding:3px 8px;border:1px solid #591804;background:#fff8e7;color:#591804;}
-        button.hld__btn:hover {background:#591804;color:#fff0cd;}
-        #hld__updated {position:fixed;top:20px;right:20px;width:230px;padding:10px;border-radius:5px;box-shadow:0 0 15px #666;border:1px solid #591804;background:#fff8e7;z-index: 9999;}
-        #hld__updated .hld__readme {text-decoration:underline;color:#591804;}
-        .hld__script-info {margin-left:4px;font-size:70%;color:#666;}
-        `
-    }
-    /**
      * 设置模块
-     * @name settingPanel
+     * @name SettingPanel
      * @description 提供脚本的设置面板，提供配置修改，保存等基础功能
      */
-    const settingPanel = {
-        name: 'settingPanel',
-        initFunc: function () {
-            const _this = this
+    const SettingPanel = {
+        name: 'SettingPanel',
+        title: '设置模块',
+        initFunc() {
             //设置面板
             let $panelDom = $(`
             <div id="hld__setting_cover" class="animated zoomIn">
                 <div id="hld__setting_panel">
-                    <a href="javascript:void(0)" id="hld__setting_close" class="hld__setting-close">×</a>
+                    <a href="javascript:void(0)" id="hld__setting_close" class="hld__setting-close" close-type="hide">×</a>
                     <p class="hld__sp-title"><a title="更新地址" href="https://greasyfork.org/zh-CN/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C" target="_blank">NGA优化摸鱼体验<span class="hld__script-info">v${script.getInfo().version}</span></a></p>
                     <div class="hld__field">
                         <p class="hld__sp-section">显示优化</p>
@@ -518,7 +508,7 @@
                     <div class="hld__advanced-setting">
                         <button id="hld__advanced_button">+</button><span>高级设置</span>
                         <div class="hld__advanced-setting-panel">
-                            <p><svg t="1590560820184" class="icon" viewBox="0 0 1040 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2738" width="200" height="200"><path d="M896.355855 975.884143 127.652332 975.884143c-51.575656 0-92.993974-19.771299-113.653503-54.238298-20.708648-34.515095-18.194384-79.5815 6.9022-123.5632L408.803663 117.885897c25.244964-44.376697 62.767556-69.77004 102.953813-69.77004 40.136116 0 77.658707 25.393343 103.002932 69.671803L1003.006873 798.131763c25.097608 44.030819 27.711132 89.049129 6.952342 123.514081C989.348806 956.159916 947.881368 975.884143 896.355855 975.884143L896.355855 975.884143 896.355855 975.884143 896.355855 975.884143 896.355855 975.884143zM511.805572 119.511931c-12.769838 0-27.414373 12.376888-39.298028 33.134655L84.656075 832.892451c-12.130272 21.350261-14.989389 40.530089-7.741311 52.611242 7.297197 12.08013 25.787316 19.033495 50.737568 19.033495l768.703523 0c24.997324 0 43.439348-6.903224 50.736545-19.033495 7.197936-12.031011 4.387937-31.210839-7.791453-52.5611L551.055504 152.646586C539.220968 131.888819 524.527314 119.511931 511.805572 119.511931L511.805572 119.511931 511.805572 119.511931 511.805572 119.511931 511.805572 119.511931zM512.004093 653.807726c-20.1182 0-36.488029-15.975856-36.488029-35.69906L475.516064 296.773124c0-19.723204 16.369829-35.698037 36.488029-35.698037 20.117177 0 36.485983 15.975856 36.485983 35.698037l0 321.335543C548.490076 637.832893 532.12127 653.807726 512.004093 653.807726L512.004093 653.807726 512.004093 653.807726 512.004093 653.807726zM511.757476 828.308039c31.359218 0 56.851822-24.950252 56.851822-55.717999s-25.491581-55.716976-56.851822-55.716976c-31.408337 0-56.851822 24.949228-56.851822 55.716976S480.349139 828.308039 511.757476 828.308039L511.757476 828.308039 511.757476 828.308039 511.757476 828.308039z" p-id="2739"></path></svg> 鼠标停留在<span class="hld__adv-help" title="详细描述">选项文字</span>上可以显示详细描述，设置有误可能会导致插件异常或者无效！</p>
+                            <p><svg t="1590560820184" class="icon" viewBox="0 0 1040 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2738" width="200" height="200"><path d="M896.355855 975.884143 127.652332 975.884143c-51.575656 0-92.993974-19.771299-113.653503-54.238298-20.708648-34.515095-18.194384-79.5815 6.9022-123.5632L408.803663 117.885897c25.244964-44.376697 62.767556-69.77004 102.953813-69.77004 40.136116 0 77.658707 25.393343 103.002932 69.671803L1003.006873 798.131763c25.097608 44.030819 27.711132 89.049129 6.952342 123.514081C989.348806 956.159916 947.881368 975.884143 896.355855 975.884143L896.355855 975.884143 896.355855 975.884143 896.355855 975.884143 896.355855 975.884143zM511.805572 119.511931c-12.769838 0-27.414373 12.376888-39.298028 33.134655L84.656075 832.892451c-12.130272 21.350261-14.989389 40.530089-7.741311 52.611242 7.297197 12.08013 25.787316 19.033495 50.737568 19.033495l768.703523 0c24.997324 0 43.439348-6.903224 50.736545-19.033495 7.197936-12.031011 4.387937-31.210839-7.791453-52.5611L551.055504 152.646586C539.220968 131.888819 524.527314 119.511931 511.805572 119.511931L511.805572 119.511931 511.805572 119.511931 511.805572 119.511931 511.805572 119.511931zM512.004093 653.807726c-20.1182 0-36.488029-15.975856-36.488029-35.69906L475.516064 296.773124c0-19.723204 16.369829-35.698037 36.488029-35.698037 20.117177 0 36.485983 15.975856 36.485983 35.698037l0 321.335543C548.490076 637.832893 532.12127 653.807726 512.004093 653.807726L512.004093 653.807726 512.004093 653.807726 512.004093 653.807726zM511.757476 828.308039c31.359218 0 56.851822-24.950252 56.851822-55.717999s-25.491581-55.716976-56.851822-55.716976c-31.408337 0-56.851822 24.949228-56.851822 55.716976S480.349139 828.308039 511.757476 828.308039L511.757476 828.308039 511.757476 828.308039 511.757476 828.308039z" p-id="2739"></path></svg> 鼠标停留在<span class="hld__help" title="详细描述">选项文字</span>上可以显示详细描述，设置有误可能会导致插件异常或者无效！</p>
                             <table id="hld__advanced_left"></table>
                             <table id="hld__advanced_right"></table>
                         </div>
@@ -535,7 +525,7 @@
             const insertDom = setting => {
                 if (setting.type === 'normal') {
                     $panelDom.find(`#hld__normal_${setting.menu || 'left'}`).append(`
-                    <p><label ${setting.desc ? 'class="hld__adv-help" help="'+setting.desc+'"' : ''}><input type="checkbox" id="hld__cb_${setting.key}"> ${setting.title || setting.key}${setting.shortCutCode ? '（快捷键切换[<b>'+script.getModule('shortCutKeys').getCodeName(setting.rewriteShortCutCode || setting.shortCutCode)+'</b>]）' : ''}</label></p>
+                    <p><label ${setting.desc ? 'class="hld__help" help="'+setting.desc+'"' : ''}><input type="checkbox" id="hld__cb_${setting.key}"> ${setting.title || setting.key}${setting.shortCutCode ? '（快捷键切换[<b>'+script.getModule('ShortCutKeys').getCodeName(setting.rewriteShortCutCode || setting.shortCutCode)+'</b>]）' : ''}</label></p>
                     `)
                     if (setting.extra) {
                         $panelDom.find(`#hld__cb_${setting.key}`).attr('enable', `hld__${setting.key}_${setting.extra.mode || 'fold'}`)
@@ -568,7 +558,7 @@
                     }
                     $panelDom.find(`#hld__advanced_${setting.menu || 'left'}`).append(`
                     <tr>
-                        <td><span class="hld__adv-help" help="${setting.desc || ''}">${setting.title || setting.key}</span></td>
+                        <td><span class="hld__help" help="${setting.desc || ''}">${setting.title || setting.key}</span></td>
                         <td>${formItem}</td>
                     </tr>`)
                 }
@@ -587,14 +577,15 @@
              * Bind:Mouseover Mouseout
              * 提示信息Tips
              */
-            $panelDom.find('.hld__adv-help').mouseover(function(e){
+            $('body').on('mouseover', '.hld__help', function(e){
+                if (!$(this).attr('help')) return
                 const $help = $(`<div class="hld__help-tips">${$(this).attr('help').replace(/\n/g, '<br>')}</div>`)
                 $help.css({
                     top: ($(this).offset().top + $(this).height() + 5) + 'px',
                     left: $(this).offset().left + 'px'
                 })
                 $('body').append($help)
-            }).mouseout(()=>$('.hld__help-tips').remove())
+            }).on('mouseout', '.hld__help', ()=>$('.hld__help-tips').remove())
             $('body').append($panelDom)
             //本地恢复设置
             //基础设置
@@ -605,7 +596,7 @@
                     if (enableDomID) {
                         script.setting.normal[k] ? $('#' + enableDomID).show() : $('#' + enableDomID).hide()
                         $('#' + enableDomID).find('input').each(function () {
-                            $(this).val() == script.setting.normal[$(this).attr('name').substr(8)] && ($(this)[0].checked = true)
+                            $(this).val() == script.setting.normal[$(this).attr('name').substring(8)] && ($(this)[0].checked = true)
                         })
                         $('#hld__cb_' + k).on('click', function () {
                             $(this)[0].checked ? $('#' + enableDomID).slideDown() : $('#' + enableDomID).slideUp()
@@ -643,7 +634,11 @@
              * 关闭面板（通用）
              */
             $('body').on('click', '.hld__list-panel .hld__setting-close', function () {
-                $(this).parent().remove()
+                if ($(this).attr('close-type') == 'hide') {
+                    $(this).parent().hide()
+                } else {
+                    $(this).parent().remove()
+                }
             })
             /**
              * Bind:Click
@@ -654,7 +649,7 @@
                 $('#hld__setting_cover').fadeOut(200)
             })
         },
-        renderAlwaysFunc: function () {
+        renderAlwaysFunc() {
             if($('.hld__setting-box').length == 0) {
                 $('#startmenu > tbody > tr > td.last').append('<div><div class="item hld__setting-box"></div></div>')
                 let $entry = $('<a id="hld__setting" title="打开NGA优化摸鱼插件设置面板">NGA优化摸鱼插件设置</a>')
@@ -666,12 +661,42 @@
                 $('.hld__setting-box').append($entry)
             }
         },
-        addButton: function (button) {
-            $('#hld_setting_panel_buttons').append(`
-            <button class="hld__btn" id="${button.id}" title="${button.desc}">${button.title}</button>
-            `)
+        addButton(button) {
+            const $button = $(`<button class="hld__btn" id="${button.id}" title="${button.desc}">${button.title}</button>`)
+            if (typeof button.click == 'function') {
+                $button.on('click', function() {
+                    button.click($(this))
+                })
+            }
+            $('#hld_setting_panel_buttons').append($button)
         },
         style: `
+        .animated {animation-duration:.3s;animation-fill-mode:both;}
+        .animated-1s {animation-duration:1s;animation-fill-mode:both;}
+        .zoomIn {animation-name:zoomIn;}
+        .bounce {-webkit-animation-name:bounce;animation-name:bounce;-webkit-transform-origin:center bottom;transform-origin:center bottom;}
+        .fadeInUp {-webkit-animation-name:fadeInUp;animation-name:fadeInUp;}
+        #loader {display:none;position:absolute;top:50%;left:50%;margin-top:-10px;margin-left:-10px;width:20px;height:20px;border:6px dotted #FFF;border-radius:50%;-webkit-animation:1s loader linear infinite;animation:1s loader linear infinite;}
+        @keyframes loader {0% {-webkit-transform:rotate(0deg);transform:rotate(0deg);}100% {-webkit-transform:rotate(360deg);transform:rotate(360deg);}}
+        @keyframes zoomIn {from {opacity:0;-webkit-transform:scale3d(0.3,0.3,0.3);transform:scale3d(0.3,0.3,0.3);}50% {opacity:1;}}
+        @keyframes bounce {from,20%,53%,80%,to {-webkit-animation-timing-function:cubic-bezier(0.215,0.61,0.355,1);animation-timing-function:cubic-bezier(0.215,0.61,0.355,1);-webkit-transform:translate3d(0,0,0);transform:translate3d(0,0,0);}40%,43% {-webkit-animation-timing-function:cubic-bezier(0.755,0.05,0.855,0.06);animation-timing-function:cubic-bezier(0.755,0.05,0.855,0.06);-webkit-transform:translate3d(0,-30px,0);transform:translate3d(0,-30px,0);}70% {-webkit-animation-timing-function:cubic-bezier(0.755,0.05,0.855,0.06);animation-timing-function:cubic-bezier(0.755,0.05,0.855,0.06);-webkit-transform:translate3d(0,-15px,0);transform:translate3d(0,-15px,0);}90% {-webkit-transform:translate3d(0,-4px,0);transform:translate3d(0,-4px,0);}}
+        @keyframes fadeInUp {from {opacity:0;-webkit-transform:translate3d(-50%,100%,0);transform:translate3d(-50%,100%,0);}to {opacity:1;-webkit-transform:translate3d(-50%,0,0);transform:translate3d(-50%,0,0);}}
+        .hld__msg{display:none;position:fixed;top:10px;left:50%;transform:translateX(-50%);color:#fff;text-align:center;z-index:99996;padding:10px 30px 10px 45px;font-size:16px;border-radius:10px;background-image:url("${SVG_ICON_MSG}");background-size:25px;background-repeat:no-repeat;background-position:15px}
+        .hld__msg a{color:#fff;text-decoration: underline;}
+        .hld__msg-ok{background:#4bcc4b}
+        .hld__msg-err{background:#c33}
+        .hld__msg-warn{background:#FF9900}
+        .hld__flex{display:flex;}
+        .hld__float-left{float: left;}
+        .clearfix {clear: both;}
+        #hld__noti_container {position:fixed;top:10px;left:10px;z-index:99;}
+        .hld__noti-msg {display:none;padding:10px 20px;font-size:14px;font-weight:bold;color:#fff;margin-bottom:10px;background:rgba(0,0,0,0.6);border-radius:10px;cursor:pointer;}
+        .hld__btn-groups {display:flex;justify-content:center !important;margin-top:10px;}
+        button.hld__btn {padding:3px 8px;border:1px solid #591804;background:#fff8e7;color:#591804;}
+        button.hld__btn:hover {background:#591804;color:#fff0cd;}
+        #hld__updated {position:fixed;top:20px;right:20px;width:230px;padding:10px;border-radius:5px;box-shadow:0 0 15px #666;border:1px solid #591804;background:#fff8e7;z-index: 9999;}
+        #hld__updated .hld__readme {text-decoration:underline;color:#591804;}
+        .hld__script-info {margin-left:4px;font-size:70%;color:#666;}
         #hld__setting {color:#6666CC;cursor:pointer;}
         #hld__setting_cover {display:none;padding-top: 70px;position:absolute;top:0;left:0;right:0;bottom:0;z-index:999;}
         #hld__setting_panel {position:relative;background:#fff8e7;width:600px;left: 50%;transform: translateX(-50%);padding:15px 20px;border-radius:10px;box-shadow:0 0 10px #666;border:1px solid #591804;}
@@ -692,7 +717,8 @@
         .hld__advanced-setting-panel>p svg {height:16px;width:16px;vertical-align: top;margin-right:3px;}
         .hld__advanced-setting-panel>table td {padding-right:10px}
         .hld__advanced-setting-panel input[type=text],.hld__advanced-setting-panel input[type=number] {width:80px}
-        .hld__adv-help {cursor:help;text-decoration: underline;}
+        .hld__advanced-setting-panel input[type=number] {border: 1px solid #e6c3a8;box-shadow: 0 0 2px 0 #7c766d inset;border-radius: 0.25em;}
+        .hld__help {cursor:help;text-decoration: underline;}
         .hld__buttons {clear:both;display:flex;justify-content:space-between;padding-top:15px;}
         button.hld__btn {padding:3px 8px;border:1px solid #591804;background:#fff8e7;color:#591804;}
         button.hld__btn:hover {background:#591804;color:#fff0cd;}
@@ -703,18 +729,27 @@
     }
     /**
      * 快捷键模块
-     * @name shortCutKeys
+     * @name ShortCutKeys
      * @description 为模块提供快捷键切换的能力，提供修改，保存快捷键等
     */
-    const shortCutKeys = {
-        name: 'shortCutKeys',
-        beforeFunc: function () {
+    const ShortCutKeys = {
+        name: 'ShortCutKeys',
+        title: '快捷键支持',
+        setting: {
+            type: 'advanced',
+            key: 'dynamicEnable',
+            default: true,
+            title: '动态功能启用',
+            desc: '此配置表示部分可以快捷键切换的功能默认行为策略\n选中时：关闭功能(如隐藏头像)也可以通过快捷键切换显示/隐藏\n取消时：关闭功能(如隐藏头像)将彻底关闭功能，快捷键会失效',
+            menu: 'left'
+        },
+        preProcFunc() {
             script.setting.normal.shortcutKeys = []
         },
-        initFunc: function () {
+        initFunc() {
             const _this = this
             // 添加到配置面板的设置入口
-            script.getModule('settingPanel').addButton({
+            script.getModule('SettingPanel').addButton({
                 id: 'hld__shortcut_manage',
                 title: '编辑快捷键',
                 desc: '编辑快捷键'
@@ -835,7 +870,7 @@
                 $('#hld__shortcut_panel').remove()
             })
         },
-        getCodeName (val, valType='code') {
+        getCodeName(val, valType='code') {
             const shortcutCode = {
                 'A': 65, 'B': 66, 'C': 67, 'D': 68, 'E': 69, 'F': 70, 'G': 71,
                 'H': 72, 'I': 73, 'J': 74, 'K': 75, 'L': 76, 'M': 77, 'N': 78,
@@ -879,19 +914,20 @@
     }
     /**
      * 配置备份模块
-     * @name backupModule
+     * @name BackupModule
      * @description 提供配置的导入，导出功能
      */
-    const backupModule = {
-        name: 'backupModule',
+    const BackupModule = {
+        name: 'BackupModule',
+        title: '配置备份',
         backupItems: [],
-        initFunc: function () {
+        initFunc() {
             /**
              * 导入导出设置面板
              */
             const _this = this
             // 在设置面板上添加按钮
-            script.getModule('settingPanel').addButton({
+            script.getModule('SettingPanel').addButton({
                 id: 'hld__backup_panel',
                 title: '导入/导出',
                 desc: '导入/导出配置字符串，包含设置，黑名单，标记名单等等'
@@ -1000,16 +1036,16 @@
                 })
             })
         },
-        addItem: function(item) {
+        addItem(item) {
             this.backupItems.push(item)
         },
         // 字符串版本转数字
-        vstr2num: function(str) {
+        vstr2num(str) {
             let num = 0
             str.split('.').forEach((n, i) => num += i < 2 ? +n * 1000 / Math.pow(10, i) : +n)
             return num
         },
-        calculateSize: function (num) {
+        calculateSize(num) {
             if (num == 0) return '0 B'
             let k = 1024
             let sizeStr = ['B','KB','MB','GB']
@@ -1040,16 +1076,17 @@
     }
     /**
      * 赏面板
-     * @name rewardPanel
+     * @name RewardPanel
      * @description 别问，好活当赏
      */
-    const rewardPanel = {
-        name: 'rewardPanel',
-        initFunc: function () {
+    const RewardPanel = {
+        name: 'RewardPanel',
+        title: '赏面板',
+        initFunc() {
             /**
              * 打赏
              */
-            script.getModule('settingPanel').addButton({
+            script.getModule('SettingPanel').addButton({
                 id: 'hld__reward',
                 title: '<span style="margin-right:3px">¥</span>赏',
                 desc: '好活当赏'
@@ -1092,28 +1129,13 @@
         `
     }
     /**
-     * 动态启用配置模块
-     * @name dynamicEnable
-     * @description 此模块提供了快捷键动态启用的功能
-     */
-    const dynamicEnable = {
-        name: 'dynamicEnable',
-        setting: {
-            type: 'advanced',
-            key: 'dynamicEnable',
-            default: true,
-            title: '动态功能启用',
-            desc: '此配置表示部分可以快捷键切换的功能默认行为策略\n选中时：关闭功能(如隐藏头像)也可以通过快捷键切换显示/隐藏\n取消时：关闭功能(如隐藏头像)将彻底关闭功能，快捷键会失效',
-            menu: 'left'
-        }
-    }
-    /**
      * 隐藏头像模块
-     * @name hideAvatar
+     * @name HideAvatar
      * @description 此模块提供了可以快捷键切换显示隐藏头像
      */
-    const hideAvatar = {
-        name: 'hideAvatar',
+    const HideAvatar = {
+        name: 'HideAvatar',
+        title: '隐藏头像',
         setting: {
             shortCutCode: 81, // Q
             type: 'normal',
@@ -1122,21 +1144,21 @@
             title: '隐藏头像',
             menu: 'left'
         },
-        renderFormsFunc: function ($el) {
+        renderFormsFunc($el) {
             if (script.setting.normal.hideAvatar) {
                 $el.find('.avatar, .avatar+img').css('display', 'none')
                 $el.find('.c1').css('background-image', 'none')
             }
         },
         shortcutFunc: {
-            hideAvatar: function () {
+            hideAvatar() {
                 if (script.setting.normal.hideAvatar || script.setting.advanced.dynamicEnable) {
                     $('.avatar, .avatar+img').toggle()
                     script.popNotification(`${$('.avatar:hidden').length == 0 ? '显示' : '隐藏'}头像`)
                 }
             }
         },
-        asyncStyle: function () {
+        asyncStyle() {
             return `
             .posterinfo .avatar+img {display:${script.setting.normal.hideAvatar ? 'none' : 'inline'};}
             `
@@ -1144,12 +1166,13 @@
     }
     /**
      * 隐藏头像模块
-     * @name hideSmile
+     * @name HideSmile
      * @description 此模块提供了可以快捷键切换显示隐藏表情
      *              其中隐藏的表情会用文字来替代
      */
-    const hideSmile = {
-        name: 'hideSmile',
+    const HideSmile = {
+        name: 'HideSmile',
+        title: '隐藏头像',
         setting: {
             shortCutCode: 87, // W
             type: 'normal',
@@ -1158,7 +1181,7 @@
             title: '隐藏表情',
             menu: 'left'
         },
-        renderFormsFunc: function ($el) {
+        renderFormsFunc($el) {
             $el.find('.c2 img').each(function () {
                 const classs = $(this).attr('class')
                 if (classs && classs.includes('smile') && !$(this).is(':hidden')) {
@@ -1170,7 +1193,7 @@
             })
         },
         shortcutFunc: {
-            hideSmile: function () {
+            hideSmile() {
                 if (script.setting.normal.hideSmile || script.setting.advanced.dynamicEnable) {
                     $('.c2 img').each(function () {
                         const classs = $(this).attr('class');
@@ -1184,11 +1207,12 @@
     }
     /**
      * 贴内图片缩放模块
-     * @name imgResize
+     * @name ImgResize
      * @description 此模块提供了可以调整贴内图片的尺寸
      */
-    const imgResize = {
-        name: 'imgResize',
+    const ImgResize = {
+        name: 'ImgResize',
+        title: '贴内图片缩放',
         settings: [{
             type: 'normal',
             key: 'imgResize',
@@ -1203,7 +1227,7 @@
             desc: '贴内图片缩放的宽度，高度自适应，单位px',
             menu: 'left'
         }],
-        renderFormsFunc: function ($el) {
+        renderFormsFunc($el) {
             $el.find('.c2 img').each(function () {
                 const classs = $(this).attr('class')
                 if ((!classs || !classs.includes('smile')) && script.setting.normal.imgResize) {
@@ -1219,12 +1243,13 @@
     }
     /**
      * 隐藏图片模块
-     * @name hideImage
+     * @name HideImage
      * @description 此模块提供了可以快捷键切换显示隐藏图片
      *              其中隐藏的图片会用一个按钮来替代
      */
-    const hideImage = {
-        name: 'hideImage',
+    const HideImage = {
+        name: 'HideImage',
+        title: '隐藏图片',
         setting: {
             shortCutCode: 69, // E
             type: 'normal',
@@ -1233,7 +1258,7 @@
             title: '隐藏贴内图片',
             menu: 'left'
         },
-        renderFormsFunc: function ($el) {
+        renderFormsFunc($el) {
             $el.find('.c2 img').each(function () {
                 const classs = $(this).attr('class')
                 if ((!classs || !classs.includes('smile')) && !$(this).is(':hidden')) {
@@ -1254,7 +1279,7 @@
             })
         },
         shortcutFunc: {
-            hideImage: function () {
+            hideImage() {
                 if (!script.setting.advanced.dynamicEnable) return
                 if ($('.hld__img-postimg:hidden').length < $('.switch-img').length) {
                     $('.hld__img-postimg').hide()
@@ -1272,11 +1297,12 @@
     }
     /**
      * 隐藏签名模块
-     * @name hideSign
+     * @name HideSign
      * @description 此模块提供了可以配置默认隐藏签名
      */
-    const hideSign = {
-        name: 'hideSign',
+    const HideSign = {
+        name: 'HideSign',
+        title: '隐藏签名',
         setting: {
             type: 'normal',
             key: 'hideSign',
@@ -1284,18 +1310,19 @@
             title: '隐藏签名',
             menu: 'left'
         },
-        renderFormsFunc: function ($el) {
+        renderFormsFunc($el) {
             script.setting.normal.hideSign && $el.find('.sign, .sigline').css('display', 'none')
         }
     }
     /**
      * 隐藏图片模块
-     * @name hideHeader
+     * @name HideHeader
      * @description 此模块提供了可以配置默认隐藏版头
      *              以及一个高级配置可选一起隐藏顶部背景
      */
-    const hideHeader = {
-        name: 'hideHeader',
+    const HideHeader = {
+        name: 'HideHeader',
+        title: '隐藏图片',
         settings: [{
             type: 'normal',
             key: 'hideHeader',
@@ -1310,11 +1337,11 @@
             desc: '选中时：隐藏版头的同时顶部背景图片\n取消时：无操作',
             menu: 'right'
         }],
-        renderAlwaysFunc: function ($el) {
+        renderAlwaysFunc($el) {
             //隐藏版头
             if (script.setting.normal.hideHeader && $('#hld__switch_header').length == 0) {
                 $('#toppedtopic').hide()
-                window.location.href.indexOf('favor=') == -1 && $('#sub_forums').hide()
+                $('#toppedtopic').length > 0 && $('#sub_forums').hide()
                 let $toggleHeaderBtn = $('<button style="position: absolute;right: 16px;" id="hld__switch_header">切换显示版头</button>')
                 $toggleHeaderBtn.click(() => $('#toppedtopic, #sub_forums').toggle())
                 $('#toptopics > div > h3').append($toggleHeaderBtn)
@@ -1331,12 +1358,13 @@
     }
     /**
      * Excel模块
-     * @name excelMode
+     * @name ExcelMode
      * @description 此模块提供了可以快捷键切换Excel模式
      *              以及一个高级配置可选更改Excel左侧序号的类型
      */
-    const excelMode = {
-        name: 'excelMode',
+    const ExcelMode = {
+        name: 'ExcelMode',
+        title: 'Excel模式',
         settings: [{
             shortCutCode: 82, // R
             type: 'normal',
@@ -1347,7 +1375,7 @@
         }, {
             type: 'advanced',
             key: 'excelTheme',
-            default: 'wps',
+            default: 'tencent',
             options: [{
                 label: '腾讯文档',
                 value: 'tencent'
@@ -1368,9 +1396,16 @@
             title: 'Excel左列序号',
             desc: 'Excel最左列的显示序号，此策略为尽可能的更像Excel\n选中时：Excel最左栏为从1开始往下，逐行+1\n取消时：Excel最左栏为原始的回帖数\n*此功能仅在贴列表有效',
             menu: 'left'
+        }, {
+            type: 'advanced',
+            key: 'excelTitle',
+            default: '工作簿1',
+            title: 'Excel覆盖标题',
+            desc: 'Excel模式下标签栏的名称, 如留空, 则显示原始标题',
+            menu: 'left'
         }],
         beforeUrl: window.location.href,
-        initFunc: function() {
+        initFunc() {
             // 生成列标题字母列表
             const columnLetters = () => {
                 let capital = []
@@ -1513,7 +1548,7 @@
                 `)
             }
 
-            $('#hld__excel_setting').click(()=>$('#hld__setting_cover').css('display', 'flex'))
+            $('#hld__excel_setting').click(()=>$('#hld__setting_cover').css('display', 'block'))
             $('#mainmenu .half').parent().append($('#mainmenu .half').clone(true).addClass('hld__half-clone').text($('#mainmenu .half').text().replace('你好', '')))
             if(script.setting.normal.excelMode) {
                 if(this.beforeUrl.includes('thread.php') || this.beforeUrl.includes('read.php')) {
@@ -1521,7 +1556,7 @@
                 }
             }
         },
-        renderAlwaysFunc: function ($el) {
+        renderAlwaysFunc($el) {
             $('.hld__excel-theme-' + script.setting.advanced.excelTheme).length == 0 && $('body').addClass('hld__excel-theme-' + script.setting.advanced.excelTheme)
             if(script.setting.normal.excelMode && window.location.href != this.beforeUrl) {
                 this.beforeUrl = window.location.href
@@ -1537,12 +1572,21 @@
             }else {
                 $('body').removeClass('hld__excel-body-err')
             }
+            // Excel Title
+            if ($('.hld__excel-body').length > 0) {
+                const excelTitle = script.setting.advanced.excelTitle
+                if (excelTitle) {
+                    $(document).attr('title') != excelTitle && $(document).attr('title', excelTitle)
+                }
+                $('.hld__excel-titlebar-title').html(excelTitle || $(document).attr('title'))
+                $('#hld__excel_icon').length == 0 && $('head').append(`<link id= "hld__excel_icon" rel="shortcut icon" type="image/png" href="${IMG_EXCEL_ICON}" />`)
+            }
         },
-        renderFormsFunc: function ($el) {
+        renderFormsFunc($el) {
             $el.find('.postrow>td:first-child').before('<td class="c0"></td>')
         },
         shortcutFunc: {
-            excelMode: function () {
+            excelMode() {
                 if (script.setting.normal.excelMode || script.setting.advanced.dynamicEnable) {
                     this.switchExcelMode()
                     script.popNotification($('.hld__excel-body').length > 0 ? 'Excel模式' : '普通模式')
@@ -1719,40 +1763,14 @@
         `
     }
     /**
-     * Excel标题栏标题模块
-     * @name excelTitle
-     * @description 此模块提供了在Excel模式下可以更改标题的功能
-     *              提供一个高级配置输入自定义标题
-     */
-    const excelTitle = {
-        name: 'excelTitle',
-        setting: {
-            type: 'advanced',
-            key: 'excelTitle',
-            default: '工作簿1',
-            title: 'Excel覆盖标题',
-            desc: 'Excel模式下标签栏的名称, 如留空, 则显示原始标题',
-            menu: 'left'
-        },
-        renderAlwaysFunc: function ($el) {
-            if ($('.hld__excel-body').length > 0) {
-                const excelTitle = script.setting.advanced.excelTitle
-                if (excelTitle) {
-                    $(document).attr('title') != excelTitle && $(document).attr('title', excelTitle)
-                }
-                $('.hld__excel-titlebar-title').html(excelTitle || $(document).attr('title'))
-                $('#hld__excel_icon').length == 0 && $('head').append(`<link id= "hld__excel_icon" rel="shortcut icon" type="image/png" href="${IMG_EXCEL_ICON}" />`)
-            }
-        }
-    }
-    /**
      * 折叠引用模块
-     * @name foldQuote
+     * @name FoldQuote
      * @description 此模块提供了可以选择配置自动折叠过长引用
      *              提供一个高级配置可以设置折叠的阈值
      */
-    const foldQuote = {
-        name: 'foldQuote',
+    const FoldQuote = {
+        name: 'FoldQuote',
+        title: '折叠引用',
         settings: [{
             type: 'normal',
             key: 'foldQuote',
@@ -1767,7 +1785,7 @@
             desc: '自动折叠引用的高度阈值，单位为像素(px)',
             menu: 'right'
         }],
-        renderFormsFunc: function ($el) {
+        renderFormsFunc($el) {
             if (script.setting.normal.foldQuote) {
                 // 自动折叠过长引用
                 if ($el.find('.postcontent .quote').length > 0) {
@@ -1809,11 +1827,12 @@
     }
     /**
      * 新页面打开模块
-     * @name linkTargetBlank
+     * @name LinkTargetBlank
      * @description 此模块提供了可以选择配置在新页面打开链接
      */
-    const linkTargetBlank = {
-        name: 'linkTargetBlank',
+    const LinkTargetBlank = {
+        name: 'LinkTargetBlank',
+        title: '新页面打开',
         setting: {
             type: 'normal',
             key: 'linkTargetBlank',
@@ -1821,7 +1840,7 @@
             title: '论坛列表新窗口打开',
             menu: 'right'
         },
-        renderThreadsFunc: function ($el) {
+        renderThreadsFunc($el) {
             if (script.setting.normal.linkTargetBlank) {
                 let $link = $el.find('.topic')
                 $link.data('href', $link.attr('href')).attr('href', 'javascript:void(0)')
@@ -1834,11 +1853,12 @@
     }
     /**
      * 链接直接跳转
-     * @name directLinkJump
+     * @name DirectLinkJump
      * @description 此模块提供了超链接等直接跳转无须弹窗确认
      */
-    const directLinkJump = {
-        name: 'directLinkJump',
+    const DirectLinkJump = {
+        name: 'DirectLinkJump',
+        title: '链接直接跳转',
         setting: {
             type: 'normal',
             key: 'directLinkJump',
@@ -1846,7 +1866,7 @@
             title: '链接直接跳转',
             menu: 'right'
         },
-        renderFormsFunc: function ($el) {
+        renderFormsFunc($el) {
             if (script.setting.normal.directLinkJump) {
                 $el.find('a[onclick]').each(function(){
                     if ($(this).attr('onclick').includes('showUrlAlert')) {
@@ -1858,12 +1878,13 @@
     }
     /**
      * 图片增强模块
-     * @name imgEnhance
+     * @name ImgEnhance
      * @description 此模块提供了图片增强功能，使用一个独立的图层打开图片
      *              可以快速切换，缩放，旋转等
      */
-    const imgEnhance = {
-        name: 'imgEnhance',
+    const ImgEnhance = {
+        name: 'ImgEnhance',
+        title: '图片增强',
         settings: [{
             type: 'normal',
             key: 'imgEnhance',
@@ -1879,7 +1900,7 @@
             key: 'imgEnhanceNext',
             title: '楼内上一张图'
         }],
-        renderFormsFunc: function ($el) {
+        renderFormsFunc($el) {
             $el.find('img').each(function () {
                 const classs = $(this).attr('class')
                 if (!classs || (classs && !classs.includes('smile'))) {
@@ -1895,7 +1916,7 @@
                 })
             }
         },
-        resizeImg: (el) => {
+        resizeImg(el) {
             if ($('#hld__img_full').length > 0) return
             let urlList = []
             let currentIndex = el.parent().find('[hld__imglist=ready]').index(el)
@@ -2030,12 +2051,12 @@
             $('body').append($imgBox)
         },
         shortcutFunc: {
-            imgEnhancePrev: function () {
+            imgEnhancePrev() {
                 if ($('#hld__img_full').length > 0) {
                     $('#hld__img_full .prev-img').click()
                 }
             },
-            imgEnhanceNext: function () {
+            imgEnhanceNext() {
                 if ($('#hld__img_full').length > 0) {
                     $('#hld__img_full .next-img').click()
                 }
@@ -2062,77 +2083,29 @@
     }
     /**
      * 标记楼主模块
-     * @name authorMark
+     * @name AuthorMark
+     * @requires https://cdn.staticfile.org/spectrum/1.8.0/spectrum.js
      * @description 此模块提供了自动标记楼主，使其更醒目
+     *              提供了高级设置可选标记楼主的颜色
+     *              以及为其他模块提供一个spectrum的配置文件
      */
-    const authorMark = {
-        name: 'authorMark',
-        setting: {
+    const AuthorMark = {
+        name: 'AuthorMark',
+        title: '标记楼主',
+        settings: [{
             type: 'normal',
             key: 'authorMark',
             default: true,
             title: '高亮楼主',
             menu: 'right'
-        },
-        postAuthor: [],
-        initFunc: function () {
-            const localPostAuthor = window.localStorage.getItem('hld__NGA_post_author')
-            localPostAuthor && (this.postAuthor = localPostAuthor.split(','))
-        },
-        renderFormsFunc: function ($el) {
-            const _this = this
-            if (script.setting.normal.authorMark) {
-                const author = $('#postauthor0').text().replace('楼主', '')
-                const tid = this.getQueryString('tid')
-                const authorStr = `${tid}:${author}`
-                if (author && !this.postAuthor.includes(authorStr) && !window.location.href.includes('authorid')) {
-                    this.postAuthor.unshift(authorStr) > 10 && this.postAuthor.pop()
-                    window.localStorage.setItem('hld__NGA_post_author', this.postAuthor.join(','))
-                }
-                $el.find('a.b').each(function () {
-                    const name = $(this).attr('hld-mark-before-name') || $(this).text().replace('[', '').replace(']', '')
-                    if (name && _this.postAuthor.includes(`${tid}:${name}`)) {
-                        $(this).append('<span class="hld__post-author">楼主</span>')
-                    }
-                })
-            }
-        },
-        /**
-         * 获取URL参数
-         * @method getQueryString
-         * @param {String} name key
-         * @return {String|null} value
-         */
-        getQueryString: (name) => {
-            let url = decodeURI(window.location.search.replace(/&amp;/g, "&"))
-            let reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)")
-            let r = url.substr(1).match(reg)
-            if (r != null) return unescape(r[2])
-            return null
-        },
-        asyncStyle: () => {
-            return `
-            .hld__post-author {background:${script.setting.advanced.authorMarkColor || '#F00'};color: #FFF;display: inline-block;padding:0 5px;margin-left: 5px;border-radius: 5px;font-weight:bold;    line-height: 1.4em;padding-top: 0.1em;padding-bottom: 0;}
-            `
-        }
-    }
-    /**
-     * 标记楼主可选颜色模块
-     * @name authorMarkColor
-     * @requires https://cdn.staticfile.org/spectrum/1.8.0/spectrum.js
-     * @description 此模块提供了高级设置可选标记楼主的颜色
-     *              以及为其他模块提供一个spectrum的配置文件
-     */
-    const authorMarkColor = {
-        name: 'authorMarkColor',
-        setting: {
+        }, {
             type: 'advanced',
             key: 'authorMarkColor',
             default: '#F00',
             title: '标记楼主颜色',
             desc: '标记楼主中的[楼主]的背景颜色，单位为16进制颜色代码',
             menu: 'left'
-        },
+        }],
         // spectrum配置对象
         colorPickerConfig: {
             type: 'color',
@@ -2154,8 +2127,61 @@
                 ['#660000','#783f04','#7f6000','#274e13','#0c343d','#073763','#20124d','#4c1130']
             ]
         },
-        initFunc: function() {
-            $('#hld__setting_cover').find('#hld__adv_authorMarkColor').spectrum(this.colorPickerConfig)
+        postAuthor: [],
+        initFunc() {
+            const localPostAuthor = window.localStorage.getItem('hld__NGA_post_author')
+            localPostAuthor && (this.postAuthor = localPostAuthor.split(','))
+            // 初始化颜色选择器
+            this.initSpectrum('#hld__setting_cover #hld__adv_authorMarkColor')
+        },
+        renderFormsFunc($el) {
+            const _this = this
+            if (script.setting.normal.authorMark) {
+                const author = $('#postauthor0').text().replace('楼主', '')
+                const tid = this.getQueryString('tid')
+                const authorStr = `${tid}:${author}`
+                if (author && !this.postAuthor.includes(authorStr) && !window.location.href.includes('authorid')) {
+                    this.postAuthor.unshift(authorStr) > 10 && this.postAuthor.pop()
+                    window.localStorage.setItem('hld__NGA_post_author', this.postAuthor.join(','))
+                }
+                $el.find('a.b').each(function () {
+                    const name = $(this).attr('hld-mark-before-name') || $(this).text().replace('[', '').replace(']', '')
+                    if (name && _this.postAuthor.includes(`${tid}:${name}`)) {
+                        $(this).append('<span class="hld__post-author">楼主</span>')
+                    }
+                })
+            }
+        },
+        /**
+         * 获取URL参数
+         * @method getQueryString
+         * @param {String} name key
+         * @param {String} url 要解析的URL
+         * @return {String|null} value
+         */
+        getQueryString(name, url='') {
+            url ||= decodeURIComponent(window.location.href.replace(/&amp;/g, "&"))
+            let reg = new RegExp("(?:\\?|&)" + name + "=([^&]*)(&|$)")
+            let r = url.substring(1).match(reg)
+            if (r != null) return encodeURIComponent(r[1])
+            return null
+        },
+        /**
+        * 初始化颜色选择器
+        * @method initSpectrum
+        * @param {str} selector 元素选择器
+        */
+        initSpectrum(selector) {
+            if (selector instanceof jQuery) {
+                selector.spectrum(this.colorPickerConfig)
+            } else {
+                $(selector).spectrum(this.colorPickerConfig)
+            }
+        },
+        asyncStyle() {
+            return `
+            .hld__post-author {background:${script.setting.advanced.authorMarkColor || '#F00'};color: #FFF;display: inline-block;padding:0 5px;margin-left: 5px;border-radius: 5px;font-weight:bold;    line-height: 1.4em;padding-top: 0.1em;padding-bottom: 0;}
+            `
         },
         style: `
         .cp-color-picker{z-index:99997}
@@ -2256,12 +2282,13 @@
     }
     /**
      * 自动翻页模块
-     * @name autoPage
+     * @name AutoPage
      * @description 此模块提供了脚本自动翻页的功能
      *              提供一个高级配置可以设置自动翻页的检测阈值
      */
-    const autoPage = {
-        name: 'autoPage',
+    const AutoPage = {
+        name: 'AutoPage',
+        title: '自动翻页',
         settings: [{
             type: 'normal',
             key: 'autoPage',
@@ -2270,10 +2297,10 @@
             menu: 'right'
         }],
         $window: $(window),
-        initFunc: function () {
+        initFunc() {
             script.setting.normal.autoPage && $('body').addClass('hld__reply-fixed')
         },
-        renderAlwaysFunc: function () {
+        renderAlwaysFunc() {
             const _this = this
             if(script.setting.normal.autoPage) {
                 if($('#hld__next_page').length > 0) return
@@ -2297,12 +2324,13 @@
     }
     /**
      * 关键字屏蔽模块
-     * @name keywordsBlock
+     * @name KeywordsBlock
      * @description 此模块提供了关键字屏蔽功能
      *              提供一个高级配置可以设置是否过滤标题
      */
-    const keywordsBlock = {
-        name: 'keywordsBlock',
+    const KeywordsBlock = {
+        name: 'KeywordsBlock',
+        title: '关键字屏蔽',
         settings: [{
             type: 'normal',
             key: 'keywordsBlock',
@@ -2333,7 +2361,7 @@
             menu: 'right'
         }],
         keywordsList: [],
-        initFunc: function () {
+        initFunc() {
             const _this = this
             // 同步本地数据
             const localKeywordsList = window.localStorage.getItem('hld__NGA_keywords_list')
@@ -2344,7 +2372,7 @@
                 window.localStorage.setItem('hld__NGA_keywords_list', JSON.stringify(_this.keywordsList))
             }
             // 添加到导入导出配置
-            script.getModule('backupModule').addItem({
+            script.getModule('BackupModule').addItem({
                 title: '关键字列表',
                 writeKey: 'keywords_list',
                 valueKey: 'keywordsList',
@@ -2379,7 +2407,7 @@
                 script.popMsg('保存成功，刷新页面生效')
             })
         },
-        renderThreadsFunc: function ($el) {
+        renderThreadsFunc($el) {
             const title = $el.find('.c2>a').text()
             if ((script.setting.advanced.kwdBlockContent === 'ALL' || script.setting.advanced.kwdBlockContent === 'TITLE') && script.setting.normal.keywordsBlock && this.keywordsList.length > 0) {
                 for (let keyword of this.keywordsList) {
@@ -2391,7 +2419,7 @@
                 }
             }
         },
-        renderFormsFunc: function ($el) {
+        renderFormsFunc($el) {
             const _this = this
             if (script.setting.normal.keywordsBlock && this.keywordsList.length > 0 && (script.setting.advanced.kwdBlockContent === 'ALL' || script.setting.advanced.kwdBlockContent === 'BODY')) {
                 const $postcontent = $el.find('.postcontent')
@@ -2446,7 +2474,7 @@
          * @param {Array} array 列表
          * @return {Array} 处理后的列表
          */
-        removeBlank: function (array) {
+        removeBlank(array) {
             let r = []
             array.map(function (val, index) {
                 if (val !== '' && val != undefined) {
@@ -2461,7 +2489,7 @@
          * @param {Array} array 列表
          * @return {Array} 处理后的列表
          */
-        uniq: function (array) {
+        uniq(array) {
             return [...new Set(array)]
         },
         style: `
@@ -2471,14 +2499,15 @@
     }
     /**
      * 黑名单标记模块
-     * @name markAndBan
+     * @name MarkAndBan
      * @description 此模块提供了黑名单屏蔽功能，标签标记功能
      *              提供高级配置可以设置标记/备注风格
      *              提供高级配置可以设置功能面板显示方式
      *              提供高级配置可以设置黑名单屏蔽策略
      */
-    const markAndBan = {
-        name: 'markAndBan',
+    const MarkAndBan = {
+        name: 'MarkAndBan',
+        title: '黑名单标记',
         settings: [{
             type: 'normal',
             key: 'markAndBan',
@@ -2525,7 +2554,7 @@
         banList: [],
         markList: [],
         markedTags: [],
-        initFunc: function () {
+        initFunc() {
             const _this = this
             // 读取本地数据
             const localBanList = window.localStorage.getItem('hld__NGA_ban_list')
@@ -2564,13 +2593,13 @@
                 script.throwError('【NGA-Script】无法加载标记列表，数据解析失败\n标记列表已清空，之前的数据已经备份到hld__NGA_mark_list_bak\n请在控制台中的localStorage中查看')
             }
             // 添加到导入导出配置
-            script.getModule('backupModule').addItem({
+            script.getModule('BackupModule').addItem({
                 title: '黑名单列表',
                 writeKey: 'ban_list',
                 valueKey: 'banList',
                 module: this
             })
-            script.getModule('backupModule').addItem({
+            script.getModule('BackupModule').addItem({
                 title: '标记名单列表',
                 writeKey: 'mark_list',
                 valueKey: 'markList',
@@ -2752,7 +2781,7 @@
                 })
             }
         },
-        renderThreadsFunc: function($el) {
+        renderThreadsFunc($el) {
             const title = $el.find('.c2>a').text()
             const uid = ($el.find('.author').attr('href') && $el.find('.author').attr('href').indexOf('uid=') > -1) ? $el.find('.author').attr('href').split('uid=')[1] + '' : ''
             const name = $el.find('.author').text()
@@ -2765,7 +2794,7 @@
                 }
             }
         },
-        renderFormsFunc: function($el) {
+        renderFormsFunc($el) {
             const _this = this
             if (script.setting.normal.markAndBan) {
                 // 插入操作面板
@@ -2777,7 +2806,7 @@
                     } else {
                         currentName = $(this).parents('td').prev('td').find('.author').text()
                     }
-                    currentName.endsWith('楼主') && (currentName = currentName.substr(0, currentName.length - 4))
+                    currentName.endsWith('楼主') && (currentName = currentName.substring(0, currentName.length - 2))
                     const mbDom = `<a class="hld__extra-icon" data-type="mark" title="标签此用户" data-name="${currentName}" data-uid="${currentUid}"><svg t="1686732786072" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2385" width="200" height="200"><path d="M900.64 379.808l-263.072-256.032c-36.448-35.328-105.76-35.392-142.304 0.096l-327.04 319.904c-56.416 54.72-70.72 76.704-70.72 150.976l0 143.936c0 132.768 26.976 192 186.912 192l131.872 0c81.12 0 128.448-46.656 193.952-111.264l290.016-297.696c18.592-17.984 29.248-43.968 29.248-71.264C929.504 423.36 918.976 397.6 900.64 379.808zM323.008 786.752c-52.928 0-96-43.072-96-96s43.072-96 96-96 96 43.072 96 96S375.936 786.752 323.008 786.752z" fill="#3970fe" p-id="2386" data-spm-anchor-id="a313x.7781069.0.i0" class="selected"></path></svg></a><a class="hld__extra-icon" title="拉黑此用户(屏蔽所有言论)" data-type="ban"  data-name="${currentName}" data-uid="${currentUid}"><svg t="1686733137783" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="12682" width="200" height="200"><path d="M512 0a512 512 0 1 0 0 1024 512 512 0 0 0 0-1024zM204.8 409.6h614.4v204.8H204.8V409.6z" fill="#d00309" p-id="12683" data-spm-anchor-id="a313x.7781069.0.i10" class="selected"></path></svg></a>`
                     script.setting.advanced.autoHideBanIcon ? $(this).after(`<span class="hld__extra-icon-box">${mbDom}</span>`) : $(this).append(mbDom)
                 })
@@ -2855,7 +2884,7 @@
          * @param {Number} setting.left pos.left 位置
          * @param {Function} setting.callback 回调函数
          */
-        banlistPopup: function (setting) {
+        banlistPopup(setting) {
             const _this = this
             $('.hld__dialog').length > 0 && $('.hld__dialog').remove()
             const retainWord = [':', '(', ')', '&', '#', '^', ',']
@@ -2864,9 +2893,7 @@
                 $banDialog.find('#container_dom').append(`<div><span>您确定要拉黑用户</span><span class="hld__dialog-user">${setting.name}</span><span>吗？</span></div>`)
                 let $okBtn = $('<button class="hld__btn">拉黑</button>')
                 $okBtn.click(function(){
-                    const banObj = {name: setting.name, uid: setting.uid}
-                    !_this.getBanUser(banObj) && _this.banList.push(banObj)
-                    window.localStorage.setItem('hld__NGA_ban_list', JSON.stringify(_this.banList))
+                    _this.setBanUser({name: setting.name, uid: setting.uid})
                     $('.hld__dialog').remove()
                     script.popMsg('拉黑成功，重载页面生效')
                 })
@@ -2896,7 +2923,7 @@
          * @param {Object} banObj 黑名单对象
          * @return {Object|null} 获取的用户对象
          */
-        getBanUser: function (banObj) {
+        getBanUser(banObj) {
             const _this = this
             for (let u of _this.banList) {
                 if ((u.uid && banObj.uid && u.uid == banObj.uid) || 
@@ -2912,10 +2939,19 @@
             return null
         },
         /**
+         * 拉黑用户
+         * @method setBanUser
+         * @param {Object} banObj 黑名单对象, {uid, name}
+         */
+        setBanUser(banObj) {
+            !this.getBanUser(banObj) && this.banList.push(banObj)
+            window.localStorage.setItem('hld__NGA_ban_list', JSON.stringify(this.banList))
+        },
+        /**
          * 重新渲染黑名单列表
          * @method reloadBanlist
          */
-        reloadBanlist: function () {
+        reloadBanlist() {
             const _this = this
             $('#hld__banlist').empty()
             _this.banList.forEach((item, index) => $('#hld__banlist').append(`
@@ -2935,7 +2971,7 @@
          * 重新渲染标签列表
          * @method reloadMarklist
          */
-        reloadMarklist: function () {
+        reloadMarklist() {
             const _this = this
             $('#hld__marklist').empty()
             _this.markList.forEach((user_mark, index) => {
@@ -2968,7 +3004,7 @@
          * @param {Number} setting.left pos.left 位置
          * @param {Function} setting.callback 回调函数
          */
-        userMarkPopup: function (setting) {
+        userMarkPopup(setting) {
             const _this = this
             $('.hld__dialog').length > 0 && $('.hld__dialog').remove()
             const retain_word = [':', '(', ')', '&', '#', '^', ',']
@@ -2995,7 +3031,7 @@
                 <td><button title="删除此标签" class="hld__mark-del">x</button></td>
                 </tr>`)
                 $tr.find('.hld__mark-del').click(function(){$(this).parents('tr').remove()})
-                $tr.find('.hld__dialog-color-picker').spectrum(script.getModule('authorMarkColor').colorPickerConfig)
+                script.getModule('AuthorMark').initSpectrum($tr.find('.hld__dialog-color-picker'))
                 $markDialog.find('#hld__mark_body').append($tr)
                 n && $tr.find('.hld__mark-mark').focus()
             }
@@ -3051,7 +3087,7 @@
             })
             $markDialog.find('.hld__button-save').append($okBtn)
             $('body').append($markDialog)
-            $('.hld__dialog-color-picker').spectrum(script.getModule('authorMarkColor').colorPickerConfig)
+            script.getModule('AuthorMark').initSpectrum('.hld__dialog-color-picker')
         },
         /**
          * 获取用户标签对象
@@ -3060,7 +3096,7 @@
          * @param {String} user 用户名
          * @return {Object|null} 标签对象
          */
-        getUserMarks: function (user) {
+        getUserMarks(user) {
             const _this = this
             const check = _this.markList.findIndex(v => (v.uid && user.uid && v.uid == user.uid) || 
             (v.name && user.name && v.name == user.name))
@@ -3081,7 +3117,7 @@
          * @method setUserMarks
          * @param {Object} userMarks 标签对象
          */
-        setUserMarks: function (userMarks) {
+        setUserMarks(userMarks) {
             // 检查是否已有标签
             const _this = this
             const check = _this.markList.findIndex(v => (v.uid && userMarks.uid && v.uid == userMarks.uid) || 
@@ -3151,11 +3187,12 @@
     }
     /**
      * 护眼模式
-     * @name eyeCareMode
+     * @name EyeCareMode
      * @description 此模块提供了护眼模式（绿色）
      */
-    const eyeCareMode = {
-        name: 'eyeCareMode',
+    const EyeCareMode = {
+        name: 'EyeCareMode',
+        title: '护眼模式',
         setting: {
             type: 'normal',
             key: 'eyeCareMode',
@@ -3168,10 +3205,10 @@
         textColor: '#10273f', //文字颜色
         buttonColor: '#c7edcc', // 按钮颜色
         borderColor: '#ffffff', // 边框颜色
-        initFunc: function () {
+        initFunc() {
             script.setting.normal.eyeCareMode && $('body').addClass('hld__eye-care')
         },
-        asyncStyle: function () {
+        asyncStyle() {
             return `
             body.hld__eye-care, .hld__eye-care #msg_block_c .menu a, #msg_block_c .pager a, .hld__eye-care .nav_link, .hld__eye-care button.hld__btn:hover {color: ${this.textColor} !important;}
             .hld__eye-care body, .hld__eye-care .stdbtn, .hld__eye-care .stdbtn .innerbg, .hld__eye-care .stdbtn a, .hld__eye-care .nav_root,
@@ -3213,11 +3250,12 @@
     }
     /**
      * 暗黑模式
-     * @name darkMode
+     * @name DarkMode
      * @description 此模块提供了暗黑主题(仿Github Dark efault Theme)
      */
-    const darkMode = {
-        name: 'darkMode',
+    const DarkMode = {
+        name: 'DarkMode',
+        title: '暗黑模式',
         setting: {
             type: 'normal',
             key: 'darkMode',
@@ -3234,10 +3272,10 @@
         buttonColor: '#1f262d', // 按钮颜色
         buttonHoverColor: '#2e363d', // 按钮停留颜色
         borderColor: '#21262d', // 边框颜色
-        initFunc: function () {
+        initFunc() {
             script.setting.normal.darkMode && $('body').removeClass('hld__eye-care').addClass('hld__dark-mode')
         },
-        asyncStyle: function () {
+        asyncStyle() {
             return `
             body.hld__dark-mode, .hld__dark-mode #msg_block_c .menu a, #msg_block_c .pager a, .hld__dark-mode .nav_link, .hld__dark-mode button.hld__btn:hover {color: ${this.textColor} !important;}
             .hld__dark-mode #m_threads a, .hld__dark-mode .forumbox h2, .hld__dark-mode .forumbox h1, .hld__dark-mode textarea, .hld__dark-mode select, .hld__dark-mode input,
@@ -3293,11 +3331,12 @@
     }
     /**
      * 字体大小调整
-     * @name fontResize
+     * @name FontResize
      * @description 此模块提供了调整字体大小的功能
      */
-    const fontResize = {
-        name: 'fontResize',
+    const FontResize = {
+        name: 'FontResize',
+        title: '字体大小调整',
         setting: {
             type: 'advanced',
             key: 'fontResize',
@@ -3306,7 +3345,7 @@
             desc: '字体大小调整，单位为像素(px)，初始值是12，注意：此值调整过大会导致页面混乱',
             menu: 'left'
         },
-        initFunc: function () {
+        initFunc() {
             const fontResizeInput = script.setting.advanced.fontResize
             try {
                 const fontSize = parseInt(fontResizeInput)
@@ -3320,7 +3359,7 @@
     }
     /**
      * 扩展坞模块
-     * @name extraDocker
+     * @name ExtraDocker
      * @description 此模块提供了一个悬浮的扩展坞，来添加某些功能
      *              目前添加的功能有：
      *                  返回顶部：无跳转返回当前页面的第一页/刷新当页
@@ -3329,8 +3368,9 @@
      *                  回复：回复主题
      *                  跳转尾页：跳转到当前帖子的尾页
      */
-    const extraDocker = {
-        name: 'extraDocker',
+    const ExtraDocker = {
+        name: 'ExtraDocker',
+        title: '扩展坞',
         settings: [{
             shortCutCode: 84, // T
             key: 'backTop',
@@ -3340,7 +3380,7 @@
             key: 'backBottom',
             title: '跳转尾页'
         }],
-        initFunc: function () {
+        initFunc() {
             const _this = this
             const $dockerDom = $(`
                 <div class="hld__docker">
@@ -3379,7 +3419,7 @@
                     }, null, 8)
                 }
                 if (type == 'FAVOR') {
-                    const tid = script.getModule('authorMark').getQueryString('tid')
+                    const tid = script.getModule('AuthorMark').getQueryString('tid')
                     if (script.isForms() && tid) {
                         unsafeWindow.commonui.favor(e, null, tid)
                     }
@@ -3400,17 +3440,17 @@
                 }
             })
         },
-        renderAlwaysFunc: function (script) {
+        renderAlwaysFunc(script) {
             (script.isThreads() || script.isForms()) ? $('.hld__docker').show() : $('.hld__docker').hide()
             $('#hld__jump_favor').toggle(script.isForms())
             $('#hld__jump_reply').toggle(script.isForms())
         },
         shortcutFunc: {
-            backTop: function () {
+            backTop() {
                 $('#hld__jump_top').click()
                 script.popNotification('返回顶部')
             },
-            backBottom: function () {
+            backBottom() {
                 $('#hld__jump_bottom').click()
                 script.popNotification('最后一页')
             }
@@ -3420,7 +3460,7 @@
          * @method getQuerySet
          * @return {Object} 参数对象
          */
-        getQuerySet: function () {
+        getQuerySet() {
             let queryList = {}
             let url = decodeURI(window.location.search.replace(/&amp;/g, "&"))
             url.startsWith('?') && (url = url.substring(1))
@@ -3450,11 +3490,12 @@
     }
     /**
      * 域名重定向
-     * @name domainRedirect
+     * @name DomainRedirect
      * @description 此模块提供了将不同域名重定向到一个指定的目标域名
      */
-    const domainRedirect = {
-        name: 'domainRedirect',
+    const DomainRedirect = {
+        name: 'DomainRedirect',
+        title: '域名重定向',
         setting: {
             type: 'advanced',
             key: 'domainRedirectTarget',
@@ -3476,7 +3517,7 @@
             desc: '此配置设置将域名重定向到的目标域名\n警告:不同域名的配置文件中的此配置应该保持一致，如不一致将会反复重定向陷入死循环!',
             menu: 'left'
         },
-        initFunc: function () {
+        initFunc() {
             const domainRedirectTarget = script.setting.advanced.domainRedirectTarget
             if (domainRedirectTarget && window.location.host != domainRedirectTarget) {
                 const newRedirectUrl = window.location.href.replace(window.location.host, domainRedirectTarget)
@@ -3486,11 +3527,12 @@
     }
     /**
      * 用户增强
-     * @name userEnhance
+     * @name UserEnhance
      * @description 此模块提供了用户功能类的增强，如显示注册天数，IP所属地等
      */
-    const userEnhance = {
+    const UserEnhance = {
         name: 'userEnhance',
+        title: '用户增强',
         settings: [{
             type: 'normal',
             key: 'userEnhance',
@@ -3518,15 +3560,18 @@
         forumData: {
             '108': '垃圾处理'
         },
-        initFunc: function() {
+        store: null,
+        initFunc() {
+            // 创建storage示例
+            this.store = script.createStorageInstance('NGA_BBS_Script__UserInfoCache')
             this.preprocessing()
         },
-        renderFormsFunc: function($el) {
+        renderFormsFunc($el) {
             if (!script.setting.normal.userEnhance) return
             const _this = this
             const uid = $el.find('a[name="uid"]').text()
             const userInfo = unsafeWindow.commonui.userInfo.users[uid]
-            if (!userInfo) return
+            if (!userInfo || uid <= 0) return
             const regSeconds = Math.ceil(new Date().getTime() / 1000) - userInfo.regdate
             const regDays = Math.round(regSeconds / 3600 / 24)
             const regYear = (regSeconds / 3600 / 24 / 365).toFixed(1)
@@ -3556,23 +3601,25 @@
                 // 初始化的时候清理超过一定时间的数据，避免无限增长数据
                 // 出于性能考虑，每日只执行一次
                 const currentDate = new Date()
-                const lastClear = await localforage.getItem('USERENHANCE_CLEAR_DAY')
+                const lastClear = await this.store.getItem('USERENHANCE_CLEAR_DAY')
                 if (lastClear != currentDate.getDate()) {
                     const exprieSeconds = 7 * 24 * 3600  // 7天
                     const currentTime = Math.ceil(currentDate.getTime() / 1000)
                     let removedCount = 0
-                    localforage.iterate(function(value, key, iterationNumber) {
+                    this.store.iterate(function(value, key, iterationNumber) {
                         if (key.startsWith('USERINFO_')) {
                             if (!value._queryTime || currentTime - value._queryTime >= exprieSeconds) {
-                                localforage.removeItem(key)
+                                this.store.removeItem(key)
                                 removedCount += 1
                             }
                         }
-                    }).then(function() {
-                        localforage.setItem('USERENHANCE_CLEAR_DAY', currentDate.getDate())
+                    })
+                    .then(() => {
+                        this.store.setItem('USERENHANCE_CLEAR_DAY', currentDate.getDate())
                         script.printLog(`用户增强: 已清除${removedCount}条用户超期数据`)
-                    }).catch(function(err) {
-                        console.error('用户增强清除超期数据失败，错误原因:', err);
+                    })
+                    .catch(err => {
+                        console.error('用户增强清除超期数据失败，错误原因:', err)
                     })
                 }
                 // 获取所有版面字典，扁平化提纯fid:name
@@ -3607,7 +3654,7 @@
         getRemoteUserInfo(uid) {
             const storageKey = `USERINFO_${uid}`
             return new Promise((resolve, reject) => {
-                localforage.getItem(storageKey)
+                this.store.getItem(storageKey)
                 .then(value => {
                     if (value) {
                         resolve(value)
@@ -3617,7 +3664,7 @@
                             if (res.data && Array.isArray(res.data) && res.data.length > 0) {
                                 const remoteUserInfo = res.data[0]
                                 remoteUserInfo['_queryTime'] = res.time
-                                localforage.setItem(storageKey, remoteUserInfo)
+                                this.store.setItem(storageKey, remoteUserInfo)
                                 resolve(res.data[0])
                             }
                         })
@@ -3883,6 +3930,370 @@
         @keyframes loading-circle {0% {transform:rotate(0);}100% {transform:rotate(360deg);}}
         `
     }
+    /**
+     * 插件支持模块
+     * @name PluginSupport
+     * @description 此模块提供了插件支持的能力
+     */
+    const PluginSupport = {
+        name: 'PluginSupport',
+        title: '插件支持',
+        pluginSetting: null,
+        preProcFunc() {
+            script.setting.plugin = {}
+            this.pluginSetting = script.setting.plugin
+        },
+        initFunc() {
+            // 添加到配置面板的设置入口
+            script.getModule('SettingPanel').addButton({
+                title: '插件管理',
+                desc: '插件管理',
+                click: () => $('#hld__plugin_panel').show()
+            })
+            try {
+                // 注册插件管理面板
+                GM_registerMenuCommand('插件管理', () => $('#hld__plugin_panel').show())
+            } catch {}
+            // 添加插件到导入导出配置
+            script.getModule('BackupModule').addItem({
+                title: '插件配置',
+                writeKey: 'plugin_setting',
+                valueKey: 'pluginSetting',
+                module: this
+            })
+            // 添加插件
+            if (unsafeWindow.ngaScriptPlugins) {
+                script.printLog(`检测到个${unsafeWindow.ngaScriptPlugins.length}插件`)
+                unsafeWindow.ngaScriptPlugins.forEach(module => {
+                    module.name && this.addPlugin(module)
+                })
+            }
+            // 加载配置
+            this.loadSetting()
+            this.initSettingPanel()
+        },
+        initSettingPanel() {
+            const _this = this
+            // 插件设置面板
+            const $pluginPanel = $(`
+                <div id="hld__plugin_panel" class="hld__list-panel animated fadeInUp">
+                    <a href="javascript:void(0)" class="hld__setting-close" close-type="hide">×</a>
+                    <div class="hld__plugin-header"><b>插件管理</b></div>
+                    <div class="hld__plugin-scorllarea">
+                        <div class="hld__plugin-content"></div>
+                    </div>
+                    <div class="hld__plugin-footer">
+                        <button class="hld__btn" id="hld__plugin_getmore">获取更多插件</button>
+                        <button class="hld__btn" id="hld__plugin_save">保存</button>
+                    </div>
+                </div>
+            `)
+            const ngaScriptPlugins = unsafeWindow?.ngaScriptPlugins || []
+            ngaScriptPlugins.forEach(module => {
+                const $plugin = $(`
+                    <div class="hld__plugin">
+                        <div class="hld__plugin-info">
+                            <div class="hld__plugin-name">
+                                <a href="${module.meta.updateURL || module.meta.namespace}" target="_blank">${module.title || module.name}<span>v${module.version}</span></a>
+                            </div>
+                            <div class="hld__plugin-desc" title="${module.desc}">${module.desc}</div>
+                        </div>
+                    </div>
+                `)
+                if (module.error) {
+                    // 插件有误
+                    $plugin.addClass('hld__plugin-error hld__help')
+                    $plugin.attr('error', module.error).attr('help', '插件未执行，原因：' + module.errorMsg)
+                }
+                const pluginID = this.getPluginID(module)
+                if (!module.error && (module.setting || module.settings)) {
+                    let settings = []
+                    if (Array.isArray(module.settings)) {
+                        settings.push(...module.settings)
+                    } else if (Array.isArray(module.setting)) {
+                        settings.push(...module.setting)
+                    } else if (typeof module.setting == 'object') {
+                        settings.push(module.setting)
+                    }
+                    const $pluginSettings = $('<div class="hld__plugin-settings"><table></table></div>')
+                    // 渲染表单
+                    settings.forEach(setting => {
+                        let formItem = ''
+                        const valueType = typeof setting.default
+                        if (valueType === 'boolean') {
+                            formItem = `<input type="checkbox" plugin-id="${pluginID}" plugin-setting-key="${setting.key}">`
+                        }
+                        if (valueType === 'number') {
+                            formItem = `<input type="number" plugin-id="${pluginID}" plugin-setting-key="${setting.key}">`
+                        }
+                        if (valueType === 'string') {
+                            if (setting.options) {
+                                let t = ''
+                                for (const option of setting.options) {
+                                    t += `<option value="${option.value}">${option.label}</option>`
+                                }
+                                formItem = `<select plugin-id="${pluginID}" plugin-setting-key="${setting.key}">${t}</select>`
+                            } else if (setting.type == 'textarea') {
+                                formItem = `<textarea rows="3" plugin-id="${pluginID}" plugin-setting-key="${setting.key}" />`
+                            } else {
+                                formItem = `<input type="text" plugin-id="${pluginID}" plugin-setting-key="${setting.key}" />`
+                            }
+                        }
+                        $pluginSettings.find('table').append(`
+                            <tr>
+                                <td><span ${setting.desc ? 'class="hld__help" help="' + setting.desc + '" ' : ''}>${setting.title || setting.key}</span></td>
+                                <td>${formItem}</td>
+                            </tr>
+                        `)
+                        // 恢复设置
+                        let defaultValue = setting.default
+                        if (script.setting.plugin?.[pluginID]?.[setting.key] != undefined) {
+                            defaultValue = script.setting.plugin[pluginID][setting.key]
+                        }
+                        if (typeof defaultValue == 'boolean') {
+                            $pluginSettings.find(`[plugin-id="${pluginID}"][plugin-setting-key="${setting.key}"]`)[0].checked = defaultValue
+                        }
+                        if (typeof defaultValue == 'number' || typeof defaultValue == 'string') {
+                            $pluginSettings.find(`[plugin-id="${pluginID}"][plugin-setting-key="${setting.key}"]`).val(defaultValue)
+                        }
+                    })
+                    // 添加按钮及设置面板
+                    $plugin.append($pluginSettings)
+                    $plugin.find('.hld__plugin-info').append(`<div class="hld__plugin-expand hld__help" help="查看插件设置"><img src="${SVG_ICON_SETTING}"></div>`)
+                }
+                // 自定义按钮
+                if (module.buttons && Array.isArray(module.buttons) && module.buttons.length > 0) {
+                    const $pluginButtons = $('<div class="hld__plugin-buttons"></div>')
+                    module.buttons.forEach((button, index) => {
+                        const buttonid = `${pluginID}_button_${index}`
+                        const $button = $(`<button class="hld__btn" id="${buttonid}">${button.title || '未命名按钮'}</button>`)
+                        $button.click(() => {
+                            if (typeof button.action == 'string' && typeof module[button.action] == 'function') {
+                                module[button.action](button.args)
+                            }
+                            if (typeof button.action == 'function') {
+                                button.action(button.args)
+                            }
+                        })
+                        $pluginButtons.append($button)
+                    })
+                    $plugin.find('.hld__plugin-settings').append($pluginButtons)
+                }
+                $pluginPanel.find('.hld__plugin-content').append($plugin)
+            })
+            if (ngaScriptPlugins.length == 0) {
+                $pluginPanel.find('.hld__plugin-content').html('<div class="hld_plugin-empty">未安装任何插件</div>')
+            }
+            // 展开设置
+            $pluginPanel.find('.hld__plugin-expand').click(function(){
+                $(this).parent().siblings('.hld__plugin-settings').slideToggle(100)
+            })
+            // 获取更多插件
+            $pluginPanel.find('#hld__plugin_getmore').click(function(){
+                window.open('https://greasyfork.org/zh-CN/scripts?q=NGA%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C%E6%8F%92%E4%BB%B6')
+            })
+            // 保存设置
+            $pluginPanel.find('#hld__plugin_save').click(function(){
+                _this.saveSetting()
+            })
+            $('body').append($pluginPanel)
+        },
+        /**
+         * 添加插件
+         * @param {*} module 插件模块
+         */
+        addPlugin(module) {
+            module.type = 'plugin'
+            module.title = module.title || module.meta.name
+            module.desc = module.desc || module.meta.description
+            module.author = module.author || module.meta.author || 'Unknown'
+            module.version = module.meta.version || '1.0.0'
+            // 检测是否与标准模块命名冲突，此检测是为了未来可以合并插件功能进主脚本内而做的预设性检查
+            const pluginID = this.getPluginID(module)
+            const existBasicModule = script.modules.find(m => m.type != 'plugin' && m.name == module.name)
+            if (existBasicModule) {
+                module.error = 'UNIQUE_BASIC'
+                module.errorMsg = `插件[${module.name}]与标准模块重名，可能是标准模块已有此功能`
+                script.printLog(`[${module.name}]${module.errorMsg}`)
+                return
+            }
+            // 检测重复插件，插件Name@Author字符串为唯一key值，如重复导入将不会运行
+            const duplicatePlugin = script.modules.find(m => m.type == 'plugin' && `${m.name}@${this.hashCode(m.author)}` == pluginID)
+            if (duplicatePlugin) {
+                module.error = 'DUPLICATED'
+                module.errorMsg = `重复导入，插件[${pluginID}]当前已加载`
+                script.printLog(`[${module.name}]${module.errorMsg}`)
+                return
+            }
+            // 插件预处理函数
+            if (module.preProcFunc) {
+                try {
+                    module.preProcFunc()
+                } catch (error) {
+                    this.printLog(`[${module.name}]插件在[preProcFunc()]中运行失败！`)
+                    console.log(error)
+                }
+            }
+            // 添加设置
+            const addSetting = setting => {
+                // // 插件配置
+                // if (setting.shortCutCode && script.setting.plugin.shortcutKeys) {
+                //     script.setting.plugin.shortcutKeys.push(setting.shortCutCode)
+                // }
+                if (setting.key) {
+                    if (!script.setting.plugin[pluginID]) {
+                        script.setting.plugin[pluginID] = {}
+                    }
+                    script.setting.plugin[pluginID][setting.key] = setting.default || ''
+                }
+            }
+            // 功能板块
+            if (module.setting && !Array.isArray(module.setting)) {
+                addSetting(module.setting)
+            }
+            if (module.settings && Array.isArray(module.settings)) {
+                for (const setting of module.settings) {
+                    addSetting(setting)
+                }
+            }
+            // 添加样式
+            if (module.style) {
+                script.style += module.style
+            }
+            // 插件注入对象
+            const moduleProxy = new Proxy(module, {
+                get: function (target, key) {
+                    if (key == 'mainScript') return script  // 主脚本
+                    if (key == 'pluginID') return pluginID  // 插件ID
+                    if (key == 'pluginSettings') return script.setting.plugin[pluginID]  // 插件配置
+                    return target[key]
+                },
+                set: function (target, key, newValue) {
+                    if (['mainScript', 'pluginID', 'pluginSettings'].includes(key)) {
+                        throw new TypeError(`[${key}]为插件保留字段，不可手动设值`)
+                    }
+                    target[key] = newValue
+                    return true
+                }
+            })
+            script.modules.push(moduleProxy)
+        },
+        /**
+         * 读取插件配置
+         * @method loadSetting
+         */
+        loadSetting() {
+            try {
+                // 插件设置
+                if (window.localStorage.getItem('hld__NGA_plugin_setting')) {
+                    let localPluginSetting = JSON.parse(window.localStorage.getItem('hld__NGA_plugin_setting'))
+                    for (const pluginName of Object.keys(localPluginSetting)) {
+                        let currentSetting = script.setting.plugin[pluginName]
+                        let localSetting = localPluginSetting[pluginName]
+                        if (currentSetting) {
+                            for (let k in currentSetting) {
+                                !localSetting.hasOwnProperty(k) && (localSetting[k] = currentSetting[k])
+                            }
+                            for (let k in localSetting) {
+                                !currentSetting.hasOwnProperty(k) && delete localSetting[k]
+                            }
+                        }
+                        script.setting.plugin[pluginName] = localSetting
+                    }
+                }
+            } catch {
+                if (window.confirm('【NGA-Script】读取插件配置文件出现错误，无法加载配置文件！\n可能是插件配置有误，清空本地插件配置即可恢复使用\n警告：清空插件配置会丢失所有插件的设置\n\n点击【确认】清空本地插件配置，并自动刷新\n\n如还有问题，请提出反馈')) {
+                    localStorage.removeItem('hld__NGA_plugin_setting')
+                    window.location.reload()
+                }
+            }
+        },
+        /**
+         * 保存插件配置
+         * @method saveSetting
+         * @param {String} msg 自定义消息信息
+         */
+        saveSetting (msg='保存插件配置成功，刷新页面生效') {
+            script.modules.forEach(module => {
+                if (module.type == 'plugin' && module.name) {
+                    const pluginID = this.getPluginID(module)
+                    const pluginSetting = Object.assign({}, script.setting.plugin[pluginID])
+                    const $controls = $(`[plugin-id="${pluginID}"]`)
+                    if (pluginSetting && $controls) {
+                        $controls.each((index, element) => {
+                            const k = $(element).attr('plugin-setting-key')
+                            const inputType = $(element)[0].nodeName
+                            const valueType = typeof pluginSetting[k]
+                            if (inputType == 'SELECT') {
+                                pluginSetting[k] = $(element).val()
+                            } else {
+                                if (valueType == 'boolean') {
+                                    pluginSetting[k] = $(element)[0].checked
+                                }
+                                if (valueType == 'number') {
+                                    pluginSetting[k] = +$(element).val()
+                                }
+                                if (valueType == 'string') {
+                                    pluginSetting[k] = $(element).val()
+                                }
+                            }
+                        })
+                        // 预检查配置参数
+                        if (module.beforeSaveSettingFunc) {
+                            const errorMsg = module.beforeSaveSettingFunc(pluginSetting)
+                            if (errorMsg && typeof errorMsg === 'string') {
+                                script.throwError(`插件【${module.title || module.name || 'UNKNOW'}】检查配置返回错误：\n${'-'.repeat(50)}\n${errorMsg}`)
+                            }
+                        }
+                        script.setting.plugin[pluginID] = Object.assign({}, pluginSetting)
+                    }
+                }
+            })
+            window.localStorage.setItem('hld__NGA_plugin_setting', JSON.stringify(script.setting.plugin))
+            msg && script.popMsg(msg)
+            $('#hld__plugin_panel').hide()
+        },
+        /**
+         * 获取插件的唯一ID
+         * @param {obj} module 插件对象
+         */
+        getPluginID(module) {
+            return `${module.name}@${this.hashCode(module.author)}`
+        },
+        /**
+         * 生成字符串哈希值
+         * @param {String} str 字符串
+         * @returns 哈希值
+         */
+        hashCode(str) {
+            return str.split('').reduce((prevHash, currVal) => (((prevHash << 5) - prevHash) + currVal.charCodeAt(0))|0, 0)
+        },
+        style: `
+        #hld__plugin_panel {display:none;width:400px;min-height:300px;}
+        #hld__plugin_panel .hld__plugin-header {min-height:20px;}
+        #hld__plugin_panel .hld__plugin-scorllarea {margin:10px 0;height:300px;padding-right:10px;overflow-y:auto;border-top:1px solid #e0c19e;border-bottom:1px solid #e0c19e;}
+        #hld__plugin_panel .hld__plugin-content {height:auto;}
+        #hld__plugin_panel .hld_plugin-empty {margin-top:20%;text-align:center;font-size:16px;color:#666;}
+        #hld__plugin_panel .hld__plugin-footer {min-height:32px;display:flex;justify-content:space-between;}
+        #hld__plugin_panel button {transition:all .2s ease;cursor:pointer;}
+        .hld__plugin {padding:10px 0;border-bottom:1px dashed #666;}
+        .hld__plugin-error {text-decoration: line-through;}
+        .hld__plugin-info {position:relative;padding-right:30px;box-sizing:border-box;}
+        .hld__plugin-name {margin-bottom:5px;}
+        .hld__plugin-name a {font-weight:bold;font-size:16px;color:#1a3959;}
+        .hld__plugin-name span {margin-left:4px;font-size:70%;color:#666;}
+        .hld__plugin-desc {white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .hld__plugin-expand {width:20px;display:flex;align-items:center;cursor:pointer;position:absolute;top:10px;right:0px;}
+        .hld__plugin-expand img {width:100%;transition:all .2s ease}
+        .hld__plugin-expand:hover img {width:100%;transform:rotate(45deg);}
+        .hld__plugin-settings {display:none;width:100%;height:auto;border-top:1px dashed #999;margin-top:10px;padding-top:10px;}
+        .hld__plugin-settings table td {padding-right:10px;}
+        .hld__plugin-settings textarea {resize:none;}
+        .hld__plugin-settings input[type=number] {border: 1px solid #e6c3a8;box-shadow: 0 0 2px 0 #7c766d inset;border-radius: 0.25em;}
+        .hld__plugin-buttons {padding-top:5px;}
+        .hld__plugin-buttons > button {margin-right:5px;margin-top:5px;}
+        `
+    }
 
     /**
      * 初始化脚本
@@ -3891,35 +4302,32 @@
     /**
      * 添加模块
      */
-    script.addModule(defaultStyle)
-    script.addModule(settingPanel)
-    script.addModule(shortCutKeys)
-    script.addModule(backupModule)
-    script.addModule(rewardPanel)
-    script.addModule(dynamicEnable)
-    script.addModule(hideAvatar)
-    script.addModule(hideSmile)
-    script.addModule(hideImage)
-    script.addModule(imgResize)
-    script.addModule(hideSign)
-    script.addModule(hideHeader)
-    script.addModule(excelMode)
-    script.addModule(excelTitle)
-    script.addModule(foldQuote)
-    script.addModule(userEnhance)
-    script.addModule(linkTargetBlank)
-    script.addModule(directLinkJump)
-    script.addModule(imgEnhance)
-    script.addModule(authorMark)
-    script.addModule(authorMarkColor)
-    script.addModule(autoPage)
-    script.addModule(keywordsBlock)
-    script.addModule(markAndBan)
-    script.addModule(eyeCareMode)
-    script.addModule(darkMode)
-    script.addModule(fontResize)
-    script.addModule(extraDocker)
-    script.addModule(domainRedirect)
+    script.addModule(SettingPanel)
+    script.addModule(ShortCutKeys)
+    script.addModule(BackupModule)
+    script.addModule(PluginSupport)
+    script.addModule(RewardPanel)
+    script.addModule(HideAvatar)
+    script.addModule(HideSmile)
+    script.addModule(HideImage)
+    script.addModule(ImgResize)
+    script.addModule(HideSign)
+    script.addModule(HideHeader)
+    script.addModule(ExcelMode)
+    script.addModule(FoldQuote)
+    script.addModule(UserEnhance)
+    script.addModule(LinkTargetBlank)
+    script.addModule(DirectLinkJump)
+    script.addModule(ImgEnhance)
+    script.addModule(AuthorMark)
+    script.addModule(AutoPage)
+    script.addModule(KeywordsBlock)
+    script.addModule(MarkAndBan)
+    script.addModule(EyeCareMode)
+    script.addModule(DarkMode)
+    script.addModule(FontResize)
+    script.addModule(ExtraDocker)
+    script.addModule(DomainRedirect)
     /**
      * 运行脚本
      */
