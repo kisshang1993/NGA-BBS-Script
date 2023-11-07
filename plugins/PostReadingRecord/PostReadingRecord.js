@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验-帖子浏览记录
 // @namespace    https://github.com/kisshang1993/test_plugin
-// @version      1.0.0
+// @version      1.0.1
 // @author       HLD
 // @description  记录帖子的阅读状态，着色以阅读帖子标题，跟踪后续新回复数量
 // @license      MIT
 // @match        *://bbs.nga.cn/*
 // @match        *://ngabbs.com/*
 // @match        *://nga.178.com/*
+// @match        *://g.nga.cn/*
 // @grant        unsafeWindow
 // @run-at       document-start
 // @inject-into  content

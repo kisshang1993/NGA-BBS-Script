@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      4.3.0
+// @version      4.3.1
 // @author       HLD
 // @description  NGA论坛显示优化，全面功能增强，优雅的摸鱼
 // @license      MIT
@@ -14,6 +14,7 @@
 // @match        *://bbs.nga.cn/*
 // @match        *://ngabbs.com/*
 // @match        *://nga.178.com/*
+// @match        *://g.nga.cn/*
 // @grant        GM_registerMenuCommand
 // @grant        unsafeWindow
 // @inject-into  content
