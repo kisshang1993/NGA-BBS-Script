@@ -6,6 +6,8 @@
 
 使用WebDAV对配置进行同步，提供上传/下载配置功能
 
+> ⚠需要本体版本**v4.4**以上
+
 ![WebDAV配置同步](https://s2.loli.net/2023/11/14/Ul9sgrLjFtXGqSk.png)
 
 ### 使用方式
