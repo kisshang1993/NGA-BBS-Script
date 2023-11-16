@@ -206,7 +206,7 @@ buttons: [{
     action: 'clearData'
 }, {
     title: '重置',
-    action: () => { ... }
+    action: function() { ... }
 }]
 ```
 
@@ -338,6 +338,27 @@ type: `Object`
     initFunc() {
         // 插件保存的配置，如未修改过则是default的值
         console.log(this.pluginSettings['markColor'])  // 输出 => #000000
+    }
+}
+```
+
+#### 🔹 pluginInputs
+
+type: `Object`
+
+插件配置的输入控件dom，键值对为`settings`值对象的key: $el`[jQuery Object]`
+
+```js
+{
+    settings: [{
+        key: 'markColor',
+        title: '标记着色颜色',
+        default: '#000000'
+    }],
+    initFunc() {
+        // 插件配置当前的输入框，可以获取到当前输入框内的值
+        // pluginSettings储存的是保存之后的值，而这里可以获取到保存之前输入控件内的值
+        console.log(this.pluginInputs['markColor'].val())  // 输出 => #FFFFFF
     }
 }
 ```

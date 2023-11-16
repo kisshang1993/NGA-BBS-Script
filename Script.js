@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      4.3.1
+// @version      4.4.0
 // @author       HLD
 // @description  NGA论坛显示优化，全面功能增强，优雅的摸鱼
 // @license      MIT
@@ -16,6 +16,10 @@
 // @match        *://nga.178.com/*
 // @match        *://g.nga.cn/*
 // @grant        GM_registerMenuCommand
+// @grant        GM_setValue
+// @grant        GM_getValue
+// @grant        GM_deleteValue
+// @grant        GM_listValues
 // @grant        unsafeWindow
 // @inject-into  content
 // ==/UserScript==
@@ -277,6 +281,41 @@
             )
         }
         /**
+         * 读取值
+         * @method saveSetting
+         * @param {String} key
+         */
+        getValue(key) {
+            try {
+                return GM_getValue(key) || window.localStorage.getItem(key)
+            } catch {
+                return window.localStorage.getItem(key)
+            }
+        }
+        /**
+         * 写入值
+         * @method setValue
+         * @param {String} key
+         * @param {String} value
+         */
+        setValue(key, value) {
+            try {
+                GM_setValue(key, value)
+            } catch {}
+            window.localStorage.setItem(key, value)
+        }
+        /**
+         * 删除值
+         * @method deleteValue
+         * @param {String} key
+         */
+        deleteValue(key) {
+            try {
+                GM_deleteValue(key)
+            } catch {}
+            window.localStorage.deleteItem(key)
+        }
+        /**
          * 保存配置到本地
          * @method saveSetting
          * @param {String} msg 自定义消息信息
@@ -286,7 +325,7 @@
             for (let k in this.setting.normal) {
                 $('input#hld__cb_' + k).length > 0 && (this.setting.normal[k] = $('input#hld__cb_' + k)[0].checked)
             }
-            window.localStorage.setItem('hld__NGA_setting', JSON.stringify(this.setting.normal))
+            script.setValue('hld__NGA_setting', JSON.stringify(this.setting.normal))
             // 高级设置
             for (let k in this.setting.advanced) {
                 if ($('#hld__adv_' + k).length > 0) {
@@ -307,7 +346,7 @@
                     }
                 }
             }
-            window.localStorage.setItem('hld__NGA_advanced_setting', JSON.stringify(this.setting.advanced))
+            script.setValue('hld__NGA_advanced_setting', JSON.stringify(this.setting.advanced))
             msg && this.popMsg(msg)
         }
         /**
@@ -317,8 +356,9 @@
         loadSetting() {
             // 基础设置
             try {
-                if (window.localStorage.getItem('hld__NGA_setting')) {
-                    let localSetting = JSON.parse(window.localStorage.getItem('hld__NGA_setting'))
+                const settingStr = script.getValue('hld__NGA_setting')
+                if (settingStr) {
+                    let localSetting = JSON.parse(settingStr)
                     for (let k in this.setting.normal) {
                         !localSetting.hasOwnProperty(k) && (localSetting[k] = this.setting.normal[k])
                         if (k == 'shortcutKeys') {
@@ -353,8 +393,9 @@
                     this.setting.normal = localSetting
                 }
                 // 高级设置
-                if (window.localStorage.getItem('hld__NGA_advanced_setting')) {
-                    let localAdvancedSetting = JSON.parse(window.localStorage.getItem('hld__NGA_advanced_setting'))
+                const advancedSettingStr = script.getValue('hld__NGA_advanced_setting')
+                if (advancedSettingStr) {
+                    let localAdvancedSetting = JSON.parse(advancedSettingStr)
                     for (let k in this.setting.advanced) {
                         !localAdvancedSetting.hasOwnProperty(k) && (localAdvancedSetting[k] = this.setting.advanced[k])
                     }
@@ -365,8 +406,8 @@
                 }
             } catch {
                 if (window.confirm('【NGA-Script】读取插件配置文件出现错误，无法加载配置文件！\n可能是配置有误，清空本地配置即可恢复使用\n警告：清空配置会丢失所有设置\n\n点击【确认】清空本地配置，并自动刷新\n\n如还有问题，请提出反馈')) {
-                    localStorage.removeItem('hld__NGA_setting')
-                    localStorage.removeItem('hld__NGA_advanced_setting')
+                    script.deleteValue('hld__NGA_setting')
+                    script.deleteValue('hld__NGA_advanced_setting')
                     window.location.reload()
                 }
             }
@@ -388,13 +429,14 @@
                 return str.substring(0, str.lastIndexOf('.'))
             }
             //检查更新
-            if (window.localStorage.getItem('hld__NGA_version')) {
-                const local_version = vstr2num(window.localStorage.getItem('hld__NGA_version'))
+            const cver = script.getValue('hld__NGA_version')
+            if (cver) {
+                const local_version = vstr2num(cver)
                 const current_version = vstr2num(GM_info.script.version)
                 if (current_version > local_version) {
-                    const lv_mid = +vstr2mid(window.localStorage.getItem('hld__NGA_version'))
+                    const lv_mid = +vstr2mid(cver)
                     const cv_mid = +vstr2mid(GM_info.script.version)
-                    window.localStorage.setItem('hld__NGA_version', GM_info.script.version)
+                    script.setValue('hld__NGA_version', GM_info.script.version)
                     if (cv_mid > lv_mid) {
                         const focus = ''
                         $('body').append(`<div id="hld__updated" class="animated-1s bounce"><p><a href="javascript:void(0)" class="hld__setting-close">×</a><b>NGA-Script已更新至v${GM_info.script.version}</b></p>${focus}<p><a class="hld__readme" href="https://greasyfork.org/zh-CN/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C" target="_blank">查看更新内容</a></p></div>`)
@@ -403,7 +445,7 @@
                         })
                     }
                 }
-            } else window.localStorage.setItem('hld__NGA_version', GM_info.script.version)
+            } else script.setValue('hld__NGA_version', GM_info.script.version)
         }
         /**
          * 创建储存对象实例
@@ -444,6 +486,7 @@
             }
         }
     }
+
     /* 注册菜单按钮 */
     try {
         // 设置面板
@@ -454,18 +497,18 @@
         // 清理缓存
         GM_registerMenuCommand('清理缓存', function () {
             if (window.confirm('此操作为清理Local Storage与IndexedDB部分缓存内容，不会清理配置\n\n继续请点击【确定】')) {
-                localStorage.removeItem('hld__NGA_post_author')
+                script.deleteValue('hld__NGA_post_author')
                 localforage.clear()
                 alert('操作成功，请刷新页面重试')
             }
         })
         // 修复脚本
         GM_registerMenuCommand('修复脚本', function () {
-            if (window.confirm('如脚本运行失败或无效，尝试修复脚本，这会清除脚本的本地缓存信息\n* 本地缓存信息包含配置，各种名单等\n* 此操作不可逆转，如果需要备份，请手动备份localStorage内的hld__*的字段\n\n继续请点击【确定】')) {
-                for (let i=0;i<localStorage.length;i++) {
-                    let key = localStorage.key(i)
-                    key.startsWith('hld__NGA_') && localStorage.removeItem(key)
-                }
+            if (window.confirm('如脚本运行失败或无效，尝试修复脚本，这会清除脚本的所有数据\n* 数据包含配置，各种名单等\n* 此操作不可逆转，请谨慎操作\n\n继续请点击【确定】')) {
+                try {
+                    GM_listValues().forEach(key => GM_deleteValue(key))
+                } catch {}
+                window.localStorage.clear()
                 alert('操作成功，请刷新页面重试')
             }
         })
@@ -695,6 +738,7 @@
         .hld__btn-groups {display:flex;justify-content:center !important;margin-top:10px;}
         button.hld__btn {padding:3px 8px;border:1px solid #591804;background:#fff8e7;color:#591804;}
         button.hld__btn:hover {background:#591804;color:#fff0cd;}
+        button.hld__btn[disabled] {opacity:.5;}
         #hld__updated {position:fixed;top:20px;right:20px;width:230px;padding:10px;border-radius:5px;box-shadow:0 0 15px #666;border:1px solid #591804;background:#fff8e7;z-index: 9999;}
         #hld__updated .hld__readme {text-decoration:underline;color:#591804;}
         .hld__script-info {margin-left:4px;font-size:70%;color:#666;}
@@ -938,8 +982,6 @@
              * 导入导出面板
              */
             $('body').on('click', '#hld__backup_panel', function () {
-                const unsupported = '3.3.0'
-                const currentVer = script.getInfo().version
                 if($('#hld__export_panel').length > 0) return
                 $('#hld__setting_cover').append(`
                     <div id="hld__export_panel" class="hld__list-panel animated fadeInUp">
@@ -954,8 +996,12 @@
                                 <p><button id="hld__export__data">导出</button> <button id="hld__import__data">导入</button></p>
                             </div>
                             <div>
-                                <p><b style="text-decoration: underline;cursor:help;" title="【导出】\n选择要导出的内容，点击导出，复制以下字符串用于备份，分享等\n【导入】\n将字符串复制到以下输入框中，点击导入，将会自动导入字符串中包含的内容">字符串</b></p>
+                                <p>
+                                    <b class="hld__help" help="【导出】\n选择要导出的内容，点击导出，复制以下字符串用于备份，分享等\n【导入】\n将字符串复制到以下输入框中，点击导入，将会自动导入字符串中包含的内容">字符串</b>
+                                    <label><input type="checkbox" id="hld__cb_export_encode" checked="checked"> Base64编码</label>
+                                </p>
                                 <textarea id="hld__export_str" rows="9"></textarea>
+                                <p><a href="https://greasyfork.org/zh-CN/scripts?q=NGA%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C%E6%8F%92%E4%BB%B6" target="_blank">使用WebDAV进行配置同步</a></p>
                             </div>
                         </div>
                         <div><p id="hld__export_msg"></p></div>
@@ -972,26 +1018,23 @@
                  * 导出配置
                  */
                 $('#hld__export__data').click(function(){
-                    let obj = {}
+                    let exportItems = []
                     // 基础配置
                     if ($('#hld__cb_export_setting').prop('checked')) {
-                        obj['setting'] = script.setting.normal
-                        obj['advanced_setting'] = script.setting.advanced
+                        exportItems.push('setting')
                     }
                     // 其他模组备份项
                     for (const item of _this.backupItems) {
                         const $c = $(`#hld__cb_export_${item.writeKey}`)
                         if ($c.length > 0 && $c.prop('checked')) {
-                            obj[item.writeKey] = item.module[item.valueKey]
+                            exportItems.push(item.writeKey)
                         }
                     }
-                    if (Object.keys(obj).length == 0) {
+                    if (Object.keys(exportItems).length == 0) {
                         $('#hld__export_msg').html('<span style="color:#CC0000">没有选择任何项目可供导出！</span>')
                         return
                     }
-                    obj['name'] = 'HLD-NGA-SCRIPT'
-                    obj['ver'] = script.getInfo().version
-                    const backupB64 = _this.Base64.encode(JSON.stringify(obj))
+                    const backupB64 = _this.export(exportItems, $('#hld__cb_export_encode').prop('checked'))
                     $('#hld__export_str').val(backupB64)
                     $('#hld__export_msg').html(`<span style="color:#009900">导出成功(${_this.calculateSize(backupB64.length)})，请复制右侧字符串以备份</span>`)
                 })
@@ -1000,35 +1043,11 @@
                  * 导入配置
                  */
                 $('#hld__import__data').click(function(){
-                    if ($('#hld__export_str').val()) {
+                    const dataStr = $('#hld__export_str').val()
+                    if (dataStr) {
                         try {
-                            let obj = JSON.parse(_this.Base64.decode($('#hld__export_str').val()))
-                            const objVer = _this.vstr2num(obj.ver)
-                            if (objVer != 0 && objVer > _this.vstr2num(currentVer)) {
-                                script.popMsg(`此配置是由更高版本(v${obj.ver})的脚本导出，请升级您的脚本 <a title="更新地址" href="https://greasyfork.org/zh-CN/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C" target="_blank">[脚本地址]</a>`, 'warn')
-                                return
-                            }
-                            if (objVer != 0 && objVer < _this.vstr2num(unsupported)) {
-                                script.popMsg(`此配置是由低版本(v${obj.ver})的脚本导出，当前版本(v${currentVer})已不支持！`, 'err')
-                                return
-                            }
-                            let confirm = window.confirm('此操作会覆盖你的配置，确认吗？')
-                            if (!confirm) return
-                            if (Object.keys(obj).includes('setting')) {
-                                obj.setting && (script.setting.normal = obj.setting)
-                                obj.advanced_setting && (script.setting.advanced = obj.advanced_setting)
-                                window.localStorage.setItem('hld__NGA_setting', JSON.stringify(script.setting.normal))
-                                window.localStorage.setItem('hld__NGA_advanced_setting', JSON.stringify(script.setting.advanced))
-                            }
-                            // 其他模组备份项
-                            for (const item of _this.backupItems) {
-                                if (Object.keys(obj).includes(item.writeKey)) {
-                                    item.module[item.valueKey] = obj[item.writeKey]
-                                    window.localStorage.setItem(`hld__NGA_${item.writeKey}`, JSON.stringify(obj[item.writeKey]))
-                                }
-                            }
-                            $('#hld__export_msg').html('<span style="color:#009900">导入成功，刷新浏览器以生效</span>')
-
+                            const importStatus = _this.import(dataStr, $('#hld__cb_export_encode').prop('checked'))
+                            importStatus && $('#hld__export_msg').html('<span style="color:#009900">导入成功，刷新浏览器以生效</span>')
                         } catch (err){
                             script.printLog(`JSON解析失败：${err}`)
                             $('#hld__export_msg').html('<span style="color:#CC0000">字符串有误，解析失败！</span>')
@@ -1056,6 +1075,60 @@
                 i = l
             }
             return (num / Math.pow(k, i)).toFixed(2) + ' ' + sizeStr[i]
+        },
+        export(items, encode=true) {
+            const exportData = {
+                name: 'NGA-BBS-SCRIPT',
+                ver: script.getInfo().version,
+                exportDate: new Date().toLocaleString(),
+                timestamp: new Date().getTime()
+            }
+            Array.isArray(items) || (items = [items])
+            // 基础配置
+            if (items.includes('setting') || items.includes('*')) {
+                exportData['setting'] = script.setting.normal
+                exportData['advanced_setting'] = script.setting.advanced
+            }
+            // 其他模组备份项
+            for (const item of this.backupItems) {
+                if (items.includes(item.writeKey) || items.includes('*')) {
+                    exportData[item.writeKey] = item.module[item.valueKey]
+                }
+            }
+            const exportDataStr = JSON.stringify(exportData)
+            return encode ? this.Base64.encode(exportDataStr) : exportDataStr
+        },
+        import(dataStr, isEncode=true) {
+            dataStr = isEncode ? this.Base64.decode(dataStr) : dataStr
+            let obj = JSON.parse(dataStr)
+            const unsupported = '3.3.0'
+            const currentVer = script.getInfo().version
+            const objVer = this.vstr2num(obj.ver)
+            if (objVer != 0 && objVer > this.vstr2num(currentVer)) {
+                script.popMsg(`此配置是由更高版本(v${obj.ver})的脚本导出，请升级您的脚本 <a title="更新地址" href="https://greasyfork.org/zh-CN/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C" target="_blank">[脚本地址]</a>`, 'warn')
+                return
+            }
+            if (objVer != 0 && objVer < this.vstr2num(unsupported)) {
+                script.popMsg(`此配置是由低版本(v${obj.ver})的脚本导出，当前版本(v${currentVer})已不支持！`, 'err')
+                return
+            }
+            let confirm = window.confirm('此操作会覆盖你的配置，确认吗？')
+            if (!confirm) return
+            if (Object.keys(obj).includes('setting')) {
+                obj.setting && (script.setting.normal = obj.setting)
+                obj.advanced_setting && (script.setting.advanced = obj.advanced_setting)
+                script.setValue('hld__NGA_setting', JSON.stringify(script.setting.normal))
+                script.setValue('hld__NGA_advanced_setting', JSON.stringify(script.setting.advanced))
+            }
+            // 其他模组备份项
+            for (const item of this.backupItems) {
+                if (Object.keys(obj).includes(item.writeKey)) {
+                    item.module[item.valueKey] = obj[item.writeKey]
+                    script.setValue(`hld__NGA_${item.writeKey}`, JSON.stringify(obj[item.writeKey]))
+                }
+            }
+            script.popMsg('导入成功，刷新页面生效')
+            return true
         },
         /**
          * Base64互转
@@ -2130,7 +2203,7 @@
         },
         postAuthor: [],
         initFunc() {
-            const localPostAuthor = window.localStorage.getItem('hld__NGA_post_author')
+            const localPostAuthor = script.getValue('hld__NGA_post_author')
             localPostAuthor && (this.postAuthor = localPostAuthor.split(','))
             // 初始化颜色选择器
             this.initSpectrum('#hld__setting_cover #hld__adv_authorMarkColor')
@@ -2143,7 +2216,7 @@
                 const authorStr = `${tid}:${author}`
                 if (author && !this.postAuthor.includes(authorStr) && !window.location.href.includes('authorid')) {
                     this.postAuthor.unshift(authorStr) > 10 && this.postAuthor.pop()
-                    window.localStorage.setItem('hld__NGA_post_author', this.postAuthor.join(','))
+                    script.setValue('hld__NGA_post_author', this.postAuthor.join(','))
                 }
                 $el.find('a.b').each(function () {
                     const name = $(this).attr('hld-mark-before-name') || $(this).text().replace('[', '').replace(']', '')
@@ -2365,12 +2438,12 @@
         initFunc() {
             const _this = this
             // 同步本地数据
-            const localKeywordsList = window.localStorage.getItem('hld__NGA_keywords_list')
+            const localKeywordsList = script.getValue('hld__NGA_keywords_list')
             try {
                 localKeywordsList && (_this.keywordsList = JSON.parse(localKeywordsList))
             } catch {
                 localKeywordsList && (_this.keywordsList = localKeywordsList.split(','))
-                window.localStorage.setItem('hld__NGA_keywords_list', JSON.stringify(_this.keywordsList))
+                script.setValue('hld__NGA_keywords_list', JSON.stringify(_this.keywordsList))
             }
             // 添加到导入导出配置
             script.getModule('BackupModule').addItem({
@@ -2403,8 +2476,8 @@
                 keywordsList = _this.removeBlank(keywordsList)
                 keywordsList = _this.uniq(keywordsList)
                 _this.keywordsList = keywordsList
-                window.localStorage.setItem('hld__NGA_keywords_list', JSON.stringify(_this.keywordsList))
-                $('.hld__list-panel').remove()
+                script.setValue('hld__NGA_keywords_list', JSON.stringify(_this.keywordsList))
+                $('#hld__keywords_panel').remove()
                 script.popMsg('保存成功，刷新页面生效')
             })
         },
@@ -2558,15 +2631,15 @@
         initFunc() {
             const _this = this
             // 读取本地数据
-            const localBanList = window.localStorage.getItem('hld__NGA_ban_list')
+            const localBanList = script.getValue('hld__NGA_ban_list')
             try {
                 localBanList && (_this.banList = JSON.parse(localBanList))
             } catch {
-                window.localStorage.setItem('hld__NGA_ban_list_bak', localBanList)
-                window.localStorage.removeItem('hld__NGA_ban_list')
+                script.setValue('hld__NGA_ban_list_bak', localBanList)
+                script.deleteValue('hld__NGA_ban_list')
                 script.throwError('【NGA-Script】无法加载黑名单列表，数据解析失败\n黑名单已清空，之前的数据已经备份到hld__NGA_ban_list_bak\n请在控制台中的localStorage中查看')
             }
-            const localMarkList = window.localStorage.getItem('hld__NGA_mark_list')
+            const localMarkList = script.getValue('hld__NGA_mark_list')
             try {
                 if (localMarkList) {
                     _this.markList = JSON.parse(localMarkList)
@@ -2589,8 +2662,8 @@
                     _this.markedTags.sort((a, b) => {return b.count - a.count})
                 }
             } catch {
-                window.localStorage.setItem('hld__NGA_mark_list_bak', localMarkList)
-                window.localStorage.removeItem('hld__NGA_mark_list')
+                script.setValue('hld__NGA_mark_list_bak', localMarkList)
+                script.deleteValue('hld__NGA_mark_list')
                 script.throwError('【NGA-Script】无法加载标记列表，数据解析失败\n标记列表已清空，之前的数据已经备份到hld__NGA_mark_list_bak\n请在控制台中的localStorage中查看')
             }
             // 添加到导入导出配置
@@ -2661,7 +2734,7 @@
                     <div class="hld__list-c"><p>黑名单</p>
                     <div class="hld__scroll-area">
                     <table class="hld__table hld__table-banlist">
-                    <thead><tr><th width="175">用户名</th><th>UID</th><th width="25">操作</th></tr></thead><tbody id="hld__banlist"></tbody></table>
+                    <thead><tr><th width="175">用户名</th><th>UID</th><th>备注</th><th width="25">操作</th></tr></thead><tbody id="hld__banlist"></tbody></table>
                     </div>
                     <div class="hld__table-banlist-buttons"><button id="hld__banlist_add_btn" class="hld__btn">+添加用户</button></div>
                     </div>
@@ -2695,7 +2768,7 @@
                     $('body').on('click', '.hld__bl-del', function(){
                         const index = $(this).data('index')
                         _this.banList.splice(index, 1)
-                        window.localStorage.setItem('hld__NGA_ban_list', JSON.stringify(_this.banList))
+                        script.setValue('hld__NGA_ban_list', JSON.stringify(_this.banList))
                         _this.reloadBanlist()
                     })
                     /**
@@ -2721,7 +2794,7 @@
                         const markList = $('#hld__mark_list_textarea').val()
                         try {
                             _this.banList = JSON.parse(banList)
-                            window.localStorage.setItem('hld__NGA_ban_list', banList)
+                            script.setValue('hld__NGA_ban_list', banList)
                             _this.reloadBanlist()
                         } catch {
                             script.popMsg('黑名单数据有误！', 'err')
@@ -2729,7 +2802,7 @@
                         }
                         try {
                             _this.markList = JSON.parse(markList)
-                            window.localStorage.setItem('hld__NGA_mark_list', markList)
+                            script.setValue('hld__NGA_mark_list', markList)
                             _this.reloadMarklist()
                         } catch {
                             script.popMsg('标记单数据有误！', 'err')
@@ -2759,7 +2832,7 @@
                     $('body').on('click', '.hld__ml-del', function(){
                         const index = $(this).data('index')
                         _this.markList.splice(index, 1)
-                        window.localStorage.setItem('hld__NGA_mark_list', JSON.stringify(_this.markList))
+                        script.setValue('hld__NGA_mark_list', JSON.stringify(_this.markList))
                         _this.reloadMarklist()
                     })
                     /**
@@ -2827,17 +2900,18 @@
                         //拉黑用户实现
                         if (script.setting.advanced.banStrictMode == 'HIDE') {
                             if ($(this).hasClass('author')) {
+                                const $blocktips = $('<div class="hld__banned hld__banned-block">此用户在你的黑名单中，已屏蔽其言论，点击查看</div>')
                                 if ($(this).parents('div.comment_c').length > 0) {
                                     $(this).parents('div.comment_c').find('.ubbcode').hide()
-                                    $(this).parents('div.comment_c').find('.ubbcode').after('<span class="hld__banned hld__banned-block">此用户在你的黑名单中，已屏蔽其言论，点击查看</span>')
+                                    $(this).parents('div.comment_c').find('.ubbcode').after($blocktips)
                                 } else {
                                     $(this).parents('.forumbox.postbox').find('.c2 .postcontent').hide()
-                                    $(this).parents('.forumbox.postbox').find('.c2 .postcontent').after('<span class="hld__banned hld__banned-block">此用户在你的黑名单中，已屏蔽其言论，点击查看</span>')
+                                    $(this).parents('.forumbox.postbox').find('.c2 .postcontent').after($blocktips)
                                 }
                             } else {
                                 if (!$(this).parent().is(':hidden')) {
                                     $(this).parent().hide()
-                                    $(this).parent().after('<div class="quote"><span class="hld__banned hld__banned-block">此用户在你的黑名单中，已屏蔽其言论，点击查看</span></div>')
+                                    $(this).parent().after('<div class="quote"><div class="hld__banned hld__banned-block">此用户在你的黑名单中，已屏蔽其言论，点击查看</div></div>')
                                 }
                             }
                         } else if (script.setting.advanced.banStrictMode == 'ALL') {
@@ -2848,10 +2922,13 @@
                                 if ($(this).parents('div.comment_c').length > 0) $(this).parents('div.comment_c').remove()
                                 else $(this).parents('.forumbox.postbox').remove()
                             } else {
-                                $(this).parent().html('<span class="hld__banned">此用户在你的黑名单中，已删除其言论</span>')
+                                $(this).parent().html('<div class="hld__banned">此用户在你的黑名单中，已删除其言论</div>')
                             }
                         }
-                        script.printLog(`黑名单屏蔽：用户：${name}, UID:${uid}`)
+                        if (banUser.desc) {
+                            $(this).parents('.postrow').find('.hld__banned').append(`<div>备注: ${banUser.desc}</div>`)
+                        }
+                        script.printLog(`黑名单屏蔽：用户：${name}, UID:${uid}, 备注:${banUser.desc}`)
                     }
                     if(script.setting.advanced.classicRemark) {
                         //经典备注风格
@@ -2867,7 +2944,7 @@
                         if(userMarks) {
                             const $el = $(this).parents('.c1').find('.clickextend')
                             let marksDom = ''
-                            userMarks.marks.forEach(item => marksDom += `<span style="color: ${item.text_color};background-color: ${item.bg_color};" title="${item.mark}">${item.mark}</span>`);
+                            userMarks.marks.forEach(item => marksDom += `<span ${item.desc ? 'class="hld__help" help="'+item.desc+'"' : ''} style="color: ${item.text_color};background-color: ${item.bg_color};">${item.mark}</span>`);
                             $el.before(`<div class="hld__marks-container">标签: ${marksDom}</div>`)
                         }
                     }
@@ -2888,29 +2965,33 @@
         banlistPopup(setting) {
             const _this = this
             $('.hld__dialog').length > 0 && $('.hld__dialog').remove()
-            const retainWord = [':', '(', ')', '&', '#', '^', ',']
             let $banDialog = $(`<div class="hld__dialog hld__dialog-sub-top hld__list-panel animated zoomIn"  style="top: ${setting.top}px;left: ${setting.left}px;"><a href="javascript:void(0)" class="hld__setting-close">×</a><div id="container_dom"></div><div class="hld__dialog-buttons"></div></div>`)
             if (setting.type == 'confirm') {
-                $banDialog.find('#container_dom').append(`<div><span>您确定要拉黑用户</span><span class="hld__dialog-user">${setting.name}</span><span>吗？</span></div>`)
+                $banDialog.find('#container_dom').append(`<div><span>您确定要拉黑用户</span><span class="hld__dialog-user">${setting.name}</span><span>吗？</span></div><div><input type="text" class="hld__ban-desc" placeholder="可选备注"></div>`)
                 let $okBtn = $('<button class="hld__btn">拉黑</button>')
                 $okBtn.click(function(){
-                    _this.setBanUser({name: setting.name, uid: setting.uid})
+                    _this.setBanUser({
+                        name: setting.name,
+                        uid: setting.uid,
+                        desc: $('.hld__ban-desc').val().trim()
+                    })
                     $('.hld__dialog').remove()
                     script.popMsg('拉黑成功，重载页面生效')
                 })
                 $banDialog.find('.hld__dialog-buttons').append($okBtn)
             }else if (setting.type == 'add') {
-                $banDialog.find('#container_dom').append(`<div>添加用户：</div><div><input id="hld__dialog_add_uid" type="text" value="" placeholder="UID"></div><div><input id="hld__dialog_add_name" type="text" value="" placeholder="用户名"></div>`)
+                $banDialog.find('#container_dom').append(`<div>添加用户：</div><div><input id="hld__dialog_add_uid" type="text" value="" placeholder="UID"></div><div><input id="hld__dialog_add_name" type="text" value="" placeholder="用户名"></div><div><input type="text" id="hld__dialog_add_desc" placeholder="可选备注"></div>`)
                 let $okBtn = $('<button class="hld__btn">添加</button>')
                 $okBtn.click(function(){
                     const name = $banDialog.find('#hld__dialog_add_name').val().trim()
                     const uid = $banDialog.find('#hld__dialog_add_uid').val().trim() + ''
+                    const desc = $banDialog.find('#hld__dialog_add_desc').val().trim()
                     if (!name && !uid) {
                         script.popMsg('UID与用户名必填一个，其中UID权重较大', 'err')
                         return
                     }
-                    !_this.getBanUser({name, uid}) && _this.banList.push({name, uid})
-                    window.localStorage.setItem('hld__NGA_ban_list', JSON.stringify(_this.banList))
+                    !_this.getBanUser({name, uid}) && _this.banList.push({name, uid, desc})
+                    script.setValue('hld__NGA_ban_list', JSON.stringify(_this.banList))
                     $('.hld__dialog').remove()
                     setting.callback()
                 })
@@ -2932,7 +3013,7 @@
                     if ((!u.uid && banObj.uid) || (!u.name && banObj.name)) {
                         u.uid = banObj.uid + '' || ''
                         u.name = banObj.name || ''
-                        window.localStorage.setItem('hld__NGA_ban_list', JSON.stringify(_this.banList))
+                        script.setValue('hld__NGA_ban_list', JSON.stringify(_this.banList))
                     }
                     return u
                 }
@@ -2946,7 +3027,7 @@
          */
         setBanUser(banObj) {
             !this.getBanUser(banObj) && this.banList.push(banObj)
-            window.localStorage.setItem('hld__NGA_ban_list', JSON.stringify(this.banList))
+            script.setValue('hld__NGA_ban_list', JSON.stringify(this.banList))
         },
         /**
          * 重新渲染黑名单列表
@@ -2959,6 +3040,7 @@
                 <tr>
                     <td title="${item.name}">${item.name}</td>
                     <td title="${item.uid}">${item.uid}</td>
+                    <td title="${item.desc}">${item.desc || ''}</td>
                     <td>
                         <span class="hld__us-action hld__us-del hld__bl-del" title="删除" data-index="${index}" data-name="${item.name}" data-uid="${item.uid}">
                             <svg t="1686881304570" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2976" width="48" height="48"><path d="M341.312 85.312l64-85.312h213.376l64 85.312H960v85.376H64V85.312h277.312zM170.688 256h682.624v768H170.688V256zM256 341.312v597.376h512V341.312H256z m213.312 85.376v426.624H384V426.688h85.312z m170.688 0v426.624H554.688V426.688H640z" fill="#111111" p-id="2977"></path></svg>
@@ -3008,14 +3090,13 @@
         userMarkPopup(setting) {
             const _this = this
             $('.hld__dialog').length > 0 && $('.hld__dialog').remove()
-            const retain_word = [':', '(', ')', '&', '#', '^', ',']
             let $markDialog = $(`<div class="hld__dialog hld__dialog-sub-top hld__list-panel animated zoomIn" style="top: ${setting.top}px;left: ${setting.left}px;">
             <a href="javascript:void(0)" class="hld__setting-close">×</a>
             ${setting.type == 'add' ? `<div style="display:block;">添加用户：<input id="hld__dialog_add_uid" type="text" value="" placeholder="UID"><input id="hld__dialog_add_name" type="text" value="" placeholder="用户名"></div>` : ''}
             <table class="hld__dialog-mark-table">
             <thead>
             <tr>
-            <th width="100">标签</th><th width="50">文字</th><th width="50">背景</th><th>操作</th>
+            <th width="100">标签</th><th width="50">文字</th><th width="50">背景</th><th>备注</th><th>操作</th>
             </tr>
             </thead>
             <tbody id="hld__mark_body"></tbody>
@@ -3024,14 +3105,16 @@
             <div class="hld__mark_history"><div class="hld__mark_history-title">选择已添加过的标签</div><div class="hld__mark_history-content"><div class="hld__mark_history-scrollarea">暂无</div></div></div>
             <div class="hld__dialog-buttons hld__button-save" style="justify-content: right !important;"></div>
             </div>`)
-            const insertRemarkRow = (r='', t='#ffffff', b='#1f72f1', n=true) => {
+            const insertRemarkRow = (r='', t='#ffffff', b='#1f72f1', d='', n=true) => {
                 let $tr = $(`<tr>
                 <td><input type="text" class="hld__mark-mark" value="${r}"></td>
                 <td><input class="hld__dialog-color-picker hld__mark-text-color" value="${t}"></td>
                 <td><input class="hld__dialog-color-picker hld__mark-bg-color" value="${b}"></td>
+                <td><textarea rows="1" class="hld__mark-desc"/></td>
                 <td><button title="删除此标签" class="hld__mark-del">x</button></td>
                 </tr>`)
                 $tr.find('.hld__mark-del').click(function(){$(this).parents('tr').remove()})
+                $tr.find('.hld__mark-desc').val(d)
                 script.getModule('AuthorMark').initSpectrum($tr.find('.hld__dialog-color-picker'))
                 $markDialog.find('#hld__mark_body').append($tr)
                 n && $tr.find('.hld__mark-mark').focus()
@@ -3040,16 +3123,16 @@
             _this.markedTags.length > 0 && $markDialog.find('.hld__mark_history-scrollarea').empty()
             _this.markedTags.forEach(tag => {
                 $markDialog.find('.hld__mark_history-scrollarea').append(`
-                    <span title="${tag.mark}" textcolor="${tag.text_color}" bgcolor="${tag.bg_color}" style="color: ${tag.text_color};background-color: ${tag.bg_color};">${tag.mark} (${tag.count})</span>
+                    <span title="${tag.mark}" textcolor="${tag.text_color}" bgcolor="${tag.bg_color}" desc="${tag.desc}" style="color: ${tag.text_color};background-color: ${tag.bg_color};">${tag.mark} (${tag.count})</span>
                 `)
             })
             $markDialog.on('click', '.hld__mark_history-scrollarea > span', function (e) {
-                insertRemarkRow($(this).attr('title'), $(this).attr('textcolor'), $(this).attr('bgcolor'), false)
+                insertRemarkRow($(this).attr('title'), $(this).attr('textcolor'), $(this).attr('bgcolor'), '', false)
             })
 
             //恢复标签
             const existMark = _this.getUserMarks({name: setting.name, uid: setting.uid})
-            existMark !== null && existMark.marks.forEach(item => insertRemarkRow(item.mark, item.text_color, item.bg_color, false))
+            existMark !== null && existMark.marks.forEach(item => insertRemarkRow(item.mark, item.text_color, item.bg_color, item.desc, false))
 
             let $addBtn = $('<button class="hld__btn">+添加新标签</button>')
             $addBtn.click(() => insertRemarkRow())
@@ -3073,8 +3156,9 @@
                     const mark = $(this).find('.hld__mark-mark').val().trim()
                     const textColor = $(this).find('.hld__mark-text-color').val()
                     const bgColor = $(this).find('.hld__mark-bg-color').val()
+                    const desc = $(this).find('.hld__mark-desc').val().trim()
                     if(mark) {
-                        userMarks.marks.push({mark, text_color: textColor, bg_color: bgColor})
+                        userMarks.marks.push({mark, text_color: textColor, bg_color: bgColor, desc})
                     }
                 })
                 if (setting.type == 'add' && userMarks.marks.length == 0) {
@@ -3098,17 +3182,15 @@
          * @return {Object|null} 标签对象
          */
         getUserMarks(user) {
-            const _this = this
-            const check = _this.markList.findIndex(v => (v.uid && user.uid && v.uid == user.uid) || 
-            (v.name && user.name && v.name == user.name))
+            const check = this.markList.findIndex(v => (v.uid && user.uid && v.uid == user.uid) || (v.name && user.name && v.name == user.name))
             if(check > -1) {
-                let userMark = _this.markList[check]
+                let userMark = this.markList[check]
                 if ((!userMark.uid && user.uid) || (!userMark.name && user.name)) {
                     userMark.uid = user.uid + '' || ''
                     userMark.name = user.name || ''
-                    window.localStorage.setItem('hld__NGA_mark_list', JSON.stringify(_this.markList))
+                    script.setValue('hld__NGA_mark_list', JSON.stringify(this.markList))
                 }
-                return _this.markList[check]
+                return userMark
             } else {
                 return null
             }
@@ -3132,7 +3214,7 @@
             }else {
                 _this.markList.push(userMarks)
             }
-            window.localStorage.setItem('hld__NGA_mark_list', JSON.stringify(_this.markList))
+            script.setValue('hld__NGA_mark_list', JSON.stringify(_this.markList))
         },
         style: `
         #hld__setting {color:#6666CC !important;cursor:pointer;}
@@ -3145,8 +3227,9 @@
         .hld__extra-icon svg {width:1em;height:1em;vertical-align:-0.15em;fill:currentColor;overflow:hidden;cursor:pointer;}
         .hld__extra-icon:hover {text-decoration:none;}
         span.hld__remark {color:#666;font-size:0.8em;}
-        span.hld__banned {color:#ba2026;}
-        span.hld__banned-block:hover {text-decoration: underline;cursor: pointer;}
+        .hld__banned {display: inline-block;color:#ba2026;border: 1px dashed #ba2026;padding: 10px 20px;font-weight: bold;}
+        .hld__banned > div {font-weight: normal;}
+        .hld__banned-block:hover {text-decoration: underline;cursor: pointer;}
         .hld__dialog{position:absolute;padding-right:35px}
         .hld__dialog>div{line-height:30px}
         .hld__dialog:before{position:absolute;content:' ';width:10px;height:10px;background-color:#fff6df;left:10px;transform:rotate(45deg)}
@@ -3163,6 +3246,9 @@
         .hld__mark_history .hld__mark_history-content {max-height: 200px;overflow: hidden;overflow-y: scroll;}
         .hld__mark_history .hld__mark_history-scrollarea  {display: flex;flex-wrap: wrap;width:250px;}
         .hld__mark_history .hld__mark_history-content span {display: inline-block;padding: 2px 5px;border-radius: 3px;margin-right: 5px;margin-top: 5px;line-height: 20px;cursor: pointer;}
+        .hld__ban-desc {width: 100% !important;}
+        .hld__mark-desc {width: 50px;resize: none;}
+        .hld__mark-desc:focus {width:150px;height:3em;}
         .hld__tab-content {display:flex;justify-content:space-between;flex-wrap: wrap;}
         .hld__table-keyword {margin-top:10px;width:200px;}
         .hld__table-keyword tr td:last-child {text-align:center;}
@@ -4051,12 +4137,14 @@
                         if (script.setting.plugin?.[pluginID]?.[setting.key] != undefined) {
                             defaultValue = script.setting.plugin[pluginID][setting.key]
                         }
+                        const $input = $pluginSettings.find(`[plugin-id="${pluginID}"][plugin-setting-key="${setting.key}"]`)
                         if (typeof defaultValue == 'boolean') {
-                            $pluginSettings.find(`[plugin-id="${pluginID}"][plugin-setting-key="${setting.key}"]`)[0].checked = defaultValue
+                            $input[0].checked = defaultValue
                         }
                         if (typeof defaultValue == 'number' || typeof defaultValue == 'string') {
-                            $pluginSettings.find(`[plugin-id="${pluginID}"][plugin-setting-key="${setting.key}"]`).val(defaultValue)
+                            $input.val(defaultValue)
                         }
+                        setting.$el = $input
                     })
                     // 添加按钮及设置面板
                     $plugin.append($pluginSettings)
@@ -4069,13 +4157,16 @@
                         const buttonid = `${pluginID}_button_${index}`
                         const $button = $(`<button class="hld__btn" id="${buttonid}">${button.title || '未命名按钮'}</button>`)
                         $button.click(() => {
+                            // 插件注入对象
+                            const moduleProxy = this.createModuleProxy(module)
                             if (typeof button.action == 'string' && typeof module[button.action] == 'function') {
-                                module[button.action](button.args)
+                                module[button.action].apply(moduleProxy, [button.args])
                             }
                             if (typeof button.action == 'function') {
-                                button.action(button.args)
+                                button.action.apply(moduleProxy, [button.args])
                             }
                         })
+                        button.$el = $button
                         $pluginButtons.append($button)
                     })
                     $plugin.find('.hld__plugin-settings').append($pluginButtons)
@@ -4161,23 +4252,35 @@
             if (module.style) {
                 script.style += module.style
             }
-            // 插件注入对象
-            const moduleProxy = new Proxy(module, {
+            const moduleProxy = this.createModuleProxy(module)
+            script.modules.push(moduleProxy)
+        },
+        /**
+         * 插件注入对象
+         * @param {*} module 插件模块
+         */
+        createModuleProxy(module) {
+            const pluginID = this.getPluginID(module)
+            return new Proxy(module, {
                 get: function (target, key) {
                     if (key == 'mainScript') return script  // 主脚本
                     if (key == 'pluginID') return pluginID  // 插件ID
-                    if (key == 'pluginSettings') return script.setting.plugin[pluginID]  // 插件配置
+                    if (key == 'pluginSettings') return script.setting.plugin[pluginID]  // 插件保存配置
+                    const pluginInputs = {}
+                    Object.keys(script.setting.plugin[pluginID]).forEach(key => {
+                        pluginInputs[key] = $(`[plugin-id="${pluginID}"][plugin-setting-key="${key}"]`)
+                    })
+                    if (key == 'pluginInputs') return pluginInputs  // 插件输入控件dom
                     return target[key]
                 },
                 set: function (target, key, newValue) {
-                    if (['mainScript', 'pluginID', 'pluginSettings'].includes(key)) {
+                    if (['mainScript', 'pluginID', 'pluginSettings', 'pluginInputs'].includes(key)) {
                         throw new TypeError(`[${key}]为插件保留字段，不可手动设值`)
                     }
                     target[key] = newValue
                     return true
                 }
             })
-            script.modules.push(moduleProxy)
         },
         /**
          * 读取插件配置
@@ -4186,8 +4289,9 @@
         loadSetting() {
             try {
                 // 插件设置
-                if (window.localStorage.getItem('hld__NGA_plugin_setting')) {
-                    let localPluginSetting = JSON.parse(window.localStorage.getItem('hld__NGA_plugin_setting'))
+                const pluginSettingStr = script.getValue('hld__NGA_plugin_setting')
+                if (pluginSettingStr) {
+                    let localPluginSetting = JSON.parse(pluginSettingStr)
                     for (const pluginName of Object.keys(localPluginSetting)) {
                         let currentSetting = script.setting.plugin[pluginName]
                         let localSetting = localPluginSetting[pluginName]
@@ -4204,7 +4308,7 @@
                 }
             } catch {
                 if (window.confirm('【NGA-Script】读取插件配置文件出现错误，无法加载配置文件！\n可能是插件配置有误，清空本地插件配置即可恢复使用\n警告：清空插件配置会丢失所有插件的设置\n\n点击【确认】清空本地插件配置，并自动刷新\n\n如还有问题，请提出反馈')) {
-                    localStorage.removeItem('hld__NGA_plugin_setting')
+                    script.deleteValue('hld__NGA_plugin_setting')
                     window.location.reload()
                 }
             }
@@ -4250,7 +4354,7 @@
                     }
                 }
             })
-            window.localStorage.setItem('hld__NGA_plugin_setting', JSON.stringify(script.setting.plugin))
+            script.setValue('hld__NGA_plugin_setting', JSON.stringify(script.setting.plugin))
             msg && script.popMsg(msg)
             $('#hld__plugin_panel').hide()
         },
@@ -4281,7 +4385,7 @@
         .hld__plugin-error {text-decoration: line-through;}
         .hld__plugin-info {position:relative;padding-right:30px;box-sizing:border-box;}
         .hld__plugin-name {margin-bottom:5px;}
-        .hld__plugin-name a {font-weight:bold;font-size:16px;color:#1a3959;}
+        .hld__plugin-name a {font-weight:bold;font-size:16px;color:#591804;}
         .hld__plugin-name span {margin-left:4px;font-size:70%;color:#666;}
         .hld__plugin-desc {white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
         .hld__plugin-expand {width:20px;display:flex;align-items:center;cursor:pointer;position:absolute;top:10px;right:0px;}
