@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      4.4.0
+// @version      4.4.1
 // @author       HLD
 // @description  NGA论坛显示优化，全面功能增强，优雅的摸鱼
 // @license      MIT
@@ -1978,7 +1978,7 @@
             $el.find('img').each(function () {
                 const classs = $(this).attr('class')
                 if (!classs || (classs && !classs.includes('smile'))) {
-                    $(this).attr('hld__imglist', 'ready').removeAttr('onload')
+                    $(this).attr('hld__imglist', 'ready').removeAttr('onload').removeAttr('onclick')
                 }
             })
             //图片增强
