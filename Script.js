@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      4.4.1
+// @version      4.4.2
 // @author       HLD
 // @description  NGA论坛显示优化，全面功能增强，优雅的摸鱼
 // @license      MIT
@@ -137,7 +137,11 @@
                     this.setting.normal.shortcutKeys.push(setting.shortCutCode)
                 }
                 if (setting.key) {
-                    this.setting[setting.type || 'normal'][setting.key] = setting.default || ''
+                    if (setting.default === false || setting.default) {
+                        this.setting[setting.type || 'normal'][setting.key] = setting.default
+                    } else {
+                        this.setting[setting.type || 'normal'][setting.key] = ''
+                    }
                 }
             }
             // 功能板块
