@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      4.4.1
+// @version      4.4.2
 // @author       HLD
 // @description  NGA论坛显示优化，全面功能增强，优雅的摸鱼
 // @license      MIT
@@ -36,6 +36,10 @@
         constructor() {
             // 配置
             this.setting = {
+                normal: {},
+                advanced: {}
+            }
+            this.defaultSetting = {
                 normal: {},
                 advanced: {}
             }
@@ -137,7 +141,12 @@
                     this.setting.normal.shortcutKeys.push(setting.shortCutCode)
                 }
                 if (setting.key) {
-                    this.setting[setting.type || 'normal'][setting.key] = setting.default || ''
+                    this.defaultSetting[setting.type || 'normal'][setting.key] = setting.default
+                    if (setting.default === false || setting.default) {
+                        this.setting[setting.type || 'normal'][setting.key] = setting.default
+                    } else {
+                        this.setting[setting.type || 'normal'][setting.key] = ''
+                    }
                 }
             }
             // 功能板块
@@ -329,7 +338,7 @@
             // 高级设置
             for (let k in this.setting.advanced) {
                 if ($('#hld__adv_' + k).length > 0) {
-                    const valueType = typeof this.setting.advanced[k]
+                    const valueType = typeof this.defaultSetting.advanced[k]
                     const inputType = $('#hld__adv_' + k)[0].nodeName
                     if (inputType == 'SELECT') {
                         this.setting.advanced[k] = $('#hld__adv_' + k).val()
@@ -4026,9 +4035,12 @@
         name: 'PluginSupport',
         title: '插件支持',
         pluginSetting: null,
+        pluginDefaultSetting: null,
         preProcFunc() {
             script.setting.plugin = {}
+            script.defaultSetting.plugin = {}
             this.pluginSetting = script.setting.plugin
+            this.pluginDefaultSetting = script.defaultSetting.plugin
         },
         initFunc() {
             // 添加到配置面板的设置入口
@@ -4236,7 +4248,15 @@
                     if (!script.setting.plugin[pluginID]) {
                         script.setting.plugin[pluginID] = {}
                     }
-                    script.setting.plugin[pluginID][setting.key] = setting.default || ''
+                    if (!script.defaultSetting.plugin[pluginID]) {
+                        script.defaultSetting.plugin[pluginID] = {}
+                    }
+                    script.defaultSetting.plugin[pluginID][setting.key] = setting.default
+                    if (setting.default === false || setting.default) {
+                        script.setting.plugin[pluginID][setting.key] = setting.default
+                    } else {
+                        script.setting.plugin[pluginID][setting.key] = ''
+                    }
                 }
             }
             // 功能板块
@@ -4323,12 +4343,13 @@
                 if (module.type == 'plugin' && module.name) {
                     const pluginID = this.getPluginID(module)
                     const pluginSetting = Object.assign({}, script.setting.plugin[pluginID])
+                    const pluginDefaultSetting = Object.assign({}, script.defaultSetting.plugin[pluginID])
                     const $controls = $(`[plugin-id="${pluginID}"]`)
                     if (pluginSetting && $controls) {
                         $controls.each((index, element) => {
                             const k = $(element).attr('plugin-setting-key')
                             const inputType = $(element)[0].nodeName
-                            const valueType = typeof pluginSetting[k]
+                            const valueType = typeof pluginDefaultSetting[k]
                             if (inputType == 'SELECT') {
                                 pluginSetting[k] = $(element).val()
                             } else {
