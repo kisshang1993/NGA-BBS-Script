@@ -39,6 +39,10 @@
                 normal: {},
                 advanced: {}
             }
+            this.defaultSetting = {
+                normal: {},
+                advanced: {}
+            }
             // 模块
             this.modules = []
             // 样式
@@ -137,6 +141,7 @@
                     this.setting.normal.shortcutKeys.push(setting.shortCutCode)
                 }
                 if (setting.key) {
+                    this.defaultSetting[setting.type || 'normal'][setting.key] = setting.default
                     if (setting.default === false || setting.default) {
                         this.setting[setting.type || 'normal'][setting.key] = setting.default
                     } else {
@@ -333,7 +338,7 @@
             // 高级设置
             for (let k in this.setting.advanced) {
                 if ($('#hld__adv_' + k).length > 0) {
-                    const valueType = typeof this.setting.advanced[k]
+                    const valueType = typeof this.defaultSetting.advanced[k]
                     const inputType = $('#hld__adv_' + k)[0].nodeName
                     if (inputType == 'SELECT') {
                         this.setting.advanced[k] = $('#hld__adv_' + k).val()
@@ -4030,9 +4035,12 @@
         name: 'PluginSupport',
         title: '插件支持',
         pluginSetting: null,
+        pluginDefaultSetting: null,
         preProcFunc() {
             script.setting.plugin = {}
+            script.defaultSetting.plugin = {}
             this.pluginSetting = script.setting.plugin
+            this.pluginDefaultSetting = script.defaultSetting.plugin
         },
         initFunc() {
             // 添加到配置面板的设置入口
@@ -4240,6 +4248,10 @@
                     if (!script.setting.plugin[pluginID]) {
                         script.setting.plugin[pluginID] = {}
                     }
+                    if (!script.defaultSetting.plugin[pluginID]) {
+                        script.defaultSetting.plugin[pluginID] = {}
+                    }
+                    script.defaultSetting.plugin[pluginID][setting.key] = setting.default
                     if (setting.default === false || setting.default) {
                         script.setting.plugin[pluginID][setting.key] = setting.default
                     } else {
@@ -4331,12 +4343,13 @@
                 if (module.type == 'plugin' && module.name) {
                     const pluginID = this.getPluginID(module)
                     const pluginSetting = Object.assign({}, script.setting.plugin[pluginID])
+                    const pluginDefaultSetting = Object.assign({}, script.defaultSetting.plugin[pluginID])
                     const $controls = $(`[plugin-id="${pluginID}"]`)
                     if (pluginSetting && $controls) {
                         $controls.each((index, element) => {
                             const k = $(element).attr('plugin-setting-key')
                             const inputType = $(element)[0].nodeName
-                            const valueType = typeof pluginSetting[k]
+                            const valueType = typeof pluginDefaultSetting[k]
                             if (inputType == 'SELECT') {
                                 pluginSetting[k] = $(element).val()
                             } else {
