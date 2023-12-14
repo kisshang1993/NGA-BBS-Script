@@ -4240,7 +4240,11 @@
                     if (!script.setting.plugin[pluginID]) {
                         script.setting.plugin[pluginID] = {}
                     }
-                    script.setting.plugin[pluginID][setting.key] = setting.default || ''
+                    if (setting.default === false || setting.default) {
+                        script.setting.plugin[pluginID][setting.key] = setting.default
+                    } else {
+                        script.setting.plugin[pluginID][setting.key] = ''
+                    }
                 }
             }
             // 功能板块
