@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      4.4.2
+// @version      4.4.3
 // @author       HLD
 // @description  NGA论坛显示优化，全面功能增强，优雅的摸鱼
 // @license      MIT
@@ -1865,8 +1865,8 @@
         renderFormsFunc($el) {
             if (script.setting.normal.foldQuote) {
                 // 自动折叠过长引用
-                if ($el.find('.postcontent .quote').length > 0) {
-                    let $quote = $el.find('.postcontent .quote')
+                $el.find('.postcontent .quote').each(function() {
+                    const $quote = $(this)
                     if ($quote.height() > (script.setting.advanced.foldQuoteHeight || 300)) {
                         const originalHeight = $quote.height()
                         $quote.addClass('hld__quote-fold')
@@ -1878,7 +1878,7 @@
                         })
                         $quote.append($openBtn)
                     }
-                }
+                })
                 // 折叠附件
                 if ($el.find('h4.silver.subtitle').length > 0) {
                     $el.find('h4.silver.subtitle').each(function (){
