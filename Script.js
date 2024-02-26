@@ -36,6 +36,7 @@
         constructor() {
             // 配置
             this.setting = {
+                original: [],
                 normal: {},
                 advanced: {}
             }
@@ -137,7 +138,8 @@
                     this.setting.normal.shortcutKeys.push(setting.shortCutCode)
                 }
                 if (setting.key) {
-                    this.setting[setting.type || 'normal'][setting.key] = setting.default || ''
+                    this.setting[setting.type || 'normal'][setting.key] = setting.default ?? ''
+                    this.setting.original.push(setting)
                 }
             }
             // 功能板块
@@ -329,7 +331,8 @@
             // 高级设置
             for (let k in this.setting.advanced) {
                 if ($('#hld__adv_' + k).length > 0) {
-                    const valueType = typeof this.setting.advanced[k]
+                    const originalSetting = this.setting.original.find(s => s.type == 'advanced' && s.key == k)
+                    const valueType = typeof originalSetting.default
                     const inputType = $('#hld__adv_' + k)[0].nodeName
                     if (inputType == 'SELECT') {
                         this.setting.advanced[k] = $('#hld__adv_' + k).val()
@@ -4236,7 +4239,8 @@
                     if (!script.setting.plugin[pluginID]) {
                         script.setting.plugin[pluginID] = {}
                     }
-                    script.setting.plugin[pluginID][setting.key] = setting.default || ''
+                    script.setting.plugin[pluginID][setting.key] = setting.default ?? ''
+                    script.setting.original.push(Object.assign({type: 'plugin', pluginID}, setting))
                 }
             }
             // 功能板块
@@ -4328,7 +4332,8 @@
                         $controls.each((index, element) => {
                             const k = $(element).attr('plugin-setting-key')
                             const inputType = $(element)[0].nodeName
-                            const valueType = typeof pluginSetting[k]
+                            const originalSetting = script.setting.original.find(s => s.type == 'plugin' && s.pluginID == pluginID && s.key == k)
+                            const valueType = typeof originalSetting.default
                             if (inputType == 'SELECT') {
                                 pluginSetting[k] = $(element).val()
                             } else {
