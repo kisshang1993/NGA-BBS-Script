@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      4.4.1
+// @version      4.4.2
 // @author       HLD
 // @description  NGA论坛显示优化，全面功能增强，优雅的摸鱼
 // @license      MIT
@@ -2217,7 +2217,7 @@
                 const author = $('#postauthor0').text().replace('楼主', '')
                 const tid = this.getQueryString('tid')
                 const authorStr = `${tid}:${author}`
-                if (author && !this.postAuthor.includes(authorStr) && !window.location.href.includes('authorid')) {
+                if (author && !this.postAuthor.includes(authorStr) && ['authorid=', 'pid='].every(k => !window.location.href.includes(k))) {
                     this.postAuthor.unshift(authorStr) > 10 && this.postAuthor.pop()
                     script.setValue('hld__NGA_post_author', this.postAuthor.join(','))
                 }
