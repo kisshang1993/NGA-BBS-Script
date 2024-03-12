@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验-WebDAV配置同步
-// @namespace    https://github.com/kisshang1993/NGA-BBS-Script/plugins/WebDAVDataSync
+// @namespace    https://github.com/kisshang1993/NGA-BBS-Script/tree/master/plugins/WebDAVDataSync
 // @version      1.0.0
 // @author       HLD
 // @description  使用WebDAV对配置进行同步，提供上传/下载配置功能

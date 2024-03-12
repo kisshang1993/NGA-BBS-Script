@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      4.4.3
+// @version      4.5.0
 // @author       HLD
 // @description  NGA论坛显示优化，全面功能增强，优雅的摸鱼
 // @license      MIT
@@ -3621,7 +3621,7 @@
      * @description 此模块提供了用户功能类的增强，如显示注册天数，IP所属地等
      */
     const UserEnhance = {
-        name: 'userEnhance',
+        name: 'UserEnhance',
         title: '用户增强',
         settings: [{
             type: 'normal',
@@ -3650,6 +3650,12 @@
         forumData: {
             '108': '垃圾处理'
         },
+        chart: null,
+        activeCount: [],
+        requestTasks: [],
+        currentUserInfo: {},
+        pageInfo: {},
+        queryTimer: null,
         store: null,
         initFunc() {
             // 创建storage示例
@@ -3658,8 +3664,7 @@
         },
         renderFormsFunc($el) {
             if (!script.setting.normal.userEnhance) return
-            const _this = this
-            const uid = $el.find('a[name="uid"]').text()
+            const uid = parseInt($el.find('a[name="uid"]').text())
             const userInfo = unsafeWindow.commonui.userInfo.users[uid]
             if (!userInfo || uid <= 0) return
             const regSeconds = Math.ceil(new Date().getTime() / 1000) - userInfo.regdate
@@ -3672,8 +3677,8 @@
             $userEnhanceContainer.append(`<div><span title="注册天数: ${regDays}天\n注册年数: ${regYear}年">坛龄: <span class="numeric userval" name="regday">${regDays}天</span></span></div>`)
             $userEnhanceContainer.append(`<div><span title="发帖数量: ${userInfo.postnum}">发帖: <span class="numeric userval" name="regday">${userInfo.postnum}</span></span></div>`)
             $userEnhanceContainer.append(`<div><span style="display: inline-flex;align-items: center;" class="hld__user-location">属地: <span class="userval numeric loading" style="margin-left:5px;"></span></span></div>`)
-            $userEnhanceContainer.append(`<div class="hld__qbc"><button>查看用户最近活动记录</button></div>`)
-            $el.find('.hld__qbc > button').click(() => _this.queryUserActivityRecords(userInfo))
+            $userEnhanceContainer.append(`<div class="hld__qbc"><button>查看用户活动记录</button></div>`)
+            $el.find('.hld__qbc > button').click(() => this.queryUserActivityRecords(userInfo))
             // 调用数据接口获取属地
             this.getRemoteUserInfo(uid)
             .then(remoteUserInfo => {
@@ -3795,7 +3800,7 @@
             }
         },
         /**
-         * 查询用户活动记录
+         * 查询用户最近活动记录(3页)
          * @param {Object} userInfo 用户信息对象
          */
         queryUserActivityRecords(userInfo) {
@@ -3804,17 +3809,129 @@
                 script.popMsg('该功能所需资源库正在加载，请稍后再试', 'warn')
                 return
             }
-            $('body').append(`<div id="hld__chart_cover" class="animated zoomIn"><a href="javascript:void(0)" class="hld__setting-close">×</a><div id="hld__chart_container"><div class="loading"></div></div></div>`)
-            $('#hld__chart_cover .hld__setting-close').click(() => $('#hld__chart_cover').remove())
-            const activeCount = []
-            const requestTasks = []
-            const statisticsCount = (validList, incrField) => {
+            $('body').append(`
+                <div id="hld__chart_cover" class="animated zoomIn">
+                    <a href="javascript:void(0)" class="hld__setting-close">×</a>
+                    <div id="hld__chart_container">
+                        <div class="loading"></div>
+                    </div>
+                    <div class="hld__chart-statistics">
+                        <div class="hld__statistics-status">
+                            <div class="hld__st-t">🏷️ 当前统计的数据量</div>
+                            <div class="hld__st-s1">用户发布的主题(页):</div>
+                            <div class="hld__st-s1-1">- 已统计
+                                <span class="hld__st-c" id="hld__statistics_post_pages">0</span>页
+                                <span class="hld__st-l" id="hld__statistics_post_status"></span>
+                            </div>
+                            <div class="hld__st-s1">用户回复的主题(页)</div>
+                            <div class="hld__st-s1-1">- 已统计
+                                <span class="hld__st-c" id="hld__statistics_reply_pages">0</span>页
+                                <span class="hld__st-l" id="hld__statistics_reply_status"></span>
+                            </div>
+                            <div class="hld__st-s1">数据天数跨度</div>
+                            <div class="hld__st-s1-1">- 已统计
+                                <span class="hld__st-c" id="hld__statistics_days_range">-</span>天内
+                            </div>
+                            <div class="hld__st-t">🏷️ 统计结果</div>
+                            <div class="hld__st-s2">✔️ 发布主题: <span class="hld__st-c" id="hld__statistics_post_count">-</span></div>
+                            <div class="hld__st-s2">✔️ 回复主题: <span class="hld__st-c" id="hld__statistics_reply_count">-</span></div>
+                            <div class="hld__st-s2">✔️ 总计发帖: <span class="hld__st-c" id="hld__statistics_total_count">-</span></div>
+                        </div>
+                        <button id="hld__chart_deep_query">深度统计</button>
+                    </div>
+                </div>
+            `)
+            $('#hld__chart_cover .hld__setting-close').click(() => {
+                this.queryUserDeepRecords('end')
+                $('#hld__chart_cover').remove()
+            })
+            $('#hld__chart_cover #hld__chart_deep_query').click(() => this.queryUserDeepRecords())
+
+            this.activeCount = []
+            this.requestTasks = []
+            this.currentUserInfo = userInfo
+            this.pageInfo = {
+                post: {
+                    label: '发布主题',
+                    pages: 0,
+                    status: '',
+                    earliestPostdate: new Date().getTime() / 1000
+                },
+                reply: {
+                    label: '回复主题',
+                    pages: 0,
+                    status: '',
+                    earliestPostdate: new Date().getTime() / 1000
+                }
+            }
+            // 查询发帖记录
+            for (let i=0;i<3;i++) {
+                this.requestTasks.push(this.requestUserRecords(userInfo.uid, 'post', i+1))
+                // 查询回复记录
+                this.requestTasks.push(this.requestUserRecords(userInfo.uid, 'reply', i+1))
+            }
+            Promise.allSettled(this.requestTasks)
+            .then(() => {
+                // 渲染chart
+                const chartContainer = document.getElementById('hld__chart_container')
+                if (!chartContainer) return
+                this.chart = echarts.init(chartContainer)
+                this.statisticsCount()
+                this.updateChart()
+            })
+            .catch(err => {
+                script.popMsg(`查询【${this.pageInfo[err.type].label}第${err.page}页】数据接口失败! 原因: ${err.errMsg}`, 'err')
+            })
+        },
+        /**
+         * 查询当前用户深度活动记录(到上限)
+         */
+        queryUserDeepRecords(status) {
+            if (status != 'end' && !$('#hld__chart_deep_query').hasClass('hld__query-loading')) {
+                // 步进统计
+                $('#hld__chart_deep_query').addClass('hld__query-loading').text('暂停统计')
+                this.queryTimer = setInterval(async () => {
+                    try {
+                        if (!this.pageInfo.post.status.endsWith('max')) {
+                            await this.requestUserRecords(this.currentUserInfo.uid, 'post', this.pageInfo.post.pages + 1)
+                        }
+                        if (!this.pageInfo.reply.status.endsWith('max')) {
+                            await this.requestUserRecords(this.currentUserInfo.uid, 'reply', this.pageInfo.reply.pages + 1)
+                        }
+                        if (this.pageInfo.post.status.endsWith('max') && this.pageInfo.reply.status.endsWith('max')) {
+                            this.queryUserDeepRecords('end')  // 停止(完成)统计
+                        }
+                    } catch (err) {
+                        script.popMsg(`查询【${this.pageInfo[err.type].label}第${err.page}页】数据接口失败! 原因: ${err.errMsg}`, 'err')
+                        this.queryUserDeepRecords('pause')  // 停止(暂停)统计
+                    } finally {
+                        this.statisticsCount()
+                        this.updateChart()
+                    }
+                }, 777)
+            } else {
+                // 暂停&完成统计
+                $('#hld__chart_deep_query').removeClass('hld__query-loading').text('继续统计')
+                if (status == 'end') {
+                    $('#hld__chart_deep_query').attr('disabled', 'disabled').text('统计完成')
+                }
+                if (this.queryTimer) {
+                    clearInterval(this.queryTimer)
+                    this.queryTimer = null
+                }
+            }
+        },
+        /**
+         * 统计数量
+         */
+        statisticsCount(validList, incrField) {
+            if (validList && incrField) {
                 validList.forEach(item => {
                     const pName = item.parent && item.parent['2'] ? item.parent['2'] : ''
-                    let existRecord = activeCount.find(p => p.fid == item.fid)
+                    let existRecord = this.activeCount.find(p => p.fid == item.fid)
                     if (!existRecord) {
-                        existRecord = {fid: item.fid, name: pName, value: 0, post: 0, reply: 0}
-                        activeCount.push(existRecord)
+                        existRecord = {fid: item.fid, name: pName, postdate: item.postdate, value: 0, post: 0, reply: 0}
+                        this.activeCount.push(existRecord)
                     }
                     existRecord['fid'] = item.fid
                     existRecord['name'] ||= pName
@@ -3822,187 +3939,139 @@
                     existRecord[incrField] += 1
                 })
             }
-            // 查询发帖记录
-            for (let i=0;i<3;i++) {
-                requestTasks.push(new Promise((resolve, reject) => {
-                    $.ajax({url: `https://${window.location.host}/thread.php?__output=11&authorid=${userInfo.uid}&page=${i+1}`})
-                    .then(postRes => {
-                        const err = postRes.error
-                        if (postRes.data && postRes.data.__T) {
-                            statisticsCount(postRes.data.__T, 'post')
+            const postCount = this.activeCount.reduce((p, c) => p + c.post, 0)
+            const replyCount = this.activeCount.reduce((p, c) => p + c.reply, 0)
+            // 计算统计数据
+            $('#hld__statistics_post_pages').text(this.pageInfo.post.pages)
+            $('#hld__statistics_post_status').attr('class', `hld__st-l ${this.pageInfo.post.status}`)
+            $('#hld__statistics_reply_pages').text(this.pageInfo.reply.pages)
+            $('#hld__statistics_reply_status').attr('class', `hld__st-l ${this.pageInfo.reply.status}`)
+            $('#hld__statistics_post_count').text(postCount)
+            $('#hld__statistics_reply_count').text(replyCount)
+            $('#hld__statistics_total_count').text(postCount + replyCount)
+            // 计算时间跨度
+            const minPostDate = Math.min(this.pageInfo.post.earliestPostdate, this.pageInfo.reply.earliestPostdate)
+            const daysRange = Math.ceil((new Date().getTime() / 1000 - minPostDate) / 86400)
+            $('#hld__statistics_days_range').text(daysRange)
+        },
+        /**
+         * 发起查询用户记录
+         */
+        requestUserRecords(uid, type, page) {
+            return new Promise((resolve, reject) => {
+                let url = `https://${window.location.host}/thread.php?__output=11&authorid=${uid}&page=${page}`
+                if (type == 'reply') {
+                    url += '&searchpost=1'
+                }
+                $.ajax({url})
+                .then(postRes => {
+                    const err = postRes.error
+                    if (postRes.data && postRes.data.__T) {
+                        if (page > this.pageInfo[type].pages) {
+                            this.pageInfo[type].pages = page
                         }
-                        if (err) {
-                            const errMsg = (err && Array.isArray(err)) ? err.join(' ') : err
-                            if (!errMsg.includes('没有符合条件的结果')) {
-                                reject(errMsg)
-                                return
-                            }
+                        if (this.pageInfo[type].status != 'hld__grab-max') {
+                            this.pageInfo[type].status = ''
                         }
-                        resolve()
-                    })
-                }))
-                // 查询回复记录
-                requestTasks.push(new Promise((resolve, reject) => {
-                    $.ajax({url: `https://${window.location.host}/thread.php?__output=11&searchpost=1&authorid=${userInfo.uid}&page=${i+1}`})
-                    .then(replyRes => {
-                        const err = replyRes.error
-                        if (replyRes.data && replyRes.data.__T) {
-                            statisticsCount(replyRes.data.__T, 'reply')
+                        postRes.data.__T.forEach(item => {
+                            if (item?.__P?.postdate && item.__P.postdate < this.pageInfo[type].earliestPostdate) {
+                                this.pageInfo[type].earliestPostdate = item.__P.postdate
+                            }
+                        })
+                        this.statisticsCount(postRes.data.__T, type)
+                    }
+                    if (err) {
+                        const errMsg = (err && Array.isArray(err)) ? err.join(' ') : err
+                        if (errMsg.includes('没有符合条件的结果')) {
+                            this.pageInfo[type].status = 'hld__grab-max'
+                        } else {
+                            this.pageInfo[type].status = 'hld__grab-err'
+                            reject({errMsg, type, page})
+                            return
                         }
-                        if (err) {
-                            const errMsg = (err && Array.isArray(err)) ? err.join(' ') : err
-                            if (!errMsg.includes('没有符合条件的结果')) {
-                                reject(errMsg)
-                                return
-                            }
-                        }
-                        resolve()
-                    })
-                }))
-            }
-            Promise.all(requestTasks)
-            .then(() => {
-                // 处理未命名板块
-                activeCount.forEach(item => item.name ||= (this.forumData[item.fid] || `板块FID: ${item.fid}`))
-                // 渲染chart
-                const chartContainer = document.getElementById('hld__chart_container')
-                if (!chartContainer) return
-                const chart = echarts.init(chartContainer)
-                chart.setOption({
-                    title: {
-                        text: '用户最近活跃板块记录',
-                        subtext: userInfo.username || `UID: ${userInfo.username}`,
-                        top: 10,
-                        left: 'center'
-                    },
-                    tooltip: {
-                        formatter: function(row) {
-                            return `${row.data.name}<br />总计: ${row.data.value}<br>发布: ${row.data.post}<br>回复: ${row.data.reply}`
-                        }
-                    },
-                    toolbox: {
-                        show: true,
-                        bottom: 10,
-                        left: 10,
-                        itemSize: 16,
-                        feature: {
-                            saveAsImage: {show: true},
-                        },
-                    },
-                    legend: {
-                        type: 'scroll',
-                        orient: 'vertical',
-                        left: 10,
-                        top: 'middle'
-                    },
-                    series: [{
-                        name: '板块',
-                        type: 'pie',
-                        radius: '50%',
-                        label: {
-                            formatter: function(row) {
-                                return `{name|${row.data.name}}\n{detail|发布: ${row.data.post}} {detail|回复: ${row.data.reply}}`
-                            },
-                            minMargin: 5,
-                            edgeDistance: 10,
-                            lineHeight: 15,
-                            rich: {detail: {
-                                fontSize: 10,
-                                color: '#999'
-                            }}
-                        },
-                        labelLine: {
-                            length: 15,
-                            length2: 0,
-                            maxSurfaceAngle: 80
-                        },
-                        labelLayout: function (params) {
-                            const isLeft = params.labelRect.x < chart.getWidth() / 2
-                            const points = params.labelLinePoints
-                            if (points) {
-                                points[2][0] = isLeft ? params.labelRect.x : params.labelRect.x + params.labelRect.width
-                            }
-                            return {labelLinePoints: points}
-                        },
-                        data: activeCount,
-                        emphasis: {
-                            itemStyle: {shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.5)'}
-                        }
-                    }],
-                    graphic: [{
-                        type: 'group',
-                        right: 15,
-                        top: 'middle',
-                        children: [{
-                            type: 'text',
-                            left: 0,
-                            top: 0,
-                            style: {
-                                text: '发布主题: ' + activeCount.reduce((p, c) => p + c.post, 0),
-                                fill: '#333',
-                            }
-                        }, {
-                            type: 'text',
-                            left: 80,
-                            top: 0,
-                            style: {
-                                text: '查看',
-                                fill: '#00a0ff',
-                            },
-                            onclick: function() {
-                                window.open(`${window.location.origin}/thread.php?authorid=${userInfo.uid}`)
-                            }
-                        }, {
-                            type: 'text',
-                            left: 0,
-                            top: 20,
-                            style: {
-                                text: '回复主题: ' + activeCount.reduce((p, c) => p + c.reply, 0),
-                                fill: '#333',
-                            }
-                        }, {
-                            type: 'text',
-                            left: 80,
-                            top: 20,
-                            style: {
-                                text: '查看',
-                                fill: '#00a0ff',
-                            },
-                            onclick: function() {
-                                window.open(`${window.location.origin}/thread.php?searchpost=1&authorid=${userInfo.uid}`)
-                            }
-                        }, {
-                            type: 'text',
-                            left: 25,
-                            top: 40,
-                            style: {
-                                text: '总计: ' + activeCount.reduce((p, c) => p + c.value, 0),
-                                fill: '#333',
-                            }
-                        }]
-                    }, {
-                        type: 'text',
-                        right: 10,
-                        bottom: 33,
-                        style: {
-                            text: '*仅统计最近有效的公开数据',
-                            fill: '#666'
-                        }
-                    }, {
-                        type: 'image',
-                        right: 10,
-                        bottom: 30,
-                        style: {
-                            image: POWER_BY_NGASCRIPT,
-                            width: 150
-                        }
-                    }]
+                    }
+                    resolve()
                 })
             })
-            .catch(errMsg => {
-                $('#hld__chart_cover').remove()
-                script.popMsg(`查询数据接口失败! 原因: ${errMsg}`, 'err')
+        },
+        /**
+         * 更新图表
+         */
+        updateChart() {
+            // 处理未命名板块
+            this.activeCount.forEach(item => item.name ||= (this.forumData[item.fid] || `板块FID: ${item.fid}`))
+            this.chart.setOption({
+                title: {
+                    text: '用户活跃板块记录',
+                    subtext: this.currentUserInfo.username || `UID: ${this.currentUserInfo.username}`,
+                    top: 10,
+                    left: 'center'
+                },
+                tooltip: {
+                    formatter: function(row) {
+                        return `${row.data.name}<br />总计: ${row.data.value}<br>发布: ${row.data.post}<br>回复: ${row.data.reply}`
+                    }
+                },
+                toolbox: {
+                    show: true,
+                    bottom: 10,
+                    left: 10,
+                    itemSize: 16,
+                    feature: {
+                        saveAsImage: {show: true},
+                    },
+                },
+                legend: {
+                    type: 'scroll',
+                    orient: 'vertical',
+                    left: 10,
+                    top: 'middle'
+                },
+                series: [{
+                    name: '板块',
+                    type: 'pie',
+                    radius: '50%',
+                    label: {
+                        formatter: function(row) {
+                            return `{name|${row.data.name}}\n{detail|发布: ${row.data.post}} {detail|回复: ${row.data.reply}}`
+                        },
+                        minMargin: 5,
+                        edgeDistance: 10,
+                        lineHeight: 15,
+                        rich: {detail: {
+                            fontSize: 10,
+                            color: '#999'
+                        }}
+                    },
+                    labelLine: {
+                        length: 15,
+                        length2: 0,
+                        maxSurfaceAngle: 80
+                    },
+                    labelLayout: params => {
+                        const isLeft = params.labelRect.x < this.chart.getWidth() / 2
+                        const points = params.labelLinePoints
+                        if (points) {
+                            points[2][0] = isLeft ? params.labelRect.x : params.labelRect.x + params.labelRect.width
+                        }
+                        return {labelLinePoints: points}
+                    },
+                    data: this.activeCount,
+                    emphasis: {
+                        itemStyle: {shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.5)'}
+                    }
+                }],
+                graphic: [{
+                    type: 'image',
+                    right: 10,
+                    bottom: 30,
+                    style: {
+                        image: POWER_BY_NGASCRIPT,
+                        width: 150
+                    }
+                }]
             })
+            $('.hld__chart-statistics').show()
         },
         style: `
         .hld__user-enhance {display:flex;flex-wrap:wrap;}
@@ -4015,8 +4084,24 @@
         #hld__chart_cover {position:fixed;top:50%;left:50%;transform:translate(-50%, -50%);border-radius:10px;background:#FFF;border:1px solid #AAA;box-shadow:0 0 10px rgba(0,0,0,.3);z-index:9993;}
         #hld__chart_cover > .hld__setting-close {background:#FFF;border:1px solid #AAA;color:#AAA;}
         #hld__chart_cover > .hld__setting-close:hover {background:#AAA;border:1px solid #FFF;color:#FFF;}
-        #hld__chart_container {width:840px;height:500px;}
-        #hld__chart_container .loading {position:absolute;top: 50%;left:50%;margin-top:-20px;margin-left:-25px;width:40px;height:40px;border:2px solid #AAA;border-top-color:transparent;border-radius:100%;animation:loading-circle infinite 0.75s linear;}
+        #hld__chart_container {width:1000px;height:600px;}
+        #hld__chart_cover .loading {position:absolute;top: 50%;left:50%;margin-top:-20px;margin-left:-25px;width:40px;height:40px;border:2px solid #AAA;border-top-color:transparent;border-radius:100%;animation:loading-circle infinite 0.75s linear;}
+        .hld__chart-statistics {display:none;position:absolute;top:calc(50% - 220px);right:10px;min-width:140px;height:400px;}
+        .hld__statistics-status > div {padding: 2px 0;}
+        .hld__statistics-status > .hld__st-t {font-weight:bold;font-size:1.1em;padding-top: 25px;}
+        .hld__statistics-status > .hld__st-s1 {margin-top: 10px;}
+        .hld__statistics-status > .hld__st-s1-1 {font-size:0.9em;color:#00000073;}
+        .hld__statistics-status .hld__st-c {font-weight:bold;font-size:18px;color:#1677ff;margin:0px 2px;}
+        .hld__statistics-status .hld__st-l {display: inline-block;padding: 1px 5px;color: #FFF;transform: scale(0.8);border-radius: 5px;}
+        .hld__statistics-status .hld__st-l.hld__grab-max {background: #67c23a;}
+        .hld__statistics-status .hld__st-l.hld__grab-max:after {content: '最大';}
+        .hld__statistics-status .hld__st-l.hld__grab-err {background: #f56c6c;}
+        .hld__statistics-status .hld__st-l.hld__grab-err:after {content: '错误';}
+        #hld__chart_deep_query {display:flex;align-items:center;margin-top:30px;background:#1677ff;border-color:#1677ff;color:#FFF;padding:6px 15px;border-radius:8px;text-align:center;cursor:pointer;}
+        #hld__chart_deep_query:not(disabled):hover {opacity:.7;}
+        #hld__chart_deep_query:disabled {background: #67c23a;}
+        .hld__query-loading:before {content:"";display: inline-block;margin-right: 5px;width: 8px;height: 8px;border: 2px solid #fff;border-top-color: transparent;border-radius: 100%;animation: loading-circle infinite 0.75s linear;}
+        .hld__statistics-status. {padding:10px 0;}
         @keyframes loading-circle {0% {transform:rotate(0);}100% {transform:rotate(360deg);}}
         `
     }
@@ -4174,6 +4259,9 @@
                     })
                     $plugin.find('.hld__plugin-settings').append($pluginButtons)
                 }
+                if ($plugin.find('.hld__plugin-settings tr').length == 0 && $plugin.find('.hld__plugin-settings button').length == 0) {
+                    $plugin.find('.hld__plugin-settings').append('<div class="hld__plugin-nosettings">暂无可配置项</div>')
+                }
                 $pluginPanel.find('.hld__plugin-content').append($plugin)
             })
             if (ngaScriptPlugins.length == 0) {
@@ -4270,11 +4358,14 @@
                     if (key == 'mainScript') return script  // 主脚本
                     if (key == 'pluginID') return pluginID  // 插件ID
                     if (key == 'pluginSettings') return script.setting.plugin[pluginID]  // 插件保存配置
-                    const pluginInputs = {}
-                    Object.keys(script.setting.plugin[pluginID]).forEach(key => {
-                        pluginInputs[key] = $(`[plugin-id="${pluginID}"][plugin-setting-key="${key}"]`)
-                    })
-                    if (key == 'pluginInputs') return pluginInputs  // 插件输入控件dom
+                    // 插件输入控件dom
+                    if (key == 'pluginInputs') {
+                        const pluginInputs = {}
+                        Object.keys(script.setting.plugin[pluginID]).forEach(key => {
+                            pluginInputs[key] = $(`[plugin-id="${pluginID}"][plugin-setting-key="${key}"]`)
+                        })
+                        return pluginInputs
+                    }
                     return target[key]
                 },
                 set: function (target, key, newValue) {
@@ -4402,6 +4493,7 @@
         .hld__plugin-settings input[type=number] {border: 1px solid #e6c3a8;box-shadow: 0 0 2px 0 #7c766d inset;border-radius: 0.25em;}
         .hld__plugin-buttons {padding-top:5px;}
         .hld__plugin-buttons > button {margin-right:5px;margin-top:5px;}
+        .hld__plugin-nosettings {color:#666;}
         `
     }
 

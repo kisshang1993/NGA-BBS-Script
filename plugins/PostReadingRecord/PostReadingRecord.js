@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验-帖子浏览记录
-// @namespace    https://github.com/kisshang1993/test_plugin
+// @namespace    https://github.com/kisshang1993/NGA-BBS-Script/tree/master/plugins/PostReadingRecord
 // @version      1.0.1
 // @author       HLD
 // @description  记录帖子的阅读状态，着色以阅读帖子标题，跟踪后续新回复数量
