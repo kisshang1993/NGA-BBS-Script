@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验-帖子浏览记录
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script/tree/master/plugins/PostReadingRecord
-// @version      1.1.0
+// @version      1.1.1
 // @author       HLD
 // @description  记录帖子的阅读状态，着色以阅读帖子标题，跟踪后续新回复数量
 // @license      MIT
@@ -159,8 +159,10 @@
             $('.forumbox.postbox').each(async (index, dom) => {
                 const $el = $(dom)
                 const currentPostboxID = $el.find('tr[id^=post1strow]').attr('id')
-                if (!currentPostboxID || !unsafeWindow.__CURRENT_TID) return
-                const lastReadCount = await this.store.getItem(unsafeWindow.__CURRENT_TID)?.lastReadCount ?? 0
+                const currentTid = unsafeWindow.__CURRENT_TID + ''
+                if (!currentPostboxID || !currentTid) return
+                const currentRecord = await this.store.getItem(currentTid)
+                const lastReadCount = currentRecord?.lastReadCount ?? 0
                 const currentReadCount = parseInt(currentPostboxID.substring(10)) + 1
                 const currentElTop = $el.offset().top
                 const currentElBottom = currentElTop + $el.outerHeight()
@@ -169,7 +171,7 @@
                 if (currentElTop < viewportBottom && currentElBottom > viewportTop) {
                     if (currentReadCount > lastReadCount) {
                         const currentPage = this.mainScript.getModule('AuthorMark').getQueryString('page') ?? 1
-                        this.store.setItem(unsafeWindow.__CURRENT_TID, {
+                        this.store.setItem(currentTid, {
                             lastReadCount: currentReadCount,
                             lastReadPage: parseInt(currentPage),
                             lastReadTime: Math.ceil(new Date().getTime() / 1000)
