@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验-帖子浏览记录
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script/tree/master/plugins/PostReadingRecord
-// @version      1.0.1
+// @version      1.1.0
 // @author       HLD
 // @description  记录帖子的阅读状态，着色以阅读帖子标题，跟踪后续新回复数量
 // @license      MIT
@@ -54,7 +54,6 @@
             title: '清理所有记录数据',
             action: 'cleanLocalData'
         }],
-        currentThread: {},
         store: null,
         beforeSaveSettingFunc(settings) {
             const $ = this.mainScript.libs.$
@@ -66,6 +65,7 @@
             }
         },
         initFunc() {
+            const $ = this.mainScript.libs.$
             // 创建储存实例
             this.store = this.mainScript.createStorageInstance('NGA_BBS_Script__PostReadingRecord')
             // 调用标准模块authorMark初始化颜色选择器
@@ -88,6 +88,18 @@
                     console.error(`${this.title}清除超期数据失败，错误原因:`, err)
                 })
             }
+            // 自动记录阅读位置
+            $(window).on('scroll resize', () => {
+                if (!this.mainScript.isForms()) return
+                this.calcReadCount()
+            })
+            // 绑定继续阅览事件
+            $(document).on('click', '.hld__unread-label', function() {
+                unsafeWindow.__LOADERREAD.go(1, {
+                    fromUrl: window.location.href,
+                    url: $(this).attr('data-continueurl')
+                })
+            })
         },
         async renderThreadsFunc($el) {
             const markStyle = `color: ${this.pluginSettings['markColor']}; opacity: ${parseInt(this.pluginSettings['markOpacity']) / 100};`
@@ -95,6 +107,7 @@
             const $a = $el.find('.c1 > a')
             const tid = this.mainScript.getModule('AuthorMark').getQueryString('tid', $a.attr('href'))
             const currentCount = parseInt($a.text())
+            if (!tid || isNaN(currentCount)) return
             // 检查并标记已读帖子
             const record = await this.store.getItem(tid)
             const recordCount = record?.lastReadCount || -1
@@ -102,26 +115,68 @@
                 $el.find('.c2 > a').attr('style', markStyle)
             }
             if (this.pluginSettings['replyCountEnable'] && recordCount > -1 && currentCount > recordCount) {
-                $el.find('.c2 > span[id^=t_pc]').append(`<span class="hld__new-reply-count-${this.pluginSettings['replyCountStyle']}">${currentCount-recordCount}</span>`)
+                const url = `https://${window.location.host}${$a.attr('href')}&page=${record.lastReadPage}#anchorid=${record.lastReadCount}`
+                $el.find('.c2 > span[id^=t_pc]').append(`
+                    <span data-continueurl="${url}" class="hld__help hld__unread-label" help="上次阅读位置">
+                        <span  class="hld__new-reply-count-${this.pluginSettings['replyCountStyle']}">
+                            ${currentCount - recordCount}
+                        </span>
+                    </span>
+                `)
             }
-            // 记录当前帖子的最新回复数
-            this.currentThread[tid] = {currentCount}
         },
-        async renderFormsFunc($el) {
-            // 更新记录
-            const tid = this.mainScript.getModule('AuthorMark').getQueryString('tid')
-            const currentLineNo = parseInt($el.find('.c1 .right > a').text().split('#')[1])
-            const currentLineAnchor = $el.find('.c1 .right > a').attr('href').split('#')[1]
-            const maxReadCount = Math.max((this.currentThread?.[tid]?.currentCount || -1), currentLineNo)
-            const record = await this.store.getItem(tid)
-            if (!record || maxReadCount > record.lastReadCount) {
-                await this.store.setItem(tid, {
-                    lastReadCount: maxReadCount,
-                    lastReadLineNo: currentLineNo,
-                    lastReadLineAnchor: currentLineAnchor,
-                    lastReadTime: Math.ceil(new Date().getTime() / 1000)
-                })
+        renderFormsFunc($el) {
+            if ($el.index() == 0) {
+                this.calcReadCount()
             }
+        },
+        renderAlwaysFunc() {
+            if (!this.mainScript.isForms()) return
+            const $ = this.mainScript.libs.$
+            const [originalURL, anchorid] = window.location.href.split('#anchorid=')
+            if (anchorid && !isNaN(parseInt(anchorid))) {
+                // 滚动至锚点处
+                for (let i=parseInt(anchorid)-1;i>0;i--) {
+                    const $posterinfo = $(`#post1strow${anchorid}`)
+                    if ($posterinfo.length > 0) {
+                        $posterinfo.parents('table.forumbox.postbox')
+                        const $parentrow = $posterinfo.parents('table.forumbox.postbox')
+                        if (!$parentrow.next().hasClass('hld__readnow')) {
+                            $parentrow.after(`<div class="hld__readnow">📌 上次阅读位置 📌</div>`)
+                        }
+                        history.replaceState(null, null, originalURL)
+                        setTimeout(() => {
+                            $(window).scrollTop($posterinfo.offset().top + $posterinfo.height() - $(window).height() + 100)
+                        }, 500)
+                        break
+                    }
+                }
+            }
+        },
+        // 计算阅读位置
+        calcReadCount() {
+            const $ = this.mainScript.libs.$
+            $('.forumbox.postbox').each(async (index, dom) => {
+                const $el = $(dom)
+                const currentPostboxID = $el.find('tr[id^=post1strow]').attr('id')
+                if (!currentPostboxID || !unsafeWindow.__CURRENT_TID) return
+                const lastReadCount = await this.store.getItem(unsafeWindow.__CURRENT_TID)?.lastReadCount ?? 0
+                const currentReadCount = parseInt(currentPostboxID.substring(10)) + 1
+                const currentElTop = $el.offset().top
+                const currentElBottom = currentElTop + $el.outerHeight()
+                const viewportTop = $(window).scrollTop()
+                const viewportBottom = viewportTop + $(window).height()
+                if (currentElTop < viewportBottom && currentElBottom > viewportTop) {
+                    if (currentReadCount > lastReadCount) {
+                        const currentPage = this.mainScript.getModule('AuthorMark').getQueryString('page') ?? 1
+                        this.store.setItem(unsafeWindow.__CURRENT_TID, {
+                            lastReadCount: currentReadCount,
+                            lastReadPage: parseInt(currentPage),
+                            lastReadTime: Math.ceil(new Date().getTime() / 1000)
+                        })
+                    }
+                }
+            })
         },
         cleanLocalData() {
             if (window.confirm('确定要清理所有记录数据吗？')) {
@@ -130,11 +185,14 @@
             }
         },
         style: `
+        .hld__unread-label {cursor: pointer;}
+        .hld__unread-label:hover:after {content: '🚀';}
         .hld__new-reply-count-tag {margin-left: 10px;display: inline-block;background-color: #8BC34A;border-radius: 10px;padding: 0 10px;color: #FFF;transform: scale(.9);}
-        .hld__new-reply-count-tag:before {content: '新增回复:'}
+        .hld__new-reply-count-tag:before {content: '未阅读:'}
         .hld__new-reply-count-tag:after {content: '条'}
         .hld__new-reply-count-text {margin-left: 10px;display: inline-block;}
         .hld__new-reply-count-text:before {content: '+'}
+        .hld__readnow {text-align: center;height:20px;line-height:20px;background:#607d8b;color:#FFF;}
         `
     }
     registerPlugin(PostReadingRecord)
