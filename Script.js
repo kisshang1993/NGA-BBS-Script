@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      4.5.0
+// @version      4.5.1
 // @author       HLD
 // @description  NGA论坛显示优化，全面功能增强，优雅的摸鱼
 // @license      MIT
-// @require      https://cdn.staticfile.org/jquery/3.4.0/jquery.min.js
-// @require      https://cdn.staticfile.org/spectrum/1.8.0/spectrum.js
-// @require      https://cdn.staticfile.org/localforage/1.10.0/localforage.min.js
-// @require      https://cdn.staticfile.org/echarts/5.4.2/echarts.min.js
+// @require      https://cdn.staticfile.net/jquery/3.4.0/jquery.min.js
+// @require      https://cdn.staticfile.net/spectrum/1.8.0/spectrum.js
+// @require      https://cdn.staticfile.net/localforage/1.10.0/localforage.min.js
+// @require      https://cdn.staticfile.net/echarts/5.4.2/echarts.min.js
 // @require      https://greasyfork.org/scripts/424901-nga-script-resource/code/NGA-Script-Resource.js?version=1268947
 // @icon         https://i.loli.net/2021/04/07/8x3yFj2pWEKluSY.png
 // @match        *://bbs.nga.cn/*
@@ -239,7 +239,7 @@
             // 初始化完成
             const endInitTime = new Date().getTime()
             console.table(modulesTable)
-            this.printLog(`[v${this.getInfo().version}] 初始化完成：共加载${this.modules.length}个模块，总耗时${endInitTime-startInitTime}ms`)
+            this.printLog(`[v${this.getInfo().version}] 初始化完成: 共加载${this.modules.length}个模块，总耗时${endInitTime-startInitTime}ms`)
             console.log('%c反馈问题请前往: https://github.com/kisshang1993/NGA-BBS-Script/issues', 'color:orangered;font-weight:bolder')
         }
         /**
@@ -291,6 +291,7 @@
             try {
                 return GM_getValue(key) || window.localStorage.getItem(key)
             } catch {
+                // 兼容性代码: 计划将在5.0之后废弃
                 return window.localStorage.getItem(key)
             }
         }
@@ -304,7 +305,6 @@
             try {
                 GM_setValue(key, value)
             } catch {}
-            window.localStorage.setItem(key, value)
         }
         /**
          * 删除值
@@ -315,7 +315,8 @@
             try {
                 GM_deleteValue(key)
             } catch {}
-            window.localStorage.deleteItem(key)
+            // 兼容性代码: 计划将在5.0之后飞起
+            window.localStorage.removeItem(key)
         }
         /**
          * 保存配置到本地
@@ -407,12 +408,8 @@
                     }
                     this.setting.advanced = localAdvancedSetting
                 }
-            } catch {
-                if (window.confirm('【NGA-Script】读取插件配置文件出现错误，无法加载配置文件！\n可能是配置有误，清空本地配置即可恢复使用\n警告：清空配置会丢失所有设置\n\n点击【确认】清空本地配置，并自动刷新\n\n如还有问题，请提出反馈')) {
-                    script.deleteValue('hld__NGA_setting')
-                    script.deleteValue('hld__NGA_advanced_setting')
-                    window.location.reload()
-                }
+            } catch(e) {
+                script.throwError(`【NGA-Script】读取配置文件出现错误，无法加载配置文件!\n错误问题: ${e}\n\n请尝试使用【修复脚本】来修复此问题`)
             }
 
         }
@@ -511,19 +508,20 @@
                 try {
                     GM_listValues().forEach(key => GM_deleteValue(key))
                 } catch {}
+                // 兼容性代码: 计划将在5.0之后废弃
                 window.localStorage.clear()
                 alert('操作成功，请刷新页面重试')
             }
         })
         // 反馈问题
         GM_registerMenuCommand('反馈问题', function () {
-            if (window.confirm('如脚本运行失败而且修复后也无法运行，请反馈问题报告\n* 问题报告请包含使用的：[浏览器]，[脚本管理器]，[脚本版本]\n* 描述问题最好以图文并茂的形式\n* 如脚本运行失败，建议提供F12控制台的红色错误输出以辅助排查\n\n默认打开的为Greasy Fork的反馈页面，有能力最好去Github Issue反馈问题，可以获得优先处理\n\n即将打开反馈页面，继续请点击【确定】')) {
+            if (window.confirm('如脚本运行失败而且修复后也无法运行，请反馈问题报告\n* 问题报告请包含使用的: [浏览器]，[脚本管理器]，[脚本版本]\n* 描述问题最好以图文并茂的形式\n* 如脚本运行失败，建议提供F12控制台的红色错误输出以辅助排查\n\n默认打开的为Greasy Fork的反馈页面，有能力最好去Github Issue反馈问题，可以获得优先处理\n\n即将打开反馈页面，继续请点击【确定】')) {
                 window.open('https://greasyfork.org/zh-CN/scripts/393991-nga%E4%BC%98%E5%8C%96%E6%91%B8%E9%B1%BC%E4%BD%93%E9%AA%8C/feedback')
             }
         })
     } catch (e) {
         // 不支持此命令
-        console.warn(`【NGA Script】警告：此脚本管理器不支持菜单按钮，可能会导致新特性无法正常使用，建议更改脚本管理器为
+        console.warn(`【NGA Script】警告: 此脚本管理器不支持菜单按钮，可能会导致新特性无法正常使用，建议更改脚本管理器为
         Tampermonkey[https://www.tampermonkey.net/] 或 Violentmonkey[https://violentmonkey.github.io/]`)
     }
 
@@ -788,7 +786,7 @@
             key: 'dynamicEnable',
             default: true,
             title: '动态功能启用',
-            desc: '此配置表示部分可以快捷键切换的功能默认行为策略\n选中时：关闭功能(如隐藏头像)也可以通过快捷键切换显示/隐藏\n取消时：关闭功能(如隐藏头像)将彻底关闭功能，快捷键会失效',
+            desc: '此配置表示部分可以快捷键切换的功能默认行为策略\n选中时: 关闭功能(如隐藏头像)也可以通过快捷键切换显示/隐藏\n取消时: 关闭功能(如隐藏头像)将彻底关闭功能，快捷键会失效',
             menu: 'left'
         },
         preProcFunc() {
@@ -1052,7 +1050,7 @@
                             const importStatus = _this.import(dataStr, $('#hld__cb_export_encode').prop('checked'))
                             importStatus && $('#hld__export_msg').html('<span style="color:#009900">导入成功，刷新浏览器以生效</span>')
                         } catch (err){
-                            script.printLog(`JSON解析失败：${err}`)
+                            script.printLog(`JSON解析失败: ${err}`)
                             $('#hld__export_msg').html('<span style="color:#CC0000">字符串有误，解析失败！</span>')
                         }
                     }
@@ -1411,7 +1409,7 @@
             key: 'hideCustomBg',
             default: true,
             title: '隐藏背景图片',
-            desc: '选中时：隐藏版头的同时顶部背景图片\n取消时：无操作',
+            desc: '选中时: 隐藏版头的同时顶部背景图片\n取消时: 无操作',
             menu: 'right'
         }],
         renderAlwaysFunc($el) {
@@ -1471,7 +1469,7 @@
             key: 'excelNoMode',
             default: false,
             title: 'Excel左列序号',
-            desc: 'Excel最左列的显示序号，此策略为尽可能的更像Excel\n选中时：Excel最左栏为从1开始往下，逐行+1\n取消时：Excel最左栏为原始的回帖数\n*此功能仅在贴列表有效',
+            desc: 'Excel最左列的显示序号，此策略为尽可能的更像Excel\n选中时: Excel最左栏为从1开始往下，逐行+1\n取消时: Excel最左栏为原始的回帖数\n*此功能仅在贴列表有效',
             menu: 'left'
         }, {
             type: 'advanced',
@@ -2257,7 +2255,7 @@
         },
         asyncStyle() {
             return `
-            .hld__post-author {background:${script.setting.advanced.authorMarkColor || '#F00'};color: #FFF;display: inline-block;padding:0 5px;margin-left: 5px;border-radius: 5px;font-weight:bold;    line-height: 1.4em;padding-top: 0.1em;padding-bottom: 0;}
+            .hld__post-author {background:${script.setting.advanced.authorMarkColor || '#F00'};color: #FFF;display: inline-block;padding:0 5px;margin-left: 5px;border-radius: 5px;font-weight:bold;line-height: 1.4em;padding-top: 0.1em;padding-bottom: 0;}
             `
         },
         style: `
@@ -2489,7 +2487,7 @@
             if ((script.setting.advanced.kwdBlockContent === 'ALL' || script.setting.advanced.kwdBlockContent === 'TITLE') && script.setting.normal.keywordsBlock && this.keywordsList.length > 0) {
                 for (let keyword of this.keywordsList) {
                     if (title.includes(keyword)) {
-                        script.printLog(`关键字屏蔽：标题：${title}  连接：${$el.find('.c2>a').attr('href')}`)
+                        script.printLog(`关键字屏蔽: 标题: ${title}  连接: ${$el.find('.c2>a').attr('href')}`)
                         $el.remove()
                         break
                     }
@@ -2501,7 +2499,7 @@
             if (script.setting.normal.keywordsBlock && this.keywordsList.length > 0 && (script.setting.advanced.kwdBlockContent === 'ALL' || script.setting.advanced.kwdBlockContent === 'BODY')) {
                 const $postcontent = $el.find('.postcontent')
                 const $postcontentClone = $postcontent.clone()
-                const consoleLog = (text) => script.printLog(`关键字屏蔽：内容：${text}`)
+                const consoleLog = (text) => script.printLog(`关键字屏蔽: 内容: ${text}`)
                 let postcontentQuote = ''
                 let postcontentText = ''
 
@@ -2601,14 +2599,14 @@
             key: 'classicRemark',
             default: false,
             title: '经典备注风格',
-            desc: '此配置表示标记功能的风格显示\n选中时：v2.9及以前的备注风格(仿微博)，此风格不能更改颜色\n取消时：新版标记风格',
+            desc: '此配置表示标记功能的风格显示\n选中时: v2.9及以前的备注风格(仿微博)，此风格不能更改颜色\n取消时: 新版标记风格',
             menu: 'right'
         }, {
             type: 'advanced',
             key: 'autoHideBanIcon',
             default: false,
             title: '按需显示标注拉黑按钮',
-            desc: '选中时：默认隐藏标注与拉黑按钮, 当鼠标停留区域时, 才会显示\n取消时：一直显示',
+            desc: '选中时: 默认隐藏标注与拉黑按钮, 当鼠标停留区域时, 才会显示\n取消时: 一直显示',
             menu: 'right'
         }, {
             type: 'advanced',
@@ -2625,7 +2623,7 @@
                 value: 'ALL'
             }],
             title: '拉黑模式',
-            desc: '此配置表示拉黑某人后对帖子的屏蔽策略\n屏蔽：保留楼层, 仅会屏蔽用户的回复\n删除：将会删除楼层\n全部删除: 回复被拉黑用户的回复也会被删除',
+            desc: '此配置表示拉黑某人后对帖子的屏蔽策略\n屏蔽: 保留楼层, 仅会屏蔽用户的回复\n删除: 将会删除楼层\n全部删除: 回复被拉黑用户的回复也会被删除',
             menu: 'right'
         }],
         banList: [],
@@ -2637,10 +2635,8 @@
             const localBanList = script.getValue('hld__NGA_ban_list')
             try {
                 localBanList && (_this.banList = JSON.parse(localBanList))
-            } catch {
-                script.setValue('hld__NGA_ban_list_bak', localBanList)
-                script.deleteValue('hld__NGA_ban_list')
-                script.throwError('【NGA-Script】无法加载黑名单列表，数据解析失败\n黑名单已清空，之前的数据已经备份到hld__NGA_ban_list_bak\n请在控制台中的localStorage中查看')
+            } catch(e) {
+                script.throwError(`【NGA-Script】无法加载黑名单列表，数据解析失败!\n错误问题: ${e}\n\n请尝试使用【修复脚本】来修复此问题`)
             }
             const localMarkList = script.getValue('hld__NGA_mark_list')
             try {
@@ -2664,10 +2660,8 @@
                     })
                     _this.markedTags.sort((a, b) => {return b.count - a.count})
                 }
-            } catch {
-                script.setValue('hld__NGA_mark_list_bak', localMarkList)
-                script.deleteValue('hld__NGA_mark_list')
-                script.throwError('【NGA-Script】无法加载标记列表，数据解析失败\n标记列表已清空，之前的数据已经备份到hld__NGA_mark_list_bak\n请在控制台中的localStorage中查看')
+            } catch(e) {
+                script.throwError(`【NGA-Script】无法加载标记列表，数据解析失败!\n错误问题: ${e}\n\n请尝试使用【修复脚本】来修复此问题`)
             }
             // 添加到导入导出配置
             script.getModule('BackupModule').addItem({
@@ -2866,7 +2860,7 @@
                 const banUser = this.getBanUser({name, uid})
                 //黑名单屏蔽
                 if (this.banList.length > 0 && banUser) {
-                    script.printLog(`黑名单屏蔽：标题：${title}  连接：${$el.find('.c2>a').attr('href')}`)
+                    script.printLog(`黑名单屏蔽: 标题: ${title}  连接: ${$el.find('.c2>a').attr('href')}`)
                     $el.parents('tbody').remove()
                 }
             }
@@ -2884,7 +2878,10 @@
                         currentName = $(this).parents('td').prev('td').find('.author').text()
                     }
                     currentName.endsWith('楼主') && (currentName = currentName.substring(0, currentName.length - 2))
-                    const mbDom = `<a class="hld__extra-icon" data-type="mark" title="标签此用户" data-name="${currentName}" data-uid="${currentUid}"><svg t="1686732786072" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2385" width="200" height="200"><path d="M900.64 379.808l-263.072-256.032c-36.448-35.328-105.76-35.392-142.304 0.096l-327.04 319.904c-56.416 54.72-70.72 76.704-70.72 150.976l0 143.936c0 132.768 26.976 192 186.912 192l131.872 0c81.12 0 128.448-46.656 193.952-111.264l290.016-297.696c18.592-17.984 29.248-43.968 29.248-71.264C929.504 423.36 918.976 397.6 900.64 379.808zM323.008 786.752c-52.928 0-96-43.072-96-96s43.072-96 96-96 96 43.072 96 96S375.936 786.752 323.008 786.752z" fill="#3970fe" p-id="2386" data-spm-anchor-id="a313x.7781069.0.i0" class="selected"></path></svg></a><a class="hld__extra-icon" title="拉黑此用户(屏蔽所有言论)" data-type="ban"  data-name="${currentName}" data-uid="${currentUid}"><svg t="1686733137783" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="12682" width="200" height="200"><path d="M512 0a512 512 0 1 0 0 1024 512 512 0 0 0 0-1024zM204.8 409.6h614.4v204.8H204.8V409.6z" fill="#d00309" p-id="12683" data-spm-anchor-id="a313x.7781069.0.i10" class="selected"></path></svg></a>`
+                    const mbDom = `
+                        <a class="hld__extra-icon hld__help" data-type="mark" help="标签此用户" data-name="${currentName}" data-uid="${currentUid}">🏷️</a>
+                        <a class="hld__extra-icon hld__help" help="拉黑此用户(屏蔽所有言论)" data-type="ban"  data-name="${currentName}" data-uid="${currentUid}">⛔</a>
+                    `
                     script.setting.advanced.autoHideBanIcon ? $(this).after(`<span class="hld__extra-icon-box">${mbDom}</span>`) : $(this).append(mbDom)
                 })
                 // 标记DOm
@@ -2931,7 +2928,7 @@
                         if (banUser.desc) {
                             $(this).parents('.postrow').find('.hld__banned').append(`<div>备注: ${banUser.desc}</div>`)
                         }
-                        script.printLog(`黑名单屏蔽：用户：${name}, UID:${uid}, 备注:${banUser.desc}`)
+                        script.printLog(`黑名单屏蔽: 用户: ${name}, UID:${uid}, 备注:${banUser.desc}`)
                     }
                     if(script.setting.advanced.classicRemark) {
                         //经典备注风格
@@ -2983,7 +2980,7 @@
                 })
                 $banDialog.find('.hld__dialog-buttons').append($okBtn)
             }else if (setting.type == 'add') {
-                $banDialog.find('#container_dom').append(`<div>添加用户：</div><div><input id="hld__dialog_add_uid" type="text" value="" placeholder="UID"></div><div><input id="hld__dialog_add_name" type="text" value="" placeholder="用户名"></div><div><input type="text" id="hld__dialog_add_desc" placeholder="可选备注"></div>`)
+                $banDialog.find('#container_dom').append(`<div>添加用户: </div><div><input id="hld__dialog_add_uid" type="text" value="" placeholder="UID"></div><div><input id="hld__dialog_add_name" type="text" value="" placeholder="用户名"></div><div><input type="text" id="hld__dialog_add_desc" placeholder="可选备注"></div>`)
                 let $okBtn = $('<button class="hld__btn">添加</button>')
                 $okBtn.click(function(){
                     const name = $banDialog.find('#hld__dialog_add_name').val().trim()
@@ -3095,7 +3092,7 @@
             $('.hld__dialog').length > 0 && $('.hld__dialog').remove()
             let $markDialog = $(`<div class="hld__dialog hld__dialog-sub-top hld__list-panel animated zoomIn" style="top: ${setting.top}px;left: ${setting.left}px;">
             <a href="javascript:void(0)" class="hld__setting-close">×</a>
-            ${setting.type == 'add' ? `<div style="display:block;">添加用户：<input id="hld__dialog_add_uid" type="text" value="" placeholder="UID"><input id="hld__dialog_add_name" type="text" value="" placeholder="用户名"></div>` : ''}
+            ${setting.type == 'add' ? `<div style="display:block;">添加用户: <input id="hld__dialog_add_uid" type="text" value="" placeholder="UID"><input id="hld__dialog_add_name" type="text" value="" placeholder="用户名"></div>` : ''}
             <table class="hld__dialog-mark-table">
             <thead>
             <tr>
@@ -3226,9 +3223,8 @@
         #hld__keywords_panel {width:182px;}
         .hld__extra-icon-box {padding: 5px 5px 5px 0;opacity: 0;transition: all ease .2s;}
         .hld__extra-icon-box:hover {opacity: 1;}
-        .hld__extra-icon {position: relative;padding:0 4px;background-repeat:no-repeat;background-position:center;}
-        .hld__extra-icon svg {width:1em;height:1em;vertical-align:-0.15em;fill:currentColor;overflow:hidden;cursor:pointer;}
-        .hld__extra-icon:hover {text-decoration:none;}
+        .hld__extra-icon {position: relative;padding:0 2px;text-decoration:none;cursor:pointer;}
+        .hld__extra-icon {text-decoration:none !important;}
         span.hld__remark {color:#666;font-size:0.8em;}
         .hld__banned {display: inline-block;color:#ba2026;border: 1px dashed #ba2026;padding: 10px 20px;font-weight: bold;}
         .hld__banned > div {font-weight: normal;}
@@ -3432,7 +3428,7 @@
             key: 'fontResize',
             default: 12,
             title: '字体大小调整',
-            desc: '字体大小调整，单位为像素(px)，初始值是12，注意：此值调整过大会导致页面混乱',
+            desc: '字体大小调整，单位为像素(px)，初始值是12，注意: 此值调整过大会导致页面混乱',
             menu: 'left'
         },
         initFunc() {
@@ -3451,12 +3447,12 @@
      * 扩展坞模块
      * @name ExtraDocker
      * @description 此模块提供了一个悬浮的扩展坞，来添加某些功能
-     *              目前添加的功能有：
-     *                  返回顶部：无跳转返回当前页面的第一页/刷新当页
-     *                  打开菜单：打开个人主菜单
-     *                  收藏：收藏主题
-     *                  回复：回复主题
-     *                  跳转尾页：跳转到当前帖子的尾页
+     *              目前添加的功能有: 
+     *                  返回顶部: 无跳转返回当前页面的第一页/刷新当页
+     *                  打开菜单: 打开个人主菜单
+     *                  收藏: 收藏主题
+     *                  回复: 回复主题
+     *                  跳转尾页: 跳转到当前帖子的尾页
      */
     const ExtraDocker = {
         name: 'ExtraDocker',
@@ -3644,7 +3640,7 @@
                 value: 'FLAG_AND_TEXT'
             }],
             title: '属地显示模式',
-            desc: '调整属地显示模式：\n全部国旗：显示国旗不显示文字\n全部文字：显示文字不显示国旗\n国旗加文字：前面显示国旗后面显示文字',
+            desc: '调整属地显示模式: \n全部国旗: 显示国旗不显示文字\n全部文字: 显示文字不显示国旗\n国旗加文字: 前面显示国旗后面显示文字',
             menu: 'right'
         }],
         forumData: {
@@ -4178,7 +4174,7 @@
                 if (module.error) {
                     // 插件有误
                     $plugin.addClass('hld__plugin-error hld__help')
-                    $plugin.attr('error', module.error).attr('help', '插件未执行，原因：' + module.errorMsg)
+                    $plugin.attr('error', module.error).attr('help', '插件未执行，原因: ' + module.errorMsg)
                 }
                 const pluginID = this.getPluginID(module)
                 if (!module.error && (module.setting || module.settings)) {
@@ -4401,11 +4397,8 @@
                         script.setting.plugin[pluginName] = localSetting
                     }
                 }
-            } catch {
-                if (window.confirm('【NGA-Script】读取插件配置文件出现错误，无法加载配置文件！\n可能是插件配置有误，清空本地插件配置即可恢复使用\n警告：清空插件配置会丢失所有插件的设置\n\n点击【确认】清空本地插件配置，并自动刷新\n\n如还有问题，请提出反馈')) {
-                    script.deleteValue('hld__NGA_plugin_setting')
-                    window.location.reload()
-                }
+            } catch(e) {
+                script.throwError(`【NGA-Script】读取插件配置文件出现错误，无法加载配置文件!\n错误问题: ${e}\n\n请尝试使用【修复脚本】来修复此问题`)
             }
         },
         /**
@@ -4443,7 +4436,7 @@
                         if (module.beforeSaveSettingFunc) {
                             const errorMsg = module.beforeSaveSettingFunc(pluginSetting)
                             if (errorMsg && typeof errorMsg === 'string') {
-                                script.throwError(`插件【${module.title || module.name || 'UNKNOW'}】检查配置返回错误：\n${'-'.repeat(50)}\n${errorMsg}`)
+                                script.throwError(`插件【${module.title || module.name || 'UNKNOW'}】检查配置返回错误: \n${'-'.repeat(50)}\n${errorMsg}`)
                             }
                         }
                         script.setting.plugin[pluginID] = Object.assign({}, pluginSetting)
