@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      4.5.1
+// @version      4.5.2
 // @author       HLD
 // @description  NGA论坛显示优化，全面功能增强，优雅的摸鱼
 // @license      MIT
@@ -3667,21 +3667,19 @@
             const regDays = Math.round(regSeconds / 3600 / 24)
             const regYear = (regSeconds / 3600 / 24 / 365).toFixed(1)
             // 插入UI
-            const $userEnhanceContainer = $(`<div class="hld__user-enhance"></div>`)
+            const $userEnhanceContainer = $(`<div class="hld__user-enhance hld__user-enhance-${uid}"></div>`)
             const $node = $el.find('.posterinfo div.stat .clickextend').siblings('div:first-child')
             $node.after($userEnhanceContainer)
             $userEnhanceContainer.append(`<div><span title="注册天数: ${regDays}天\n注册年数: ${regYear}年">坛龄: <span class="numeric userval" name="regday">${regDays}天</span></span></div>`)
             $userEnhanceContainer.append(`<div><span title="发帖数量: ${userInfo.postnum}">发帖: <span class="numeric userval" name="regday">${userInfo.postnum}</span></span></div>`)
-            $userEnhanceContainer.append(`<div><span style="display: inline-flex;align-items: center;" class="hld__user-location">属地: <span class="userval numeric loading" style="margin-left:5px;"></span></span></div>`)
+            $userEnhanceContainer.append(`<div><span style="display: inline-flex;align-items: center;" class="hld__user-location">属地: <span class="userval numeric hld__req-retry" style="margin-left:5px;">点击获取</span></span></div>`)
             $userEnhanceContainer.append(`<div class="hld__qbc"><button>查看用户活动记录</button></div>`)
-            $el.find('.hld__qbc > button').click(() => this.queryUserActivityRecords(userInfo))
-            // 调用数据接口获取属地
-            this.getRemoteUserInfo(uid)
-            .then(remoteUserInfo => {
-                // 异步设置属地
-                $userEnhanceContainer.find('.hld__user-location').attr('title', `IP属地: ${remoteUserInfo.ipLoc}`)
-                $userEnhanceContainer.find('.hld__user-location > span').replaceWith(this.getCountryFlag(remoteUserInfo.ipLoc))
+            $userEnhanceContainer.find('.hld__user-location > span').click(e => {
+                if (!$(e.target).hasClass('hld__req-retry')) return
+                this.getUserLocation(uid)
             })
+            $el.find('.hld__qbc > button').click(() => this.queryUserActivityRecords(userInfo))
+            // this.getUserLocation(uid)
         },
         /**
          * 预处理
@@ -3735,6 +3733,18 @@
                         }
                     }
                 }
+            })
+        },
+        getUserLocation(uid) {
+            $('.hld__user-enhance-'+uid).find('.hld__user-location > span').attr('class', 'userval numeric loading').empty()
+            // 调用数据接口获取属地
+            this.getRemoteUserInfo(uid)
+            .then(remoteUserInfo => {
+                $('.hld__user-enhance-'+uid).find('.hld__user-location').attr('title', `IP属地: ${remoteUserInfo.ipLoc}`)
+                $('.hld__user-enhance-'+uid).find('.hld__user-location > span').replaceWith(this.getCountryFlag(remoteUserInfo.ipLoc))
+            })
+            .catch(err => {
+                $('.hld__user-enhance-'+uid).find('.hld__user-location > span').attr('class', 'userval numeric hld__req-retry').html(`获取失败(${err.status}), 点击重试`)
             })
         },
         /**
@@ -3799,7 +3809,7 @@
          * 查询用户最近活动记录(3页)
          * @param {Object} userInfo 用户信息对象
          */
-        queryUserActivityRecords(userInfo) {
+        async queryUserActivityRecords(userInfo) {
             $('#hld__chart_cover').remove()
             if (typeof echarts === 'undefined') {
                 script.popMsg('该功能所需资源库正在加载，请稍后再试', 'warn')
@@ -3861,8 +3871,10 @@
                 }
             }
             // 查询发帖记录
-            for (let i=0;i<3;i++) {
-                this.requestTasks.push(this.requestUserRecords(userInfo.uid, 'post', i+1))
+            // tips: 由于NGA限流, 此处暂先拉取一页回复记录
+            for (let i=0;i<1;i++) {
+                // 查询发帖记录
+                // this.requestTasks.push(this.requestUserRecords(userInfo.uid, 'post', i+1))
                 // 查询回复记录
                 this.requestTasks.push(this.requestUserRecords(userInfo.uid, 'reply', i+1))
             }
@@ -3882,7 +3894,7 @@
         /**
          * 查询当前用户深度活动记录(到上限)
          */
-        queryUserDeepRecords(status) {
+        async queryUserDeepRecords(status) {
             if (status != 'end' && !$('#hld__chart_deep_query').hasClass('hld__query-loading')) {
                 // 步进统计
                 $('#hld__chart_deep_query').addClass('hld__query-loading').text('暂停统计')
@@ -3890,8 +3902,7 @@
                     try {
                         if (!this.pageInfo.post.status.endsWith('max')) {
                             await this.requestUserRecords(this.currentUserInfo.uid, 'post', this.pageInfo.post.pages + 1)
-                        }
-                        if (!this.pageInfo.reply.status.endsWith('max')) {
+                        } else if (!this.pageInfo.reply.status.endsWith('max')) {
                             await this.requestUserRecords(this.currentUserInfo.uid, 'reply', this.pageInfo.reply.pages + 1)
                         }
                         if (this.pageInfo.post.status.endsWith('max') && this.pageInfo.reply.status.endsWith('max')) {
@@ -3904,7 +3915,7 @@
                         this.statisticsCount()
                         this.updateChart()
                     }
-                }, 777)
+                }, 2000)
             } else {
                 // 暂停&完成统计
                 $('#hld__chart_deep_query').removeClass('hld__query-loading').text('继续统计')
@@ -3988,6 +3999,11 @@
                     }
                     resolve()
                 })
+                .catch(err => reject({
+                    errMsg: `服务器HTTP返回:${err.status}`,
+                    type,
+                    page
+                }))
             })
         },
         /**
@@ -4075,6 +4091,7 @@
         .hld__user-enhance span[name=location] {margin-left:5px;}
         .hld__country-flag {width:20px;height:auto;margin-left:5px;}
         .hld__user-location .loading {width:8px;height:8px;border:1px solid #9c958b;border-top-color:transparent;border-radius:100%;animation:loading-circle infinite 0.75s linear;}
+        .hld__user-location .hld__req-retry:hover {text-decoration: underline;cursor: pointer;}
         .hld__qbc {width:100% !important;padding:5px 0;}
         .hld__qbc > button {margin:0;}
         #hld__chart_cover {position:fixed;top:50%;left:50%;transform:translate(-50%, -50%);border-radius:10px;background:#FFF;border:1px solid #AAA;box-shadow:0 0 10px rgba(0,0,0,.3);z-index:9993;}
