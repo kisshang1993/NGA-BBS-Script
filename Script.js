@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      4.5.2
+// @version      4.5.3
 // @author       HLD
 // @description  NGA论坛显示优化，全面功能增强，优雅的摸鱼
 // @license      MIT
@@ -288,12 +288,14 @@
          * @param {String} key
          */
         getValue(key) {
-            try {
-                return GM_getValue(key) || window.localStorage.getItem(key)
-            } catch {
-                // 兼容性代码: 计划将在5.0之后废弃
-                return window.localStorage.getItem(key)
+            let value = GM_getValue(key)
+            // 读取切片
+            let splitCount = 1
+            while (GM_getValue(key + '___' + splitCount) != undefined) {
+                value += GM_getValue(key + '___' + splitCount)
+                splitCount += 1
             }
+            return value
         }
         /**
          * 写入值
@@ -302,9 +304,24 @@
          * @param {String} value
          */
         setValue(key, value) {
-            try {
+            const lengthLimit = 1024 * 1024 * 10  // 10M
+            let splitCount = 1
+            if (value.length > lengthLimit) {
+                // 切片储存
+                splitCount = Math.ceil(value.length / lengthLimit)
+                for (let i = 0; i < splitCount; i++) {
+                    const splitValue = value.substring(i * lengthLimit, (i + 1) * lengthLimit)
+                    const keyName = i > 0 ? key + '___' + i : key
+                    GM_setValue(keyName, splitValue)
+                }
+            } else {
                 GM_setValue(key, value)
-            } catch {}
+            }
+            // 删除额外切片
+            while (GM_getValue(key + '___' + splitCount) != undefined) {
+                GM_deleteValue(key + '___' + splitCount)
+                splitCount += 1
+            }
         }
         /**
          * 删除值
@@ -312,11 +329,13 @@
          * @param {String} key
          */
         deleteValue(key) {
-            try {
-                GM_deleteValue(key)
-            } catch {}
-            // 兼容性代码: 计划将在5.0之后飞起
-            window.localStorage.removeItem(key)
+            GM_deleteValue(key)
+            // 删除切片
+            let splitCount = 1
+            while (GM_getValue(key + '___' + splitCount) != undefined) {
+                GM_deleteValue(key + '___' + splitCount)
+                splitCount += 1
+            }
         }
         /**
          * 保存配置到本地
