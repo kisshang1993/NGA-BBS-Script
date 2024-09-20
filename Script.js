@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      4.5.2
+// @version      4.5.3
 // @author       HLD
 // @description  NGA论坛显示优化，全面功能增强，优雅的摸鱼
 // @license      MIT
-// @require      https://cdn.staticfile.net/jquery/3.4.0/jquery.min.js
-// @require      https://cdn.staticfile.net/spectrum/1.8.0/spectrum.js
-// @require      https://cdn.staticfile.net/localforage/1.10.0/localforage.min.js
-// @require      https://cdn.staticfile.net/echarts/5.4.2/echarts.min.js
+// @require      https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/jquery/3.4.0/jquery.min.js#sha512=Pa4Jto+LuCGBHy2/POQEbTh0reuoiEXQWXGn8S7aRlhcwpVkO8+4uoZVSOqUjdCsE+77oygfu2Tl+7qGHGIWsw==
+// @require      https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/spectrum/1.8.0/spectrum.min.js#sha512=Bx3FZ9S4XKYq5P1Yxfqp36JifotqAAAl5eotNaGWE1zSSLifBZlbKExLh2NKHA4CTlqHap7xdFzo39W+CTKrWQ==
+// @require      https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/localforage/1.10.0/localforage.min.js#sha512=+BMamP0e7wn39JGL8nKAZ3yAQT2dL5oaXWr4ZYlTGkKOaoXM/Yj7c4oy50Ngz5yoUutAG17flueD4F6QpTlPng==
+// @require      https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/echarts/5.4.2/echarts.min.js#sha512=VdqgeoWrVJcsDXFlQEKqE5MyhaIgB9yXUVaiUa8DR2J4Lr1uWcFm+ZH/YnzV5WqgKf4GPyHQ64vVLgzqGIchyw==
 // @require      https://greasyfork.org/scripts/424901-nga-script-resource/code/NGA-Script-Resource.js?version=1268947
 // @icon         https://i.loli.net/2021/04/07/8x3yFj2pWEKluSY.png
 // @match        *://bbs.nga.cn/*
@@ -1736,7 +1736,7 @@
         .hld__excel-body .topicrow {border-spacing:0;}
         .hld__excel-body #topicrows td {background:#fff;padding:5px 0;margin:0;border:none;border-right:1px solid #bbbbbb;border-bottom:1px solid #bbbbbb;margin-right:-1px;}
         .hld__excel-body .topicrow .c1 {width:33px;background:#e8e8e8 !important;}
-        .hld__excel-body .topicrow .c1 a {display:none;color: #777777 !important;font-size: 16px !important;font-family: auto;width: 30px;overflow: hidden;text-overflow: ellipsis;white-space: nowrap;}
+        .hld__excel-body .topicrow .c1 a {display:none;color: #777777 !important;font-size: 16px !important;font-family: auto;}
         .hld__excel-body.hld__excel-original-no .topicrow .c1:before {display:none;}
         .hld__excel-body.hld__excel-original-no .topicrow .c1 a {display:inline-block;}
         .hld__excel-body.hld__excel-original-no .topicrow .c1 img {width:20px;}
@@ -2140,7 +2140,7 @@
         style: `
         .hld__img_container {position:absolute;display:flex;justify-content:center;align-items:center;}
         .hld__if_control {position:absolute;display:flex;left:50%;bottom:15px;width:160px;margin-left:-80px;height:40px;background:rgba(0,0,0,0.6);z-index:9999999;}
-        .postcontent img {margin:0 5px 5px 0 !important;box-shadow:none !important;outline:none !important;}
+        .postcontent img {margin:0 5px 5px 0 !important;box-shadow:none !important;outline:none !important;max-height: none !important;}
         #hld__img_full {position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:99999;}
         #hld__img_full img {cursor:move;transition:transform .2s ease;}
         #hld__img_full .hld__imgcenter {top:50%;left:50%;transform:translate(-50%,-50%);}
@@ -3363,7 +3363,7 @@
         },
         asyncStyle() {
             return `
-            body.hld__dark-mode, .hld__dark-mode #msg_block_c .menu a, #msg_block_c .pager a, .hld__dark-mode .nav_link, .hld__dark-mode button.hld__btn:hover {color: ${this.textColor} !important;}
+            body.hld__dark-mode, .hld__dark-mode #msg_block_c .menu a, .hld__dark-mode #msg_block_c .pager a, .hld__dark-mode .nav_link, .hld__dark-mode button.hld__btn:hover {color: ${this.textColor} !important;}
             .hld__dark-mode #m_threads a, .hld__dark-mode .forumbox h2, .hld__dark-mode .forumbox h1, .hld__dark-mode textarea, .hld__dark-mode select, .hld__dark-mode input,
             .hld__dark-mode .catetitle {color:${this.textColor} !important;}
             .hld__dark-mode #m_threads a:hover {background-color:${this.buttonHoverColor} !important;}
