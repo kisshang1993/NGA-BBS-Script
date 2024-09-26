@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      4.5.3
+// @version      4.5.4
 // @author       HLD
 // @description  NGA论坛显示优化，全面功能增强，优雅的摸鱼
 // @license      MIT
-// @require      https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/jquery/3.4.0/jquery.min.js#sha512=Pa4Jto+LuCGBHy2/POQEbTh0reuoiEXQWXGn8S7aRlhcwpVkO8+4uoZVSOqUjdCsE+77oygfu2Tl+7qGHGIWsw==
-// @require      https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/spectrum/1.8.0/spectrum.min.js#sha512=Bx3FZ9S4XKYq5P1Yxfqp36JifotqAAAl5eotNaGWE1zSSLifBZlbKExLh2NKHA4CTlqHap7xdFzo39W+CTKrWQ==
-// @require      https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/localforage/1.10.0/localforage.min.js#sha512=+BMamP0e7wn39JGL8nKAZ3yAQT2dL5oaXWr4ZYlTGkKOaoXM/Yj7c4oy50Ngz5yoUutAG17flueD4F6QpTlPng==
-// @require      https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/echarts/5.4.2/echarts.min.js#sha512=VdqgeoWrVJcsDXFlQEKqE5MyhaIgB9yXUVaiUa8DR2J4Lr1uWcFm+ZH/YnzV5WqgKf4GPyHQ64vVLgzqGIchyw==
+// @require      https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-y/jquery/3.4.0/jquery.min.js#sha512=Pa4Jto+LuCGBHy2/POQEbTh0reuoiEXQWXGn8S7aRlhcwpVkO8+4uoZVSOqUjdCsE+77oygfu2Tl+7qGHGIWsw==
+// @require      https://lf26-cdn-tos.bytecdntp.com/cdn/expire-1-y/spectrum/1.8.0/spectrum.min.js#sha512=Bx3FZ9S4XKYq5P1Yxfqp36JifotqAAAl5eotNaGWE1zSSLifBZlbKExLh2NKHA4CTlqHap7xdFzo39W+CTKrWQ==
+// @require      https://lf9-cdn-tos.bytecdntp.com/cdn/expire-1-y/localforage/1.10.0/localforage.min.js#sha512=+BMamP0e7wn39JGL8nKAZ3yAQT2dL5oaXWr4ZYlTGkKOaoXM/Yj7c4oy50Ngz5yoUutAG17flueD4F6QpTlPng==
+// @require      https://lf9-cdn-tos.bytecdntp.com/cdn/expire-1-y/echarts/5.3.0/echarts.min.js#sha512=dvHO84j/D1YX7AWkAPC/qwRTfEgWRHhI3n7J5EAqMwm4r426sTkcOs6OmqCtmkg0QXNKtiFa67Tp77JWCRRINg==
 // @require      https://greasyfork.org/scripts/424901-nga-script-resource/code/NGA-Script-Resource.js?version=1268947
 // @icon         https://i.loli.net/2021/04/07/8x3yFj2pWEKluSY.png
 // @match        *://bbs.nga.cn/*
