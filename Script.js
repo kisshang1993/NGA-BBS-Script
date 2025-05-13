@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      4.5.4
+// @version      4.5.5
 // @author       HLD
 // @description  NGA论坛显示优化，全面功能增强，优雅的摸鱼
 // @license      MIT
@@ -2462,7 +2462,7 @@
                 $('#hld__setting_cover').append(`<div id="hld__keywords_panel" class="hld__list-panel animated fadeInUp">
                 <a href="javascript:void(0)" class="hld__setting-close">×</a>
                 <div>
-                <div class="hld__list-c"><p>屏蔽关键字</p><textarea row="20" id="hld__keywords_list_textarea"></textarea><p class="hld__list-desc">一行一条</p></div>
+                <div class="hld__list-c"><p>屏蔽关键字</p><textarea row="20" id="hld__keywords_list_textarea"></textarea><p class="hld__list-desc hld__help" help="以/开头会被识别为正则表达式">一行一条，支持正则表达式</p></div>
                 </div>
                 <div class="hld__btn-groups"><button class="hld__btn" id="hld__save_keywords">保存列表</button></div>
                 </div>`)
@@ -2486,8 +2486,8 @@
             const title = $el.find('.c2>a').text()
             if ((script.setting.advanced.kwdBlockContent === 'ALL' || script.setting.advanced.kwdBlockContent === 'TITLE') && script.setting.normal.keywordsBlock && this.keywordsList.length > 0) {
                 for (let keyword of this.keywordsList) {
-                    if (title.includes(keyword)) {
-                        script.printLog(`关键字屏蔽: 标题: ${title}  连接: ${$el.find('.c2>a').attr('href')}`)
+                    if (this.isKeywordHits(keyword, title)) {
+                        script.printLog(`关键字屏蔽: 命中关键字: ${keyword} 标题: ${title} 连接: ${$el.find('.c2>a').attr('href')}`)
                         $el.remove()
                         break
                     }
@@ -2513,13 +2513,13 @@
                 postcontentText = $postcontentClone.text()
                 let blockCount = 0
                 for (let keyword of this.keywordsList) {
-                    if (postcontentText && postcontentText.includes(keyword)) {
+                    if (postcontentText && this.isKeywordHits(keyword, postcontentText)) {
                         consoleLog(postcontentText)
                         $el.remove()
                         blockCount += 1
                         break
                     }
-                    if (postcontentQuote && postcontentQuote.includes(keyword)) {
+                    if (postcontentQuote && this.isKeywordHits(keyword, postcontentQuote)) {
                         consoleLog(postcontentQuote)
                         blockCount += 1
                         $postcontent.find('.quote').remove()
@@ -2557,6 +2557,31 @@
                 }
             });
             return r
+        },
+        /**
+         * 判断是否命中关键字
+         * @method isKeywordHits
+         * @param {String} keyword 关键字
+         * @param {String} text 文本
+         * @return {Boolean} 是否命中
+         */
+        isKeywordHits(keyword, text) {
+            if (keyword.startsWith('/')) {
+                const matchRegKeyword = keyword.match(/^\/(.*)\/([gimsuy]*)$/)
+                if (matchRegKeyword) {
+                    const regexPattern = matchRegKeyword[1]
+                    const flags = matchRegKeyword[2]
+                    try {
+                        const regex = new RegExp(regexPattern, flags)
+                        return regex.test(text)
+                    } catch {
+                        return false
+                    }
+                } else {
+                    return false
+                }
+            }
+            return text.includes(keyword)
         },
         /**
          * 列表去重
@@ -3411,7 +3436,8 @@
             .hld__dark-mode .forumbox td:not(.c0) {border-color:  ${this.borderColor} !important;border-bottom: 1px solid  ${this.borderColor};border-right: 1px solid  ${this.borderColor};}
             .hld__dark-mode .c4 {border-right:none !important;}
             .hld__dark-mode #m_threads .replyer, .hld__dark-mode #m_threads .replyer > b, .hld__dark-mode .small_colored_text_btn, .hld__dark-mode .forumbox .postrow .stat,
-            .hld__dark-mode #m_posts .postrow .userval, .hld__dark-mode #m_nav .bbsinfo, .hld__dark-mode .catenew p {color:${this.muteColor} !important;}
+            .hld__dark-mode #m_posts .postrow .userval, .hld__dark-mode #m_nav .bbsinfo, .hld__dark-mode .catenew p, .hld__dark-mode #m_posts .postrow .posterInfoLine .usercol, .hld__dark-mode .postrow .postinfot  {color:${this.muteColor} !important;}
+            .hld__dark-mode #m_posts .postrow .posterInfoLine {background-color: ${this.mainColor} !important;border-color:${this.borderColor} !important;}
             `
         }
     }
