@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      4.5.5
+// @version      4.5.6
 // @author       HLD
 // @description  NGA论坛显示优化，全面功能增强，优雅的摸鱼
 // @license      MIT
-// @require      https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-y/jquery/3.4.0/jquery.min.js#sha512=Pa4Jto+LuCGBHy2/POQEbTh0reuoiEXQWXGn8S7aRlhcwpVkO8+4uoZVSOqUjdCsE+77oygfu2Tl+7qGHGIWsw==
-// @require      https://lf26-cdn-tos.bytecdntp.com/cdn/expire-1-y/spectrum/1.8.0/spectrum.min.js#sha512=Bx3FZ9S4XKYq5P1Yxfqp36JifotqAAAl5eotNaGWE1zSSLifBZlbKExLh2NKHA4CTlqHap7xdFzo39W+CTKrWQ==
-// @require      https://lf9-cdn-tos.bytecdntp.com/cdn/expire-1-y/localforage/1.10.0/localforage.min.js#sha512=+BMamP0e7wn39JGL8nKAZ3yAQT2dL5oaXWr4ZYlTGkKOaoXM/Yj7c4oy50Ngz5yoUutAG17flueD4F6QpTlPng==
-// @require      https://lf9-cdn-tos.bytecdntp.com/cdn/expire-1-y/echarts/5.3.0/echarts.min.js#sha512=dvHO84j/D1YX7AWkAPC/qwRTfEgWRHhI3n7J5EAqMwm4r426sTkcOs6OmqCtmkg0QXNKtiFa67Tp77JWCRRINg==
+// @require      https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/jquery/3.4.0/jquery.min.js#sha512=Pa4Jto+LuCGBHy2/POQEbTh0reuoiEXQWXGn8S7aRlhcwpVkO8+4uoZVSOqUjdCsE+77oygfu2Tl+7qGHGIWsw==
+// @require      https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/spectrum/1.8.0/spectrum.min.js#sha512=Bx3FZ9S4XKYq5P1Yxfqp36JifotqAAAl5eotNaGWE1zSSLifBZlbKExLh2NKHA4CTlqHap7xdFzo39W+CTKrWQ==
+// @require      https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/localforage/1.10.0/localforage.min.js#sha512=+BMamP0e7wn39JGL8nKAZ3yAQT2dL5oaXWr4ZYlTGkKOaoXM/Yj7c4oy50Ngz5yoUutAG17flueD4F6QpTlPng==
+// @require      https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/echarts/5.3.0/echarts.min.js#sha512=dvHO84j/D1YX7AWkAPC/qwRTfEgWRHhI3n7J5EAqMwm4r426sTkcOs6OmqCtmkg0QXNKtiFa67Tp77JWCRRINg==
 // @require      https://greasyfork.org/scripts/424901-nga-script-resource/code/NGA-Script-Resource.js?version=1268947
 // @icon         https://i.loli.net/2021/04/07/8x3yFj2pWEKluSY.png
 // @match        *://bbs.nga.cn/*
@@ -2219,7 +2219,7 @@
                     this.postAuthor.unshift(authorStr) > 10 && this.postAuthor.pop()
                     script.setValue('hld__NGA_post_author', this.postAuthor.join(','))
                 }
-                $el.find('a.b').each(function () {
+                $el.find('a.userlink').each(function () {
                     const name = $(this).attr('hld-mark-before-name') || $(this).text().replace('[', '').replace(']', '')
                     if (name && _this.postAuthor.includes(`${tid}:${name}`)) {
                         $(this).append('<span class="hld__post-author">楼主</span>')
@@ -2910,7 +2910,7 @@
                     script.setting.advanced.autoHideBanIcon ? $(this).after(`<span class="hld__extra-icon-box">${mbDom}</span>`) : $(this).append(mbDom)
                 })
                 // 标记DOm
-                $el.find('a.b').each(function () {
+                $el.find('a.userlink').each(function () {
                     const uid = ($(this).attr('href') && $(this).attr('href').indexOf('uid=') > -1) ? $(this).attr('href').split('uid=')[1] + '' : ''
                     let name = ''
                     if ($(this).find('span.hld__post-author').length > 0 || $(this).find('span.hld__remark').length > 0) {
@@ -3710,56 +3710,54 @@
         /**
          * 预处理
          */
-        preprocessing() {
-            // 非实时性的任务使用异步处理
-            new Promise(async (resolve, reject) => {
-                // 初始化的时候清理超过一定时间的数据，避免无限增长数据
-                // 出于性能考虑，每日只执行一次
-                const currentDate = new Date()
-                const lastClear = await this.store.getItem('USERENHANCE_CLEAR_DAY')
-                if (lastClear != currentDate.getDate()) {
-                    const exprieSeconds = 7 * 24 * 3600  // 7天
-                    const currentTime = Math.ceil(currentDate.getTime() / 1000)
-                    let removedCount = 0
-                    this.store.iterate((value, key, iterationNumber) => {
-                        if (key.startsWith('USERINFO_')) {
-                            if (!value._queryTime || currentTime - value._queryTime >= exprieSeconds) {
-                                this.store.removeItem(key)
-                                removedCount += 1
-                            }
+        async preprocessing() {
+            // 初始化的时候清理超过一定时间的数据，避免无限增长数据
+            // 出于性能考虑，每日只执行一次
+            const currentDate = new Date()
+            const lastClear = await this.store.getItem('USERENHANCE_CLEAR_DAY')
+            if (lastClear != currentDate.getDate()) {
+                const exprieSeconds = 7 * 24 * 3600  // 7天
+                const currentTime = Math.ceil(currentDate.getTime() / 1000)
+                let removedCount = 0
+                this.store.iterate((value, key, iterationNumber) => {
+                    if (key.startsWith('USERINFO_')) {
+                        if (!value._queryTime || currentTime - value._queryTime >= exprieSeconds) {
+                            this.store.removeItem(key)
+                            removedCount += 1
                         }
-                    })
-                    .then(() => {
-                        this.store.setItem('USERENHANCE_CLEAR_DAY', currentDate.getDate())
-                        script.printLog(`用户增强: 已清除${removedCount}条用户超期数据`)
-                    })
-                    .catch(err => {
-                        console.error('用户增强清除超期数据失败，错误原因:', err)
-                    })
-                }
-                // 获取所有版面字典，扁平化提纯fid:name
-                if (!window?.script_muti_get_var_store?.data) {
-                    await $.ajax({
-                        url: unsafeWindow.__API.indexForumList(),
-                        dataType: 'script',
-                        cache: true
-                    })
-                }
-                const _forumData = script_muti_get_var_store.data?.['0']?.all
-                if (_forumData && typeof _forumData == 'object') {
-                    for (const v1 of Object.values(_forumData)) {
-                        if (v1.content && typeof v1.content == 'object') {
-                            for (const v2 of Object.values(v1.content)) {
-                                if (v2.content && typeof v2.content == 'object') {
-                                    for (const v3 of Object.values(v2.content)) {
-                                        this.forumData[v3.fid] = v3.name
-                                    }
+                    }
+                })
+                .then(() => {
+                    this.store.setItem('USERENHANCE_CLEAR_DAY', currentDate.getDate())
+                    script.printLog(`用户增强: 已清除${removedCount}条用户超期数据`)
+                })
+                .catch(err => {
+                    console.error('用户增强清除超期数据失败，错误原因:', err)
+                })
+            }
+            // 获取所有版面字典，扁平化提纯fid:name
+            if (!window?.script_muti_get_var_store?.data) {
+                await $.ajax({
+                    url: unsafeWindow.__API.indexForumList(),
+                    dataType: 'script',
+                    cache: true
+                })
+            }
+            const _forumData = script_muti_get_var_store.data?.['0']?.all
+            if (_forumData && typeof _forumData == 'object') {
+                for (const v1 of Object.values(_forumData)) {
+                    if (v1.content && typeof v1.content == 'object') {
+                        for (const v2 of Object.values(v1.content)) {
+                            if (v2.content && typeof v2.content == 'object') {
+                                for (const v3 of Object.values(v2.content)) {
+                                    this.forumData[v3.fid] = v3.name
                                 }
                             }
                         }
                     }
                 }
-            })
+            }
+
         },
         getUserLocation(uid) {
             $('.hld__user-enhance-'+uid).find('.hld__user-location > span').attr('class', 'userval numeric loading').empty()
@@ -3812,7 +3810,7 @@
                 const flagUrl = `https://www.huuua.com/zi/scss/icons/flag-icon-css/flags`
                 if (CHINESE_CONVERT_ISO3166_1[chsName]) {
                     flagElement = `<img class="hld__country-flag" onerror="this.style.width='auto'" alt="${chsName}" src="${flagUrl}/${CHINESE_CONVERT_ISO3166_1[chsName].toLowerCase()}.svg"/>`
-                } else if (CHINA_PROVINCE.includes(chsName)) {
+                } else if (CHINA_PROVINCE.includes(chsName.endsWith('省') ? chsName.slice(0, -1) : chsName)) {
                     flagElement = `<img class="hld__country-flag" onerror="this.style.width='auto'" alt="中国" src="${flagUrl}/cn.svg"/> `
                     const specialArea = ['香港', '澳门', '台湾'].find(name => chsName.endsWith(name))
                     if (specialArea) {
