@@ -1923,6 +1923,14 @@
                     window.open($link.data('href'))
                     return false
                 })
+                let $link_pager = $el.find('.pager a')
+                $link_pager.each(function() {
+                    $(this).data('href', $(this).attr('href')).attr('href', 'javascript:void(0)')
+                    $(this).click(() => {
+                        window.open($(this).data('href'))
+                        return false
+                    })
+                })
             }
         }
     }
