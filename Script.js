@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         NGA优化摸鱼体验
 // @namespace    https://github.com/kisshang1993/NGA-BBS-Script
-// @version      4.5.6
+// @version      4.5.7
 // @author       HLD
 // @description  NGA论坛显示优化，全面功能增强，优雅的摸鱼
 // @license      MIT
@@ -3621,9 +3621,6 @@
             }, {
                 label: 'ngabbs.com',
                 value: 'ngabbs.com'
-            }, {
-                label: 'nga.178.com',
-                value: 'nga.178.com'
             }],
             title: '域名重定向目标',
             desc: '此配置设置将域名重定向到的目标域名\n警告:不同域名的配置文件中的此配置应该保持一致，如不一致将会反复重定向陷入死循环!',
@@ -3679,6 +3676,12 @@
         pageInfo: {},
         queryTimer: null,
         store: null,
+        flagIconBaseUrls: [
+            'https://mirrors.sustech.edu.cn/cdnjs/ajax/libs/flag-icon-css/3.5.0/flags/4x3',
+            'https://cdn.jsdelivr.net/npm/flag-icons@7.5.0/flags/4x3',
+            'https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/3.5.0/flags/4x3',
+            'https://unpkg.com/flag-icons@7.5.0/flags/4x3'
+        ],
         initFunc() {
             // 创建storage示例
             this.store = script.createStorageInstance('NGA_BBS_Script__UserInfoCache')
@@ -3807,14 +3810,13 @@
             let textElement = `<span class="numeric userval" name="location">${chsName}</span>`
             let flagElement = ''
             if (script.setting.advanced.locationFlagMode != 'TEXT') {
-                const flagUrl = `https://www.huuua.com/zi/scss/icons/flag-icon-css/flags`
                 if (CHINESE_CONVERT_ISO3166_1[chsName]) {
-                    flagElement = `<img class="hld__country-flag" onerror="this.style.width='auto'" alt="${chsName}" src="${flagUrl}/${CHINESE_CONVERT_ISO3166_1[chsName].toLowerCase()}.svg"/>`
+                    flagElement = this.getCountryFlagElement(chsName, CHINESE_CONVERT_ISO3166_1[chsName])
                 } else if (CHINA_PROVINCE.includes(chsName.endsWith('省') ? chsName.slice(0, -1) : chsName)) {
-                    flagElement = `<img class="hld__country-flag" onerror="this.style.width='auto'" alt="中国" src="${flagUrl}/cn.svg"/> `
+                    flagElement = `${this.getCountryFlagElement('中国', 'CN')} `
                     const specialArea = ['香港', '澳门', '台湾'].find(name => chsName.endsWith(name))
                     if (specialArea) {
-                        flagElement += `<img class="hld__country-flag" onerror="this.style.width='auto'" alt="中国${chsName}" src="${flagUrl}/${CHINESE_CONVERT_ISO3166_1['中国'+chsName].toLowerCase()}.svg"/> `
+                        flagElement += `${this.getCountryFlagElement('中国' + chsName, CHINESE_CONVERT_ISO3166_1['中国'+chsName])} `
                     }
                 }
             }
@@ -3828,6 +3830,12 @@
                 default:
                     return textElement
             }
+        },
+        getCountryFlagElement(alt, countryCode) {
+            const flagUrls = this.flagIconBaseUrls.map(baseUrl => `${baseUrl}/${countryCode.toLowerCase()}.svg`)
+            const fallbackUrls = flagUrls.slice(1).join('|')
+            const onerror = `var urls=this.dataset.fallbackUrls?this.dataset.fallbackUrls.split('|'):[];var url=urls.shift();if(url){this.dataset.fallbackUrls=urls.join('|');this.src=url}else{this.style.width='auto'}`
+            return `<img class="hld__country-flag" data-fallback-urls="${fallbackUrls}" onerror="${onerror}" alt="${alt}" src="${flagUrls[0]}"/>`
         },
         /**
          * 查询用户最近活动记录(3页)
