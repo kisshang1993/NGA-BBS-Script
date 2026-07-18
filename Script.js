@@ -696,15 +696,25 @@
         },
         renderAlwaysFunc() {
             if($('.hld__setting-box').length == 0) {
-                $('#startmenu > tbody > tr > td.last').append('<div><div class="item hld__setting-box"></div></div>')
-                let $entry = $('<a id="hld__setting" title="打开NGA优化摸鱼插件设置面板">NGA优化摸鱼插件设置</a>')
-                $entry.click(()=>{
+                const $menu = $('#startmenu > tbody > tr > td.last').length > 0
+                    ? $('#startmenu > tbody > tr > td.last')
+                    : $('#mainmenu .half')
+                if ($menu.length > 0) {
+                    $menu.append('<div><div class="item hld__setting-box"></div></div>')
+                    let $entry = $('<a id="hld__setting" title="打开NGA优化摸鱼插件设置面板">NGA优化摸鱼插件设置</a>')
+                    $entry.click(()=>{
+                        $('#hld__setting_cover').css('display', 'block')
+                        $('html, body').animate({scrollTop: 0}, 500)
+                    })
+                    $('.hld__setting-box').append($entry)
+                }
+                // Fallback: click docker sidebar to open settings panel
+                $('body').on('click', '.hld__docker-sidebar', function() {
                     $('#hld__setting_cover').css('display', 'block')
                     $('html, body').animate({scrollTop: 0}, 500)
                 })
-                $('#hld__setting_close').click(()=>$('#hld__setting_cover').fadeOut(200))
-                $('.hld__setting-box').append($entry)
             }
+            $('#hld__setting_close').off('click').on('click', ()=>$('#hld__setting_cover').fadeOut(200))
         },
         addButton(button) {
             const $button = $(`<button class="hld__btn" id="${button.id}" title="${button.desc}">${button.title}</button>`)
