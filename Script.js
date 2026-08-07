@@ -1678,6 +1678,10 @@
             script.setting.normal.darkMode && script.popMsg('Excel模式与暗黑模式不兼容, 请勿重合使用', 'warn')
         },
         style: `
+        /* 隐藏广告 */
+        #m_posts_c>span {display: none;}
+        td.null {display: none}
+        #toptopics+span {display: none}
         /* WPS风格 */
         .hld__excel-body-err {padding-top: 200px}
         .hld__excel-header, .hld__excel-footer, .hld__excel-setting, .hld__half-clone {display: none;}
