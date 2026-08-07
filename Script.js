@@ -2378,6 +2378,7 @@
         renderAlwaysFunc() {
             const _this = this
             if(script.setting.normal.autoPage) {
+                document.body.onmousewheel = null;
                 if($('#hld__next_page').length > 0) return
                 $('#pagebbtm>.stdbtn[hld-auto-page!=ok] td').each(function(){
                     if($(this).children('a').text() == '>') {
@@ -2394,6 +2395,10 @@
                     }
                 })
                 $('#pagebbtm>.stdbtn').attr('hld-auto-page', 'ok')
+            } else {
+                document.body.onmousewheel = function(e) {
+                    e.stopPropagation()
+                }
             }
         }
     }
