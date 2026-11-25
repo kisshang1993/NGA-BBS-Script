@@ -20,6 +20,7 @@
 // @grant        GM_getValue
 // @grant        GM_deleteValue
 // @grant        GM_listValues
+// @grant        GM_addValueChangeListener
 // @grant        unsafeWindow
 // @inject-into  content
 // ==/UserScript==
@@ -317,6 +318,20 @@
             } catch {}
             // 兼容性代码: 计划将在5.0之后飞起
             window.localStorage.removeItem(key)
+        }
+        /**
+         * 监听值变更（跨标签页同步）
+         * @method addValueChangeListener
+         * @param {String} key
+         * @param {Function} callback
+         */
+        addValueChangeListener(key, callback) {
+            try {
+                if (typeof GM_addValueChangeListener === 'function') {
+                    return GM_addValueChangeListener(key, callback)
+                }
+            } catch {}
+            return null
         }
         /**
          * 保存配置到本地
@@ -2667,27 +2682,20 @@
             try {
                 if (localMarkList) {
                     _this.markList = JSON.parse(localMarkList)
-                    // 统计已添加过的标签
-                    _this.markList.forEach(item => {
-                        item.marks.forEach(mark => {
-                            const exist_tag = _this.markedTags.find(t => t.mark == mark.mark)
-                            if (exist_tag) {
-                                exist_tag.count += 1
-                            } else {
-                                _this.markedTags.push({
-                                    mark: mark.mark,
-                                    text_color: mark.text_color,
-                                    bg_color: mark.bg_color,
-                                    count: 1
-                                })
-                            }
-                        })
-                    })
-                    _this.markedTags.sort((a, b) => {return b.count - a.count})
+                    _this.refreshMarkedTags()
                 }
             } catch(e) {
                 script.throwError(`【NGA-Script】无法加载标记列表，数据解析失败!\n错误问题: ${e}\n\n请尝试使用【修复脚本】来修复此问题`)
             }
+            // 跨标签页同步黑名单与标记名单变更
+            script.addValueChangeListener('hld__NGA_ban_list', (name, oldVal, newVal, remote) => {
+                if (!remote) return
+                _this.applyBanListValue(newVal)
+            })
+            script.addValueChangeListener('hld__NGA_mark_list', (name, oldVal, newVal, remote) => {
+                if (!remote) return
+                _this.applyMarkListValue(newVal)
+            })
             // 添加到导入导出配置
             script.getModule('BackupModule').addItem({
                 title: '黑名单列表',
@@ -2789,8 +2797,16 @@
                      */
                     $('body').on('click', '.hld__bl-del', function(){
                         const index = $(this).data('index')
-                        _this.banList.splice(index, 1)
-                        script.setValue('hld__NGA_ban_list', JSON.stringify(_this.banList))
+                        const uid = $(this).attr('data-uid') || ''
+                        const name = $(this).attr('data-name') || ''
+                        _this.syncBanList()
+                        const targetIndex = (uid || name)
+                            ? _this.banList.findIndex(u => (uid ? u.uid == uid : u.name == name))
+                            : index
+                        if (targetIndex > -1 && targetIndex < _this.banList.length) {
+                            _this.banList.splice(targetIndex, 1)
+                            script.setValue('hld__NGA_ban_list', JSON.stringify(_this.banList))
+                        }
                         _this.reloadBanlist()
                     })
                     /**
@@ -2825,6 +2841,7 @@
                         try {
                             _this.markList = JSON.parse(markList)
                             script.setValue('hld__NGA_mark_list', markList)
+                            _this.refreshMarkedTags()
                             _this.reloadMarklist()
                         } catch {
                             script.popMsg('标记单数据有误！', 'err')
@@ -2853,8 +2870,17 @@
                      */
                     $('body').on('click', '.hld__ml-del', function(){
                         const index = $(this).data('index')
-                        _this.markList.splice(index, 1)
-                        script.setValue('hld__NGA_mark_list', JSON.stringify(_this.markList))
+                        const uid = $(this).attr('data-uid') || ''
+                        const name = $(this).attr('data-name') || ''
+                        _this.syncMarkList()
+                        const targetIndex = (uid || name)
+                            ? _this.markList.findIndex(u => (uid ? u.uid == uid : u.name == name))
+                            : index
+                        if (targetIndex > -1 && targetIndex < _this.markList.length) {
+                            _this.markList.splice(targetIndex, 1)
+                            script.setValue('hld__NGA_mark_list', JSON.stringify(_this.markList))
+                            _this.refreshMarkedTags()
+                        }
                         _this.reloadMarklist()
                     })
                     /**
@@ -2872,6 +2898,8 @@
                         })
                     })
                     //重载名单
+                    _this.syncBanList()
+                    _this.syncMarkList()
                     _this.reloadBanlist()
                     _this.reloadMarklist()
                 })
@@ -3015,14 +3043,92 @@
                         script.popMsg('UID与用户名必填一个，其中UID权重较大', 'err')
                         return
                     }
-                    !_this.getBanUser({name, uid}) && _this.banList.push({name, uid, desc})
-                    script.setValue('hld__NGA_ban_list', JSON.stringify(_this.banList))
+                    _this.setBanUser({name, uid, desc})
                     $('.hld__dialog').remove()
                     setting.callback()
                 })
                 $banDialog.find('.hld__dialog-buttons').append($okBtn)
             }
             $('body').append($banDialog)
+        },
+        /**
+         * 解析并更新内存中的黑名单列表
+         * @method applyBanListValue
+         * @param {String|undefined} rawVal 序列化后的黑名单字符串
+         */
+        applyBanListValue(rawVal) {
+            if (!rawVal) {
+                this.banList = []
+                return
+            }
+            try {
+                const parsed = JSON.parse(rawVal)
+                if (Array.isArray(parsed)) {
+                    this.banList = parsed
+                }
+            } catch (e) {
+                script.printLog(`同步黑名单列表失败: ${e}`)
+            }
+        },
+        /**
+         * 从存储同步最新黑名单到内存
+         * @method syncBanList
+         */
+        syncBanList() {
+            this.applyBanListValue(script.getValue('hld__NGA_ban_list'))
+        },
+        /**
+         * 解析并更新内存中的标记名单列表
+         * @method applyMarkListValue
+         * @param {String|undefined} rawVal 序列化后的标记名单字符串
+         */
+        applyMarkListValue(rawVal) {
+            if (!rawVal) {
+                this.markList = []
+                this.refreshMarkedTags()
+                return
+            }
+            try {
+                const parsed = JSON.parse(rawVal)
+                if (Array.isArray(parsed)) {
+                    this.markList = parsed
+                    this.refreshMarkedTags()
+                }
+            } catch (e) {
+                script.printLog(`同步标记列表失败: ${e}`)
+            }
+        },
+        /**
+         * 从存储同步最新标记名单到内存
+         * @method syncMarkList
+         */
+        syncMarkList() {
+            this.applyMarkListValue(script.getValue('hld__NGA_mark_list'))
+        },
+        /**
+         * 重新统计已添加过的标签
+         * @method refreshMarkedTags
+         */
+        refreshMarkedTags() {
+            const _this = this
+            _this.markedTags = []
+            _this.markList.forEach(item => {
+                if (!Array.isArray(item.marks)) return
+                item.marks.forEach(mark => {
+                    const exist_tag = _this.markedTags.find(t => t.mark == mark.mark)
+                    if (exist_tag) {
+                        exist_tag.count += 1
+                    } else {
+                        _this.markedTags.push({
+                            mark: mark.mark,
+                            text_color: mark.text_color,
+                            bg_color: mark.bg_color,
+                            count: 1
+                        })
+                    }
+                })
+            })
+            _this.markedTags.sort((a, b) => {return b.count - a.count})
         },
         /**
          * 获取黑名单用户
@@ -3036,9 +3142,21 @@
                 if ((u.uid && banObj.uid && u.uid == banObj.uid) || 
                     (u.name && banObj.name && u.name == banObj.name)) {
                     if ((!u.uid && banObj.uid) || (!u.name && banObj.name)) {
-                        u.uid = banObj.uid + '' || ''
-                        u.name = banObj.name || ''
-                        script.setValue('hld__NGA_ban_list', JSON.stringify(_this.banList))
+                        // 写回前先同步最新黑名单，避免旧标签页内存覆盖其他标签页的新增记录
+                        _this.syncBanList()
+                        const latestUser = _this.banList.find(item =>
+                            (item.uid && banObj.uid && item.uid == banObj.uid) ||
+                            (item.name && banObj.name && item.name == banObj.name)
+                        )
+                        if (latestUser) {
+                            if ((!latestUser.uid && banObj.uid) || (!latestUser.name && banObj.name)) {
+                                latestUser.uid = banObj.uid ? banObj.uid + '' : (latestUser.uid || '')
+                                latestUser.name = banObj.name || latestUser.name || ''
+                                script.setValue('hld__NGA_ban_list', JSON.stringify(_this.banList))
+                            }
+                            return latestUser
+                        }
+                        return null
                     }
                     return u
                 }
@@ -3051,8 +3169,11 @@
          * @param {Object} banObj 黑名单对象, {uid, name}
          */
         setBanUser(banObj) {
-            !this.getBanUser(banObj) && this.banList.push(banObj)
-            script.setValue('hld__NGA_ban_list', JSON.stringify(this.banList))
+            this.syncBanList()
+            if (!this.getBanUser(banObj)) {
+                this.banList.push(banObj)
+                script.setValue('hld__NGA_ban_list', JSON.stringify(this.banList))
+            }
         },
         /**
          * 重新渲染黑名单列表
@@ -3211,9 +3332,18 @@
             if(check > -1) {
                 let userMark = this.markList[check]
                 if ((!userMark.uid && user.uid) || (!userMark.name && user.name)) {
-                    userMark.uid = user.uid + '' || ''
-                    userMark.name = user.name || ''
-                    script.setValue('hld__NGA_mark_list', JSON.stringify(this.markList))
+                    // 写回前先同步最新标记名单，避免旧标签页内存覆盖其他标签页的修改
+                    this.syncMarkList()
+                    const latestMark = this.markList.find(v => (v.uid && user.uid && v.uid == user.uid) || (v.name && user.name && v.name == user.name))
+                    if (latestMark) {
+                        if ((!latestMark.uid && user.uid) || (!latestMark.name && user.name)) {
+                            latestMark.uid = user.uid ? user.uid + '' : (latestMark.uid || '')
+                            latestMark.name = user.name || latestMark.name || ''
+                            script.setValue('hld__NGA_mark_list', JSON.stringify(this.markList))
+                        }
+                        return latestMark
+                    }
+                    return null
                 }
                 return userMark
             } else {
@@ -3228,6 +3358,7 @@
         setUserMarks(userMarks) {
             // 检查是否已有标签
             const _this = this
+            _this.syncMarkList()
             const check = _this.markList.findIndex(v => (v.uid && userMarks.uid && v.uid == userMarks.uid) || 
             (v.name && userMarks.name && v.name == userMarks.name))
             if(check > -1) {
@@ -3240,6 +3371,7 @@
                 _this.markList.push(userMarks)
             }
             script.setValue('hld__NGA_mark_list', JSON.stringify(_this.markList))
+            _this.refreshMarkedTags()
         },
         style: `
         #hld__setting {color:#6666CC !important;cursor:pointer;}
